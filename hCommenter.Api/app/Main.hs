@@ -1,13 +1,14 @@
 {-# LANGUAGE DataKinds #-}
 module Main where
-import           Control.Monad              (when)
-import qualified Data.ByteString.Lazy.Char8 as BL8
-import           MyLib                      (swaggerDefinition)
+import qualified Data.ByteString.Lazy.Char8 as BL8 (writeFile)
+import           Network.Wai.Handler.Warp   (run)
 import           Options.Commander          (command_, flag, raw, toplevel)
+import           Server                     (app, swaggerDefinition)
 
 main :: IO ()
 main = command_
   . toplevel @"hCommenter CLI"
   $ flag @"generateSwagger" $ \wantsSwagger ->
-    raw $ when wantsSwagger
-        $ BL8.writeFile "swagger.json" swaggerDefinition
+    raw $ if wantsSwagger
+        then BL8.writeFile "swagger.json" swaggerDefinition
+        else run 8080 app

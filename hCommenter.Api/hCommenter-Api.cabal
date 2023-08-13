@@ -56,10 +56,13 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  MyLib
+    exposed-modules:  Server
 
     -- Modules included in this library but not exported.
-    -- other-modules:
+    other-modules:
+        Handlers.Reply
+        Handlers.Voting
+        Handlers.Comment
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -67,11 +70,11 @@ library
     -- Other library packages from which modules are imported.
     build-depends:
         base ^>=4.18.0.0,
-        classy-prelude ^>= 1.5.0.3,
-        servant-server ^>= 0.20,
-        servant-swagger ^>= 1.2,
-        swagger2 ^>= 2.8.7,
-        lens ^>= 5.2.2,
+        classy-prelude,
+        servant-server,
+        servant-swagger,
+        swagger2,
+        lens,
         bytestring,
         aeson,
         aeson-pretty,
@@ -83,8 +86,10 @@ library
     default-language: GHC2021
 
     default-extensions:
-        NoImplicitPrelude
-        OverloadedStrings
+        NoImplicitPrelude,
+        OverloadedStrings,
+        DataKinds,
+        ExplicitNamespaces,
 
 executable hCommenter-Api
     -- Import common warning flags.
@@ -104,6 +109,8 @@ executable hCommenter-Api
         base ^>=4.18.0.0,
         bytestring,
         commander-cli,
+        wai,
+        warp,
         hCommenter-Api
 
     -- Directories containing source files.
