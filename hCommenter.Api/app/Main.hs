@@ -1,8 +1,13 @@
+{-# LANGUAGE DataKinds #-}
 module Main where
-
-import qualified MyLib (someFunc)
+import           Control.Monad              (when)
+import qualified Data.ByteString.Lazy.Char8 as BL8
+import           MyLib                      (swaggerDefinition)
+import           Options.Commander          (command_, flag, raw, toplevel)
 
 main :: IO ()
-main = do
-  putStrLn "Hello, Haskell!"
-  MyLib.someFunc
+main = command_
+  . toplevel @"hCommenter CLI"
+  $ flag @"generateSwagger" $ \wantsSwagger ->
+    raw $ when wantsSwagger
+        $ BL8.writeFile "swagger.json" swaggerDefinition
