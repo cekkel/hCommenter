@@ -1,14 +1,15 @@
-module Handlers.Comment (commentServer, ID, SortBy (..), Comment (..), CommentsAPI) where
+module Handlers.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI) where
 
-import           ClassyPrelude
-import           Data.Aeson      (FromJSON, ToJSON)
-import           Data.Swagger    (ToParamSchema, ToSchema)
-import           GHC.Num         (naturalOne)
-import           Numeric.Natural (Natural)
-import           Servant         (Capture, Delete, Description,
-                                  FromHttpApiData (parseQueryParam), Get, JSON,
-                                  Post, Put, QueryParam, ReqBody, Server,
-                                  type (:<|>) (..), type (:>))
+import           ClassyPrelude         hiding (Handler, sortBy)
+import           Database.Interface    (CommentStorage, deleteComment,
+                                        editComment, getComment,
+                                        getManyComments, newComment)
+import           Database.StorageTypes (Comment, ID, SortBy (..))
+import qualified Effectful             as E
+import           Servant               (Capture, Delete, Description, Get,
+                                        HasServer (ServerT), JSON, Post, Put,
+                                        QueryParam, ReqBody, type (:<|>) (..),
+                                        type (:>))
 
 type CommentsAPI =
   "comments" :> "range"
@@ -20,40 +21,22 @@ type CommentsAPI =
 
   :<|> "comment" :>
     (
-      Description "Create a new comment" :> ReqBody '[JSON] Comment :> Post '[JSON] Comment :<|>
-      Description "Edit an existing comment" :> Capture "id" ID :> Put '[JSON] Comment :<|>
-      Description "Delete a comment" :> Capture "id" ID :> Delete '[JSON] Comment
+      Description "Get a single comment by ID"
+        :> Capture "id" ID :> Get '[JSON] Comment :<|>
+      Description "Create a new comment and get new ID"
+        :> "new" :> ReqBody '[JSON] Comment :> Post '[JSON] ID :<|>
+      Description "Edit an existing comment"
+        :> Capture "id" ID :> ReqBody '[JSON] Comment :> Put '[JSON] () :<|>
+      Description "Delete a comment"
+        :> Capture "id" ID :> Delete '[JSON] ()
     )
 
-commentServer :: Server CommentsAPI
-commentServer = getComments :<|> (postComment :<|> editComment :<|> deleteComment)
+commentServer
+  :: CommentStorage E.:> es
+  => ServerT CommentsAPI (E.Eff es)
+commentServer = getComments :<|> (getComment :<|> newComment :<|> replaceComment :<|> deleteComment)
   where
-    getComments from to sortBy = return []
-    postComment = return
-    editComment commentID = return emptyComment
-    deleteComment commentID = return emptyComment
+    getComments mStart mEnd mSort =
+      getManyComments (fromMaybe 0 mStart) (fromMaybe 10 mEnd) (fromMaybe Popular mSort)
 
-type ID = Natural
-
-data Comment = Comment
-  { commentId :: ID
-  , message   :: Text
-  } deriving (Read, Generic)
-
-instance ToJSON Comment
-instance FromJSON Comment
-instance ToSchema Comment
-instance FromHttpApiData Comment where
-  parseQueryParam :: Text -> Either Text Comment
-  parseQueryParam = maybe (Left "Comment not formatted correctly") Right . readMay
-
-data SortBy = Old | New | Popular | Controversial
-  deriving (Eq, Read, Generic)
-
-instance ToParamSchema SortBy
-instance FromHttpApiData SortBy where
-  parseQueryParam :: Text -> Either Text SortBy
-  parseQueryParam = maybe (Left "Invalid sorting method") Right . readMay
-
-emptyComment :: Comment
-emptyComment = Comment { commentId=naturalOne, message="" }
+    replaceComment cID comment = editComment cID (const comment)

@@ -60,9 +60,13 @@ library
 
     -- Modules included in this library but not exported.
     other-modules:
+        ServerTypes
         Handlers.Reply
         Handlers.Voting
         Handlers.Comment
+        Database.Interface
+        Database.Mockserver
+        Database.StorageTypes
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -70,6 +74,7 @@ library
     -- Other library packages from which modules are imported.
     build-depends:
         base ^>=4.18.0.0,
+        extra,
         classy-prelude,
         servant-server,
         servant-swagger,
@@ -78,6 +83,14 @@ library
         bytestring,
         aeson,
         aeson-pretty,
+        containers,
+        transformers,
+        effectful,
+        effectful-core,
+        effectful-th,
+        effectful-plugin,
+
+    ghc-options: -fplugin=Effectful.Plugin
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -90,6 +103,7 @@ library
         OverloadedStrings,
         DataKinds,
         ExplicitNamespaces,
+        LambdaCase,
 
 executable hCommenter-Api
     -- Import common warning flags.

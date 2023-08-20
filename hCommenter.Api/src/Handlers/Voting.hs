@@ -1,10 +1,15 @@
 module Handlers.Voting (VotingAPI, votingServer) where
 
 import           ClassyPrelude
-import           Handlers.Comment (ID)
-import           Servant          (Capture, Description, NoContent (NoContent),
-                                   PostNoContent, Server, type (:<|>) (..),
-                                   type (:>))
+import           Control.Lens
+import           Database.Interface    (CommentStorage, editComment)
+import           Database.StorageTypes (downvotes, upvotes)
+import qualified Effectful             as E
+import           Handlers.Comment      (ID)
+import           Servant               (Capture, Description,
+                                        HasServer (ServerT),
+                                        NoContent (NoContent), PostNoContent,
+                                        type (:<|>) (..), type (:>))
 
 -- | Easy to abuse, needs authentication added later
 type VotingAPI =
@@ -14,8 +19,9 @@ type VotingAPI =
       "downvote" :> Description "Downvote a comment" :> PostNoContent
     )
 
-votingServer :: Server VotingAPI
-votingServer commentID = postUpvote :<|> postDownvote
+votingServer
+  :: CommentStorage E.:> es
+  => ServerT VotingAPI (E.Eff es)
+votingServer cID = vote upvotes :<|> vote downvotes
   where
-    postUpvote = pure NoContent
-    postDownvote = pure NoContent
+    vote voteBox = editComment cID (voteBox +~ 1) >> pure NoContent
