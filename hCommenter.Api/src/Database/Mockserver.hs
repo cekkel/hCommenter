@@ -7,7 +7,7 @@ import           Database.StorageTypes
 mockComments :: PureStorage
 mockComments = PureStorage
   (M.fromList [
-    (1, mkComment 1 "First"),
-    (2, mkComment 2 "Dangit, almost got first.")
+    (1, mkComment "First"),
+    (2, mkComment "Dangit, almost got first.")
   ])
   3

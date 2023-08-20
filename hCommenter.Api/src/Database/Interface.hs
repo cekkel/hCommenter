@@ -14,13 +14,14 @@ import           Effectful.Dispatch.Dynamic (reinterpret)
 import           Effectful.Error.Static     (Error, throwError)
 import           Effectful.State.Dynamic    (evalStateLocal, gets, modify)
 import           Effectful.TH               (makeEffect)
+import           Servant                    (NoContent (NoContent))
 
 data CommentStorage :: Effect where
   GetManyComments :: Int -> Int -> SortBy -> CommentStorage m [Comment]
   GetComment :: ID -> CommentStorage m Comment
   NewComment :: Comment -> CommentStorage m ID
-  EditComment :: ID -> (Comment -> Comment) -> CommentStorage m ()
-  DeleteComment :: ID -> CommentStorage m ()
+  EditComment :: ID -> (Comment -> Comment) -> CommentStorage m NoContent
+  DeleteComment :: ID -> CommentStorage m NoContent
 
 type instance DispatchOf CommentStorage = 'Dynamic
 makeEffect ''CommentStorage
@@ -54,10 +55,12 @@ runCommentStoragePure storage = reinterpret (evalStateLocal storage) $ \_ -> \ca
          -- Security-wise it's fine since obviously this should not be used in production.
          & nextID +~ 1
     pure newID
-  EditComment cID f ->
+  EditComment cID f -> do
     modify $ store %~ M.adjust f cID
-  DeleteComment cID ->
+    pure NoContent
+  DeleteComment cID -> do
     modify $ store %~ M.delete cID
+    pure NoContent
 
 
 sortedRange :: SortBy -> Int -> Int -> Int

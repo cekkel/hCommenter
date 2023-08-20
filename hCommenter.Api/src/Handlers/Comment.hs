@@ -6,35 +6,40 @@ import           Database.Interface    (CommentStorage, deleteComment,
                                         getManyComments, newComment)
 import           Database.StorageTypes (Comment, ID, SortBy (..))
 import qualified Effectful             as E
-import           Servant               (Capture, Delete, Description, Get,
-                                        HasServer (ServerT), JSON, Post, Put,
-                                        QueryParam, ReqBody, type (:<|>) (..),
-                                        type (:>))
+import           Servant               (Capture, DeleteNoContent, Description,
+                                        Get, HasServer (ServerT), JSON, Post,
+                                        PutNoContent, QueryParam, ReqBody,
+                                        type (:<|>) (..), type (:>))
 
 type CommentsAPI =
-  "comments" :> "range"
-    :> Description "Get all comments in a range"
-    :> QueryParam "from" ID
-    :> QueryParam "to" ID
-    :> QueryParam "sortby" SortBy
-    :> Get '[JSON] [Comment]
-
-  :<|> "comment" :>
+  "comment" :>
     (
       Description "Get a single comment by ID"
-        :> Capture "id" ID :> Get '[JSON] Comment :<|>
+        :> Capture "id" ID
+        :> Get '[JSON] Comment :<|>
+      Description "Get all comments in a range"
+        :> "range"
+        :> QueryParam "from" ID
+        :> QueryParam "to" ID
+        :> QueryParam "sortby" SortBy
+        :> Get '[JSON] [Comment] :<|>
       Description "Create a new comment and get new ID"
-        :> "new" :> ReqBody '[JSON] Comment :> Post '[JSON] ID :<|>
+        :> "new"
+        :> ReqBody '[JSON] Comment
+        :> Post '[JSON] ID :<|>
       Description "Edit an existing comment"
-        :> Capture "id" ID :> ReqBody '[JSON] Comment :> Put '[JSON] () :<|>
+        :> Capture "id" ID
+        :> ReqBody '[JSON] Comment
+        :> PutNoContent :<|>
       Description "Delete a comment"
-        :> Capture "id" ID :> Delete '[JSON] ()
+        :> Capture "id" ID
+        :> DeleteNoContent
     )
 
 commentServer
   :: CommentStorage E.:> es
   => ServerT CommentsAPI (E.Eff es)
-commentServer = getComments :<|> (getComment :<|> newComment :<|> replaceComment :<|> deleteComment)
+commentServer = getComment :<|> getComments :<|> newComment :<|> replaceComment :<|> deleteComment
   where
     getComments mStart mEnd mSort =
       getManyComments (fromMaybe 0 mStart) (fromMaybe 10 mEnd) (fromMaybe Popular mSort)

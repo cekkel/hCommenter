@@ -1,10 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Database.StorageTypes (mkComment, Comment, replies, message, commentId, upvotes, downvotes, ID, SortBy(..), emptyComment, StorageError (..)) where
+module Database.StorageTypes (mkComment, Comment, replies, message, upvotes, downvotes, ID, SortBy(..), emptyComment, StorageError (..)) where
 
 import           ClassyPrelude hiding (Handler, sortBy)
-import           Control.Lens
-import           Data.Aeson    (FromJSON, ToJSON)
+import           Control.Lens  (makeLenses)
+import           Data.Aeson    (defaultOptions)
+import           Data.Aeson.TH (deriveJSON, fieldLabelModifier)
 import           Data.Swagger  (ToParamSchema, ToSchema)
 import           Servant       (FromHttpApiData (parseQueryParam))
 
@@ -13,17 +14,15 @@ data StorageError = CommentNotFound
 type ID = Int
 
 data Comment = Comment
-  { _commentId :: ID
-  , _message   :: Text
+  { _message   :: Text
   , _replies   :: [ID]
   , _upvotes   :: Int
   , _downvotes :: Int
   } deriving (Read, Generic)
 
 makeLenses ''Comment
+deriveJSON defaultOptions{fieldLabelModifier = drop 1} ''Comment
 
-instance ToJSON Comment
-instance FromJSON Comment
 instance ToSchema Comment
 instance FromHttpApiData Comment where
   parseQueryParam :: Text -> Either Text Comment
@@ -38,7 +37,7 @@ instance FromHttpApiData SortBy where
   parseQueryParam = maybe (Left "Invalid sorting method") Right . readMay
 
 emptyComment :: Comment
-emptyComment = mkComment 0 ""
+emptyComment = mkComment ""
 
-mkComment :: ID -> Text -> Comment
-mkComment cID msg = Comment cID msg [] 0 0
+mkComment :: Text -> Comment
+mkComment msg = Comment msg [] 0 0

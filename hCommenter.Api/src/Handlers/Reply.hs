@@ -10,7 +10,7 @@ import           Servant
 
 type ReplyAPI = "reply" :> Capture "id" ID :>
   (
-    Description "Reply to a comment" :> ReqBody '[JSON] Comment :> Post '[JSON] () :<|>
+    Description "Reply to a comment" :> ReqBody '[JSON] Comment :> PostNoContent :<|>
     Description "Get replies in a range"
       :> QueryParam "from" Int :> QueryParam "to" Int :> Get '[JSON] [Comment]
   )
@@ -24,7 +24,7 @@ postReply
   :: CommentStorage E.:> es
   => ID
   -> Comment
-  -> E.Eff es ()
+  -> E.Eff es NoContent
 postReply cID comment = do
   replyID <- newComment comment
   editComment cID (replies <>~ pure replyID)
