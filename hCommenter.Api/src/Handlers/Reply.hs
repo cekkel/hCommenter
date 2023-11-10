@@ -27,7 +27,8 @@ postReply
   -> E.Eff es NoContent
 postReply cID comment = do
   replyID <- newComment comment
-  editComment cID (replies <>~ pure replyID)
+  _ <- editComment cID (replies <>~ pure replyID)
+  pure NoContent
 
 getReplies
   :: CommentStorage E.:> es

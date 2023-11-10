@@ -1,15 +1,17 @@
 module Handlers.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI) where
 
-import           ClassyPrelude         hiding (Handler, sortBy)
-import           Database.Interface    (CommentStorage, deleteComment,
-                                        editComment, getComment,
-                                        getManyComments, newComment)
-import           Database.StorageTypes (Comment, ID, SortBy (..))
-import qualified Effectful             as E
-import           Servant               (Capture, DeleteNoContent, Description,
-                                        Get, HasServer (ServerT), JSON, Post,
-                                        PutNoContent, QueryParam, ReqBody,
-                                        type (:<|>) (..), type (:>))
+import           ClassyPrelude          hiding (Handler, sortBy)
+import           Control.Lens           ((.~))
+import qualified Database.Interface     as DB
+import           Database.StorageTypes  (Comment, ID, SortBy (..), StorageError,
+                                         message)
+import qualified Effectful              as E
+import           Effectful.Error.Static (Error)
+import           Servant                (Capture, Description, Get,
+                                         HasServer (ServerT), JSON,
+                                         NoContent (NoContent), Post,
+                                         PostCreated, PostNoContent, QueryParam,
+                                         ReqBody, type (:<|>) (..), type (:>))
 
 type CommentsAPI =
   "comment" :>
@@ -26,22 +28,29 @@ type CommentsAPI =
       Description "Create a new comment and get new ID"
         :> "new"
         :> ReqBody '[JSON] Comment
-        :> Post '[JSON] ID :<|>
+        :> PostCreated '[JSON] ID :<|>
       Description "Edit an existing comment"
+        :> "edit"
         :> Capture "id" ID
-        :> ReqBody '[JSON] Comment
-        :> PutNoContent :<|>
+        :> ReqBody '[JSON] Text
+        :> Post '[JSON] Comment :<|>
       Description "Delete a comment"
+        :> "delete"
         :> Capture "id" ID
-        :> DeleteNoContent
+        :> PostNoContent
     )
 
 commentServer
-  :: CommentStorage E.:> es
+  :: DB.CommentStorage E.:> es
+  => Error StorageError E.:> es
   => ServerT CommentsAPI (E.Eff es)
-commentServer = getComment :<|> getComments :<|> newComment :<|> replaceComment :<|> deleteComment
+commentServer = DB.getComment :<|> getComments :<|> DB.newComment :<|> editComment :<|> deleteComment
   where
     getComments mStart mEnd mSort =
-      getManyComments (fromMaybe 0 mStart) (fromMaybe 10 mEnd) (fromMaybe Popular mSort)
+      DB.getManyComments (fromMaybe 0 mStart) (fromMaybe 10 mEnd) (fromMaybe Popular mSort)
 
-    replaceComment cID comment = editComment cID (const comment)
+    editComment cID commentText =
+      DB.editComment cID (message .~ commentText)
+
+    deleteComment cID =
+      DB.deleteComment cID >> pure NoContent

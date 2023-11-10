@@ -7,9 +7,9 @@ import qualified Data.Aeson                 as JSON
 import           Data.Aeson.Encode.Pretty   (encodePretty)
 import           Data.ByteString.Lazy.Char8 as BS8 (ByteString)
 import           Data.Swagger               (HasInfo (info), HasTitle (title))
-import           Database.Interface         (CommentStorage,
-                                             runCommentStoragePure)
+import           Database.Interface         (CommentStorage)
 import           Database.Mockserver        (mockComments)
+import           Database.PureStorage       (runCommentStoragePure)
 import           Database.StorageTypes
 import           Effectful                  (Eff, runPureEff)
 import           Effectful.Error.Static     (Error, runErrorNoCallStack)

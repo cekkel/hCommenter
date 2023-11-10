@@ -1,7 +1,7 @@
 module Database.Mockserver where
 
 import qualified Data.Map              as M
-import           Database.Interface    (PureStorage (..))
+import           Database.PureStorage
 import           Database.StorageTypes
 
 mockComments :: PureStorage

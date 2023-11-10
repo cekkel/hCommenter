@@ -67,6 +67,7 @@ library
         Database.Interface
         Database.Mockserver
         Database.StorageTypes
+        Database.PureStorage
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
