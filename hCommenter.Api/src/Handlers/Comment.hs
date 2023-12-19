@@ -1,12 +1,13 @@
 module Handlers.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI) where
 
-import           ClassyPrelude          hiding (Handler, sortBy)
+import           ClassyPrelude          hiding (Handler, log, sortBy)
 import           Control.Lens           ((.~))
 import qualified Database.Interface     as DB
 import           Database.StorageTypes  (Comment, ID, SortBy (..), StorageError,
                                          message)
 import qualified Effectful              as E
 import           Effectful.Error.Static (Error)
+import           Logging                (Log, addLogNamespace, logInfo)
 import           Servant                (Capture, Description, Get,
                                          HasServer (ServerT), JSON,
                                          NoContent (NoContent), Post,
@@ -41,16 +42,29 @@ type CommentsAPI =
     )
 
 commentServer
-  :: DB.CommentStorage E.:> es
-  => Error StorageError E.:> es
+  :: ( DB.CommentStorage E.:> es
+     , Log E.:> es
+     , Error StorageError E.:> es
+     )
   => ServerT CommentsAPI (E.Eff es)
-commentServer = DB.getComment :<|> getComments :<|> DB.newComment :<|> editComment :<|> deleteComment
+commentServer = getComment :<|> getComments :<|> newComment :<|> editComment :<|> deleteComment
   where
-    getComments mStart mEnd mSort =
+    getComment cID = addLogNamespace "GetComment" $ do
+      logInfo "Getting a comment"
+      DB.getComment cID
+
+    getComments mStart mEnd mSort = addLogNamespace "GetComments" $ do
+      logInfo "Getting comments"
       DB.getManyComments (fromMaybe 0 mStart) (fromMaybe 10 mEnd) (fromMaybe Popular mSort)
 
-    editComment cID commentText =
+    newComment comment = addLogNamespace "NewComment" $ do
+      logInfo "Creating new comment"
+      DB.newComment comment
+
+    editComment cID commentText = addLogNamespace "EditComment" $ do
+      logInfo "Editing comment"
       DB.editComment cID (message .~ commentText)
 
-    deleteComment cID =
-      DB.deleteComment cID >> pure NoContent
+    deleteComment cID = addLogNamespace "DeleteComment" $ do
+      logInfo "Deleting comment"
+      NoContent <$ DB.deleteComment cID

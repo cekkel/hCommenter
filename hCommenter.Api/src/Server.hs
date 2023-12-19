@@ -11,11 +11,14 @@ import           Database.Interface         (CommentStorage)
 import           Database.Mockserver        (mockComments)
 import           Database.PureStorage       (runCommentStoragePure)
 import           Database.StorageTypes
-import           Effectful                  (Eff, runPureEff)
+import           Effectful                  (Eff, IOE, runEff)
 import           Effectful.Error.Static     (Error, runErrorNoCallStack)
 import           Handlers.Comment           (CommentsAPI, commentServer)
 import           Handlers.Reply             (ReplyAPI, replyServer)
 import           Handlers.Voting            (VotingAPI, votingServer)
+import           Katip                      (Verbosity (V0))
+import           Logging                    (Log, getConsoleScribe,
+                                             logExceptions, runLog)
 import           Servant                    (Application, Handler (Handler),
                                              Proxy (..), Server,
                                              ServerError (errBody, errHTTPCode, errHeaders),
@@ -32,8 +35,9 @@ swaggerDefinition =
     & info.title .~ "hCommenter API"
 
 serverAPI :: Server API
-serverAPI = hoistServer fullAPI effToHandler $
-  commentServer :<|> replyServer :<|> votingServer
+serverAPI = do
+  hoistServer fullAPI effToHandler $
+    commentServer :<|> replyServer :<|> votingServer
 
 fullAPI :: Proxy API
 fullAPI = Proxy
@@ -41,15 +45,16 @@ fullAPI = Proxy
 app :: Application
 app = serve fullAPI serverAPI
 
-effToHandler :: Eff [CommentStorage, Error StorageError] a -> Handler a
+effToHandler :: Eff [Log, CommentStorage, Error StorageError, IOE] a -> Handler a
 effToHandler m = do
-  Handler
-    . withExceptT toServerError
-    . except
-    . runPureEff
-    . runErrorNoCallStack @StorageError
-    . runCommentStoragePure mockComments
-    $ m
+  scribe <- liftIO $ getConsoleScribe V0
+  result <- liftIO $ runEff
+            . runErrorNoCallStack @StorageError
+            . runCommentStoragePure mockComments
+            . runLog "hCommenter-API" "Dev" "Console" scribe
+            . logExceptions
+            $ m
+  Handler $ withExceptT toServerError . except $ result
   where
     toServerError = \case
       CommentNotFound -> servantErrorWithText err404 "Can't find the comment"
