@@ -1,4 +1,4 @@
-module Handlers.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI, InputError (..)) where
+module Server.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI, InputError (..)) where
 
 import           ClassyPrelude          hiding (Handler, log, sortBy)
 import           Control.Lens           ((.~))
@@ -15,6 +15,7 @@ import           Servant                (Capture, Description, Get,
                                          NoContent (NoContent), Post,
                                          PostCreated, PostNoContent, QueryParam,
                                          ReqBody, type (:<|>) (..), type (:>))
+import           Server.ServerTypes     (type InputError (BadArgument))
 
 type CommentsAPI =
   "comment" :>
@@ -43,8 +44,6 @@ type CommentsAPI =
         :> PostNoContent
     )
 
-newtype InputError = BadArgument Text
-
 commentServer
   :: ( DB.CommentStorage E.:> es
      , Log E.:> es
@@ -62,8 +61,8 @@ commentServer = getComment :<|> getComments :<|> newComment :<|> editComment :<|
         pure comment
 
     getComments mStart mEnd mSort = addLogNamespace "GetComments" $ case (mStart, mEnd) of
-      (Nothing, _) -> throwError $ BadArgument "Missing 'start' parameter"
-      (_, Nothing) -> throwError $ BadArgument "Missing 'end' parameter"
+      (Nothing, _) -> throwError $ BadArgument "Missing required 'start' parameter"
+      (_, Nothing) -> throwError $ BadArgument "Missing required 'end' parameter"
       (Just start, Just end) -> addLogContext [start, end] . addLogContext sortMethod $ do
         logInfo $
           (

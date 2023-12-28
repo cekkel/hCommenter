@@ -6,8 +6,7 @@ module Logging where
 
 import           ClassyPrelude             hiding (log, singleton)
 import           Control.Lens              (makeLenses, view, (%~))
-import           Data.Aeson                (Key, Object, ToJSON (toJSON), Value)
-import           Data.Aeson.KeyMap         (singleton)
+import           Data.Aeson                (Object, Value)
 import           Effectful                 (Dispatch (Static), DispatchOf, Eff,
                                             Effect, IOE, (:>))
 import           Effectful.Dispatch.Static (SideEffects (WithSideEffects),
@@ -84,9 +83,6 @@ addLogNamespace ns = localKatipNamespace' (<> ns)
 
 addLogContext :: (Log :> es, LogItem i) => i -> Eff es a -> Eff es a
 addLogContext item = localKatipContext' (<> liftPayload item)
-
-toObj :: (ToJSON a) => Key -> a -> Object
-toObj name = singleton name . toJSON
 
 instance LogItem Object where
   payloadKeys _ _ = AllKeys

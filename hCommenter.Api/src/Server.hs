@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Server (app, swaggerDefinition) where
 
 import           ClassyPrelude              hiding (Handler)
@@ -15,22 +17,20 @@ import           Database.PureStorage       (runCommentStoragePure)
 import           Database.StorageTypes
 import           Effectful                  (Eff, IOE, runEff, (:>))
 import           Effectful.Error.Static     (CallStack, Error, prettyCallStack,
-                                             runError, runErrorWith)
-import           Handlers.Comment           (CommentsAPI,
-                                             InputError (BadArgument),
-                                             commentServer)
-import           Handlers.Reply             (ReplyAPI, replyServer)
-import           Handlers.Voting            (VotingAPI, votingServer)
+                                             runError)
 import           Katip                      (Verbosity (V0), showLS)
 import           Logging                    (Log, getConsoleScribe, logError,
                                              logExceptions, runLog)
 import           Servant                    (Application, Handler (Handler),
                                              Proxy (..), Server,
                                              ServerError (errBody, errHTTPCode, errHeaders),
-                                             err404, hoistServer, serve,
+                                             err400, err404, hoistServer, serve,
                                              type (:<|>) (..))
 import           Servant.Swagger            (HasSwagger (toSwagger))
-import qualified ServerTypes                as T
+import           Server.Comment             (CommentsAPI, commentServer)
+import           Server.Reply               (ReplyAPI, replyServer)
+import           Server.ServerTypes
+import           Server.Voting              (VotingAPI, votingServer)
 
 type API = CommentsAPI :<|> ReplyAPI :<|> VotingAPI
 
@@ -57,14 +57,14 @@ effToHandler m = do
             . runLog "hCommenter-API" "Dev" "Console" scribe
             . logExceptions
             . logExplicitErrors
-            . runError @StorageError
-            . runErrorWith (\_ (BadArgument err) -> error $ unpack err)
+            . runAndLiftError StorageError
+            . runAndLiftError InputError . fmap Right
             . runCommentStoragePure mockComments
             $ m
-  Handler $ except $ mapLeft toServerError result
-  where
-    toServerError = \case
-      (callStack, CommentNotFound) -> servantErrorWithText err404 $ "Can't find the comment" <> tshow callStack
+  Handler $ except $ mapLeft errorToServerResponse result
+
+runAndLiftError :: (e -> CustomError) -> Eff (Error e : es) (Either (CallStack, CustomError) a) -> Eff es (Either (CallStack, CustomError) a)
+runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
 logExplicitErrors :: (Show e, Log :> es) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
 logExplicitErrors currEff = do
@@ -76,17 +76,16 @@ logExplicitErrors currEff = do
     handleLeft (callStack, err) = do
       logError $ "Custom error '" <> showLS err <> "' with callstack: " <> showLS (prettyCallStack callStack)
 
-servantErrorWithText ::
-  ServerError ->
-  Text ->
-  ServerError
-servantErrorWithText sErr msg =
-  sErr
-    { errBody = errorBody (errHTTPCode sErr),
-      errHeaders = [jsonHeaders]
-    }
-  where
-    errorBody code = JSON.encode $ T.Error msg code
+errorToServerResponse :: (CallStack, CustomError) -> ServerError
+errorToServerResponse (_, err) = case err of
+  StorageError innerErr -> servantErrorWithText err404 $ case innerErr of
+    CommentNotFound -> "Can't find the comment"
+  InputError innerErr -> servantErrorWithText err400 $ case innerErr of
+    BadArgument txt -> "Bad argument: " <> txt
 
-    jsonHeaders =
-      (fromString "Content-Type", "application/json;charset=utf-8")
+  where
+    servantErrorWithText sErr msg =
+      sErr
+        { errBody = JSON.encode $ ErrorResponse msg (errHTTPCode sErr),
+          errHeaders = [(fromString "Content-Type", "application/json;charset=utf-8")]
+        }

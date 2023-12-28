@@ -6,14 +6,13 @@ import           ClassyPrelude
 import           Control.Lens               (makeLenses, view, (%~), (&), (+~))
 import qualified Data.Map                   as M
 import           Database.Interface         (CommentStorage (..))
-import           Database.StorageTypes      (ID (ID), SortBy (..),
+import           Database.StorageTypes      (Comment, ID (ID), SortBy (..),
                                              StorageError (..))
 import           Effectful                  (Eff, (:>))
 import           Effectful.Dispatch.Dynamic (reinterpret)
 import           Effectful.Error.Static     (Error, throwError)
 import           Effectful.State.Dynamic    (State, evalStateLocal, gets,
                                              modify)
-import           Handlers.Comment           (Comment)
 
 data PureStorage = PureStorage {
     _store  :: Map ID Comment,

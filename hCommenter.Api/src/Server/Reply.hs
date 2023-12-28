@@ -1,4 +1,4 @@
-module Handlers.Reply (ReplyAPI, replyServer) where
+module Server.Reply (ReplyAPI, replyServer) where
 
 import           ClassyPrelude          hiding ((<|))
 import           Control.Lens           ((<>~), (^.))
@@ -9,7 +9,7 @@ import           Database.StorageTypes
 import qualified Effectful              as E
 import           Effectful.Error.Static (Error, throwError)
 import           Logging                (Log, addLogContext, addLogNamespace,
-                                         logInfo, toObj)
+                                         logInfo)
 import           Servant                hiding (throwError)
 
 type ReplyAPI = "reply" :> Capture "id" ID :>

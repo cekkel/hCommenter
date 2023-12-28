@@ -1,4 +1,4 @@
-module Handlers.Voting (VotingAPI, votingServer) where
+module Server.Voting (VotingAPI, votingServer) where
 
 import           ClassyPrelude
 import           Control.Lens          ((+~))
@@ -6,13 +6,13 @@ import           Data.Aeson            (object, (.=))
 import           Database.Interface    (CommentStorage, editComment)
 import           Database.StorageTypes (downvotes, upvotes)
 import qualified Effectful             as E
-import           Handlers.Comment      (ID)
 import           Logging               (Log, addLogContext, addLogNamespace,
                                         logInfo)
 import           Servant               (Capture, Description,
                                         HasServer (ServerT),
                                         NoContent (NoContent), PostNoContent,
                                         type (:<|>) (..), type (:>))
+import           Server.Comment        (ID)
 
 -- | Easy to abuse, needs authentication added later
 type VotingAPI =

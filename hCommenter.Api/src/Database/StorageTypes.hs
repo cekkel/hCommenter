@@ -16,7 +16,7 @@ import           Katip             (LogItem (payloadKeys),
 import           Servant           (FromHttpApiData (parseQueryParam))
 
 data StorageError = CommentNotFound
-  deriving (Show)
+  deriving (Eq, Show)
 
 newtype ID = ID Int
   deriving newtype (Show, Read, Eq, Ord, Num, ToSchema, ToParamSchema, FromHttpApiData, ToJSON, FromJSON)
