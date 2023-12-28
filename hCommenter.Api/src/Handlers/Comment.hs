@@ -1,4 +1,4 @@
-module Handlers.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI) where
+module Handlers.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI, InputError (..)) where
 
 import           ClassyPrelude          hiding (Handler, log, sortBy)
 import           Control.Lens           ((.~))
@@ -6,8 +6,10 @@ import qualified Database.Interface     as DB
 import           Database.StorageTypes  (Comment, ID, SortBy (..), StorageError,
                                          message)
 import qualified Effectful              as E
-import           Effectful.Error.Static (Error)
-import           Logging                (Log, addLogNamespace, logInfo)
+import           Effectful.Error.Static (Error, throwError)
+import           Katip                  (showLS)
+import           Logging                (Log, addLogContext, addLogNamespace,
+                                         logInfo)
 import           Servant                (Capture, Description, Get,
                                          HasServer (ServerT), JSON,
                                          NoContent (NoContent), Post,
@@ -41,30 +43,66 @@ type CommentsAPI =
         :> PostNoContent
     )
 
+newtype InputError = BadArgument Text
+
 commentServer
   :: ( DB.CommentStorage E.:> es
      , Log E.:> es
      , Error StorageError E.:> es
+     , Error InputError E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)
 commentServer = getComment :<|> getComments :<|> newComment :<|> editComment :<|> deleteComment
   where
-    getComment cID = addLogNamespace "GetComment" $ do
+    getComment cID = addLogNamespace "Comment" . addLogContext cID $ do
       logInfo "Getting a comment"
-      DB.getComment cID
+      comment <- DB.getComment cID
+      addLogContext comment $ do
+        logInfo "Returning comment"
+        pure comment
 
-    getComments mStart mEnd mSort = addLogNamespace "GetComments" $ do
-      logInfo "Getting comments"
-      DB.getManyComments (fromMaybe 0 mStart) (fromMaybe 10 mEnd) (fromMaybe Popular mSort)
+    getComments mStart mEnd mSort = addLogNamespace "GetComments" $ case (mStart, mEnd) of
+      (Nothing, _) -> throwError $ BadArgument "Missing 'start' parameter"
+      (_, Nothing) -> throwError $ BadArgument "Missing 'end' parameter"
+      (Just start, Just end) -> addLogContext [start, end] . addLogContext sortMethod $ do
+        logInfo $
+          (
+            if isJust mSort
+            then "Getting comments with sorting method: '"
+            else "Getting comments with default sorting method: '"
+          ) <> showLS sortMethod <> "'."
 
-    newComment comment = addLogNamespace "NewComment" $ do
+        comments <- DB.getManyComments start end sortMethod
+
+        addLogContext comments $ do
+          logInfo "Returning comments successfully"
+          pure comments
+
+        where
+          sortMethod = fromMaybe Popular mSort
+
+    newComment comment = addLogNamespace "NewComment" . addLogContext comment $ do
       logInfo "Creating new comment"
-      DB.newComment comment
+
+      cID <- DB.newComment comment
+
+      addLogContext cID $ do
+        logInfo "New comment created"
+        pure cID
 
     editComment cID commentText = addLogNamespace "EditComment" $ do
       logInfo "Editing comment"
-      DB.editComment cID (message .~ commentText)
+
+      updatedComment <- DB.editComment cID (message .~ commentText)
+
+      addLogContext updatedComment $ do
+        logInfo "Comment updated successfully"
+        pure updatedComment
 
     deleteComment cID = addLogNamespace "DeleteComment" $ do
       logInfo "Deleting comment"
-      NoContent <$ DB.deleteComment cID
+
+      DB.deleteComment cID
+
+      logInfo "Comment deleted successfully"
+      pure NoContent

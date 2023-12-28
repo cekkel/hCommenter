@@ -6,17 +6,18 @@ import           ClassyPrelude
 import           Control.Lens               (makeLenses, view, (%~), (&), (+~))
 import qualified Data.Map                   as M
 import           Database.Interface         (CommentStorage (..))
-import           Database.StorageTypes      (SortBy (..), StorageError (..))
+import           Database.StorageTypes      (ID (ID), SortBy (..),
+                                             StorageError (..))
 import           Effectful                  (Eff, (:>))
 import           Effectful.Dispatch.Dynamic (reinterpret)
 import           Effectful.Error.Static     (Error, throwError)
 import           Effectful.State.Dynamic    (State, evalStateLocal, gets,
                                              modify)
-import           Handlers.Comment           (Comment, ID)
+import           Handlers.Comment           (Comment)
 
 data PureStorage = PureStorage {
     _store  :: Map ID Comment,
-    _nextID :: Int
+    _nextID :: ID
   }
 
 makeLenses ''PureStorage
@@ -27,7 +28,7 @@ runCommentStoragePure
   -> Eff (CommentStorage : es) a
   -> Eff es a
 runCommentStoragePure storage = reinterpret (evalStateLocal storage) $ \_ -> \case
-  GetManyComments start end sortMethod ->
+  GetManyComments (ID start) (ID end) sortMethod ->
     gets $ toList . M.take (sortedRange sortMethod start end) . view store
 
   GetComment cID -> getCommentIfExists cID

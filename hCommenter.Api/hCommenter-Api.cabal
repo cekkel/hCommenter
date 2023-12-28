@@ -71,6 +71,7 @@ library
         Database.Mockserver
         Database.StorageTypes
         Database.PureStorage
+        Azure.TableStorage
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -93,7 +94,8 @@ library
         effectful-core,
         effectful-th,
         effectful-plugin,
-        katip
+        katip,
+        aeson
 
     ghc-options: -fplugin=Effectful.Plugin
 

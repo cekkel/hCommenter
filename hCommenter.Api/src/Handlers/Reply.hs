@@ -1,12 +1,16 @@
 module Handlers.Reply (ReplyAPI, replyServer) where
 
-import           ClassyPrelude         hiding ((<|))
-import           Control.Lens
-import           Database.Interface    (CommentStorage, editComment, getComment,
-                                        newComment)
+import           ClassyPrelude          hiding ((<|))
+import           Control.Lens           ((<>~), (^.))
+import           Data.Aeson             (object, (.=))
+import           Database.Interface     (CommentStorage, editComment,
+                                         getComment, newComment)
 import           Database.StorageTypes
-import qualified Effectful             as E
-import           Servant
+import qualified Effectful              as E
+import           Effectful.Error.Static (Error, throwError)
+import           Logging                (Log, addLogContext, addLogNamespace,
+                                         logInfo, toObj)
+import           Servant                hiding (throwError)
 
 type ReplyAPI = "reply" :> Capture "id" ID :>
   (
@@ -16,29 +20,35 @@ type ReplyAPI = "reply" :> Capture "id" ID :>
   )
 
 replyServer
-  :: CommentStorage E.:> es
+  :: ( CommentStorage E.:> es
+     , Error StorageError E.:> es
+     , Log E.:> es
+     )
   => ServerT ReplyAPI (E.Eff es)
-replyServer cID = postReply cID :<|> getReplies cID
+replyServer cID = postReply :<|> getReplies
+  where
+    postReply comment = addLogNamespace "CreateReply" . addLogContext (object ["ParentID" .= cID]) $ do
+      logInfo "Creating reply"
+      replyID <- newComment comment
 
-postReply
-  :: CommentStorage E.:> es
-  => ID
-  -> Comment
-  -> E.Eff es NoContent
-postReply cID comment = do
-  replyID <- newComment comment
-  _ <- editComment cID (replies <>~ pure replyID)
-  pure NoContent
+      addLogContext (object ["ReplyID" .= replyID]) $ do
+        logInfo "Reply created"
+        _ <- editComment cID (replies <>~ pure replyID)
+        logInfo "Reply attached to parent"
+        pure NoContent
 
-getReplies
-  :: CommentStorage E.:> es
-  => ID
-  -> Maybe Int
-  -> Maybe Int
-  -> E.Eff es [Comment]
-getReplies cID mFrom mTo = do
-  parent <- getComment cID
-  let (fromPos, toPos) = fromMaybe (0, 10) $ (,) <$> mFrom <*> mTo
-  -- TODO: Possible optimisation since take & drop are quite inefficient.
-  let replyIDs = drop fromPos $ take toPos $ parent ^. replies
-  mapM getComment replyIDs
+    getReplies mFrom mTo = addLogNamespace "GetReplies" $ case (mFrom, mTo) of
+      (Nothing, _) -> throwError CommentNotFound
+      (_, Nothing) -> throwError CommentNotFound
+      (Just fromPos, Just toPos) -> addLogContext (object ["fromReplyPosition" .= fromPos, "toReplyPosition" .= toPos]) $ do
+        logInfo "Getting parent"
+        parent <- getComment cID
+
+        -- TODO: Possible optimisation since take & drop are quite inefficient.
+        let replyIDs = drop fromPos $ take toPos $ parent ^. replies
+
+        addLogContext (object ["ReplyIDs" .= replyIDs]) $ do
+          logInfo "Getting replies"
+          allReplies <- mapM getComment replyIDs
+          logInfo "Replies found successfully"
+          pure allReplies

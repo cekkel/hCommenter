@@ -2,22 +2,27 @@ module Server (app, swaggerDefinition) where
 
 import           ClassyPrelude              hiding (Handler)
 import           Control.Lens               ((&), (.~))
-import           Control.Monad.Trans.Except (except, withExceptT)
+import           Control.Monad.Trans.Except (except)
 import qualified Data.Aeson                 as JSON
 import           Data.Aeson.Encode.Pretty   (encodePretty)
-import           Data.ByteString.Lazy.Char8 as BS8 (ByteString)
+import           Data.Bifoldable            (bitraverse_)
+import qualified Data.ByteString.Lazy.Char8 as BS8 (ByteString)
+import           Data.Either.Extra          (mapLeft)
 import           Data.Swagger               (HasInfo (info), HasTitle (title))
 import           Database.Interface         (CommentStorage)
 import           Database.Mockserver        (mockComments)
 import           Database.PureStorage       (runCommentStoragePure)
 import           Database.StorageTypes
-import           Effectful                  (Eff, IOE, runEff)
-import           Effectful.Error.Static     (Error, runErrorNoCallStack)
-import           Handlers.Comment           (CommentsAPI, commentServer)
+import           Effectful                  (Eff, IOE, runEff, (:>))
+import           Effectful.Error.Static     (CallStack, Error, prettyCallStack,
+                                             runError, runErrorWith)
+import           Handlers.Comment           (CommentsAPI,
+                                             InputError (BadArgument),
+                                             commentServer)
 import           Handlers.Reply             (ReplyAPI, replyServer)
 import           Handlers.Voting            (VotingAPI, votingServer)
-import           Katip                      (Verbosity (V0))
-import           Logging                    (Log, getConsoleScribe,
+import           Katip                      (Verbosity (V0), showLS)
+import           Logging                    (Log, getConsoleScribe, logError,
                                              logExceptions, runLog)
 import           Servant                    (Application, Handler (Handler),
                                              Proxy (..), Server,
@@ -45,19 +50,31 @@ fullAPI = Proxy
 app :: Application
 app = serve fullAPI serverAPI
 
-effToHandler :: Eff [Log, CommentStorage, Error StorageError, IOE] a -> Handler a
+effToHandler :: Eff [CommentStorage, Error InputError, Error StorageError, Log, IOE] a -> Handler a
 effToHandler m = do
   scribe <- liftIO $ getConsoleScribe V0
   result <- liftIO $ runEff
-            . runErrorNoCallStack @StorageError
-            . runCommentStoragePure mockComments
             . runLog "hCommenter-API" "Dev" "Console" scribe
             . logExceptions
+            . logExplicitErrors
+            . runError @StorageError
+            . runErrorWith (\_ (BadArgument err) -> error $ unpack err)
+            . runCommentStoragePure mockComments
             $ m
-  Handler $ withExceptT toServerError . except $ result
+  Handler $ except $ mapLeft toServerError result
   where
     toServerError = \case
-      CommentNotFound -> servantErrorWithText err404 "Can't find the comment"
+      (callStack, CommentNotFound) -> servantErrorWithText err404 $ "Can't find the comment" <> tshow callStack
+
+logExplicitErrors :: (Show e, Log :> es) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
+logExplicitErrors currEff = do
+  value <- currEff
+  bitraverse_ handleLeft pure value
+  pure value
+
+  where
+    handleLeft (callStack, err) = do
+      logError $ "Custom error '" <> showLS err <> "' with callstack: " <> showLS (prettyCallStack callStack)
 
 servantErrorWithText ::
   ServerError ->

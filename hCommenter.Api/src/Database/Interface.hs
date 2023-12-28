@@ -9,7 +9,7 @@ import           Effectful             (Dispatch (Dynamic), DispatchOf, Effect)
 import           Effectful.TH          (makeEffect)
 
 data CommentStorage :: Effect where
-  GetManyComments :: Int -> Int -> SortBy -> CommentStorage m [Comment]
+  GetManyComments :: ID -> ID -> SortBy -> CommentStorage m [Comment]
   GetComment :: ID -> CommentStorage m Comment
   NewComment :: Comment -> CommentStorage m ID
   EditComment :: ID -> (Comment -> Comment) -> CommentStorage m Comment

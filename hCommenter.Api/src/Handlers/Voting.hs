@@ -1,11 +1,14 @@
 module Handlers.Voting (VotingAPI, votingServer) where
 
 import           ClassyPrelude
-import           Control.Lens
+import           Control.Lens          ((+~))
+import           Data.Aeson            (object, (.=))
 import           Database.Interface    (CommentStorage, editComment)
 import           Database.StorageTypes (downvotes, upvotes)
 import qualified Effectful             as E
 import           Handlers.Comment      (ID)
+import           Logging               (Log, addLogContext, addLogNamespace,
+                                        logInfo)
 import           Servant               (Capture, Description,
                                         HasServer (ServerT),
                                         NoContent (NoContent), PostNoContent,
@@ -20,8 +23,14 @@ type VotingAPI =
     )
 
 votingServer
-  :: CommentStorage E.:> es
+  :: ( CommentStorage E.:> es
+     , Log E.:> es
+     )
   => ServerT VotingAPI (E.Eff es)
-votingServer cID = vote upvotes :<|> vote downvotes
+votingServer cID = vote "UpvoteComment" upvotes :<|> vote "DownvoteComment" downvotes
   where
-    vote voteBox = editComment cID (voteBox +~ 1) >> pure NoContent
+    vote namespace voteBox = addLogNamespace namespace . addLogContext (object ["CommentID" .= cID]) $ do
+      logInfo "Incrementing vote box"
+      _ <- editComment cID (voteBox +~ 1)
+      logInfo "Vote box incremented successfully"
+      pure NoContent
