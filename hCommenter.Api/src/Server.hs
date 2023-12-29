@@ -1,17 +1,20 @@
+{-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (app, swaggerDefinition) where
+module Server (swaggerDefinition, initialiseLocalFile, app, Backend (..)) where
 
 import           ClassyPrelude              hiding (Handler)
-import           Control.Lens               ((&), (.~))
+import           Control.Lens               (makeLenses, (&), (.~), (^.))
 import           Control.Monad.Trans.Except (except)
 import qualified Data.Aeson                 as JSON
 import           Data.Aeson.Encode.Pretty   (encodePretty)
 import           Data.Bifoldable            (bitraverse_)
+import           Data.Binary                (encodeFile)
 import qualified Data.ByteString.Lazy.Char8 as BS8 (ByteString)
 import           Data.Either.Extra          (mapLeft)
 import           Data.Swagger               (HasInfo (info), HasTitle (title))
 import           Database.Interface         (CommentStorage)
+import           Database.LocalStorage      (runCommentStorageIO)
 import           Database.Mockserver        (mockComments)
 import           Database.PureStorage       (runCommentStoragePure)
 import           Database.StorageTypes
@@ -31,6 +34,7 @@ import           Server.Comment             (CommentsAPI, commentServer)
 import           Server.Reply               (ReplyAPI, replyServer)
 import           Server.ServerTypes
 import           Server.Voting              (VotingAPI, votingServer)
+import           System.Directory.Extra     (doesFileExist)
 
 type API = CommentsAPI :<|> ReplyAPI :<|> VotingAPI
 
@@ -39,19 +43,39 @@ swaggerDefinition =
   encodePretty $ toSwagger (Proxy :: Proxy API)
     & info.title .~ "hCommenter API"
 
-serverAPI :: Server API
-serverAPI = do
-  hoistServer fullAPI effToHandler $
+data Backend
+  = Static
+  | LocalFile
+  | ToBeDeterminedProd
+  deriving (Show)
+
+newtype Env = Env {
+  _backend :: Backend
+}
+makeLenses ''Env
+
+serverAPI :: Env -> Server API
+serverAPI env = do
+  hoistServer fullAPI (effToHandler env) $
     commentServer :<|> replyServer :<|> votingServer
 
 fullAPI :: Proxy API
 fullAPI = Proxy
 
-app :: Application
-app = serve fullAPI serverAPI
+app :: Backend -> Application
+app = serve fullAPI . serverAPI . Env
 
-effToHandler :: Eff [CommentStorage, Error InputError, Error StorageError, Log, IOE] a -> Handler a
-effToHandler m = do
+fileName :: FilePath
+fileName = "localStorage.txt"
+
+initialiseLocalFile :: IO ()
+initialiseLocalFile = do
+  exists <- doesFileExist fileName
+  unless exists
+    $ encodeFile fileName mockComments
+
+effToHandler :: Env -> Eff [CommentStorage, Error InputError, Error StorageError, Log, IOE] a -> Handler a
+effToHandler env m = do
   scribe <- liftIO $ getConsoleScribe V0
   result <- liftIO $ runEff
             . runLog "hCommenter-API" "Dev" "Console" scribe
@@ -59,9 +83,15 @@ effToHandler m = do
             . logExplicitErrors
             . runAndLiftError StorageError
             . runAndLiftError InputError . fmap Right
-            . runCommentStoragePure mockComments
+            . commentHandler
             $ m
-  Handler $ except $ mapLeft errorToServerResponse result
+  Handler $ except $ handleServerResponse result
+
+  where
+    commentHandler = case env ^. backend of
+      Static             -> runCommentStoragePure mockComments
+      LocalFile          -> runCommentStorageIO fileName
+      ToBeDeterminedProd -> runCommentStoragePure mockComments
 
 runAndLiftError :: (e -> CustomError) -> Eff (Error e : es) (Either (CallStack, CustomError) a) -> Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
@@ -76,11 +106,12 @@ logExplicitErrors currEff = do
     handleLeft (callStack, err) = do
       logError $ "Custom error '" <> showLS err <> "' with callstack: " <> showLS (prettyCallStack callStack)
 
-errorToServerResponse :: (CallStack, CustomError) -> ServerError
-errorToServerResponse (_, err) = case err of
-  StorageError innerErr -> servantErrorWithText err404 $ case innerErr of
+handleServerResponse :: Either (CallStack, CustomError) a -> Either ServerError a
+handleServerResponse (Right val) = Right val
+handleServerResponse (Left (_, err)) = case err of
+  StorageError innerErr -> Left $ servantErrorWithText err404 $ case innerErr of
     CommentNotFound -> "Can't find the comment"
-  InputError innerErr -> servantErrorWithText err400 $ case innerErr of
+  InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
     BadArgument txt -> "Bad argument: " <> txt
 
   where

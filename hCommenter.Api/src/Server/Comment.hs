@@ -47,7 +47,6 @@ type CommentsAPI =
 commentServer
   :: ( DB.CommentStorage E.:> es
      , Log E.:> es
-     , Error StorageError E.:> es
      , Error InputError E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)

@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TemplateHaskell    #-}
 
-module Database.StorageTypes (mkComment, Comment, replies, message, upvotes, downvotes, ID (ID), mkID, SortBy(..), emptyComment, StorageError (..)) where
+module Database.StorageTypes where
 
 import           ClassyPrelude     hiding (Handler, singleton, sortBy)
 import           Control.Lens      (makeLenses)
@@ -9,6 +9,7 @@ import           Data.Aeson        (FromJSON, Object, ToJSON (toJSON),
                                     defaultOptions)
 import           Data.Aeson.KeyMap (singleton)
 import           Data.Aeson.TH     (deriveJSON, fieldLabelModifier)
+import           Data.Binary       (Binary)
 import           Data.Swagger      (ToParamSchema, ToSchema)
 import           Katip             (LogItem (payloadKeys),
                                     PayloadSelection (AllKeys),
@@ -19,7 +20,7 @@ data StorageError = CommentNotFound
   deriving (Eq, Show)
 
 newtype ID = ID Int
-  deriving newtype (Show, Read, Eq, Ord, Num, ToSchema, ToParamSchema, FromHttpApiData, ToJSON, FromJSON)
+  deriving newtype (Show, Read, Eq, Ord, Num, ToSchema, ToParamSchema, FromHttpApiData, ToJSON, FromJSON, Binary)
 
 instance ToObject ID where
   toObject :: ID -> Object
@@ -58,6 +59,8 @@ instance ToObject [Comment]
 instance LogItem [Comment] where
   payloadKeys _ _ = AllKeys
 
+instance Binary Comment
+
 data SortBy = Old | New | Popular | Controversial
   deriving (Eq, Ord, Show, Read, Generic)
 
@@ -82,3 +85,12 @@ emptyComment = mkComment ""
 
 mkComment :: Text -> Comment
 mkComment msg = Comment msg [] 0 0
+
+data PureStorage = PureStorage {
+  _store  :: Map ID Comment,
+  _nextID :: ID
+} deriving (Read, Show, Generic)
+
+instance Binary PureStorage
+
+makeLenses ''PureStorage

@@ -1,26 +1,18 @@
-{-# LANGUAGE GADTs           #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE GADTs #-}
 
 module Database.PureStorage where
 import           ClassyPrelude
-import           Control.Lens               (makeLenses, view, (%~), (&), (+~))
+import           Control.Lens               (view, (%~), (&), (+~))
 import qualified Data.Map                   as M
 import           Database.Interface         (CommentStorage (..))
-import           Database.StorageTypes      (Comment, ID (ID), SortBy (..),
-                                             StorageError (..))
+import           Database.StorageTypes      (Comment, ID (ID), PureStorage,
+                                             SortBy (..), StorageError (..),
+                                             nextID, store)
 import           Effectful                  (Eff, (:>))
 import           Effectful.Dispatch.Dynamic (reinterpret)
 import           Effectful.Error.Static     (Error, throwError)
 import           Effectful.State.Dynamic    (State, evalStateLocal, gets,
                                              modify)
-
-data PureStorage = PureStorage {
-    _store  :: Map ID Comment,
-    _nextID :: ID
-  }
-
-makeLenses ''PureStorage
-
 runCommentStoragePure
   :: Error StorageError :> es
   => PureStorage
