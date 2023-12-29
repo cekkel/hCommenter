@@ -3,8 +3,8 @@ module Server.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI, Inp
 import           ClassyPrelude          hiding (Handler, log, sortBy)
 import           Control.Lens           ((.~))
 import qualified Database.Interface     as DB
-import           Database.StorageTypes  (Comment, ID, SortBy (..), StorageError,
-                                         message)
+import           Database.StorageTypes  (Comment, CommentId, ID, SortBy (..),
+                                         StorageError, message)
 import qualified Effectful              as E
 import           Effectful.Error.Static (Error, throwError)
 import           Katip                  (showLS)
@@ -21,26 +21,26 @@ type CommentsAPI =
   "comment" :>
     (
       Description "Get a single comment by ID"
-        :> Capture "id" ID
+        :> Capture "id" CommentId
         :> Get '[JSON] Comment :<|>
       Description "Get all comments in a range"
         :> "range"
-        :> QueryParam "from" ID
-        :> QueryParam "to" ID
+        :> QueryParam "from" CommentId
+        :> QueryParam "to" CommentId
         :> QueryParam "sortby" SortBy
         :> Get '[JSON] [Comment] :<|>
       Description "Create a new comment and get new ID"
         :> "new"
         :> ReqBody '[JSON] Comment
-        :> PostCreated '[JSON] ID :<|>
+        :> PostCreated '[JSON] CommentId :<|>
       Description "Edit an existing comment"
         :> "edit"
-        :> Capture "id" ID
+        :> Capture "id" CommentId
         :> ReqBody '[JSON] Text
         :> Post '[JSON] Comment :<|>
       Description "Delete a comment"
         :> "delete"
-        :> Capture "id" ID
+        :> Capture "id" CommentId
         :> PostNoContent
     )
 

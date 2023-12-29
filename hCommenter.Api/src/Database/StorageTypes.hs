@@ -1,50 +1,64 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE DerivingStrategies   #-}
+{-# LANGUAGE QuasiQuotes          #-}
+{-# LANGUAGE StandaloneDeriving   #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Database.StorageTypes where
 
-import           ClassyPrelude     hiding (Handler, singleton, sortBy)
-import           Control.Lens      (makeLenses)
-import           Data.Aeson        (FromJSON, Object, ToJSON (toJSON),
-                                    defaultOptions)
-import           Data.Aeson.KeyMap (singleton)
-import           Data.Aeson.TH     (deriveJSON, fieldLabelModifier)
-import           Data.Binary       (Binary)
-import           Data.Swagger      (ToParamSchema, ToSchema)
-import           Katip             (LogItem (payloadKeys),
-                                    PayloadSelection (AllKeys),
-                                    ToObject (toObject), Verbosity)
-import           Servant           (FromHttpApiData (parseQueryParam))
+import           ClassyPrelude        hiding (Handler, singleton, sortBy)
+import           Control.Lens         (makeLenses)
+import           Data.Aeson           (FromJSON, Object, ToJSON (toJSON))
+import           Data.Aeson.KeyMap    (singleton)
+import           Data.Binary          (Binary)
+import           Data.Swagger         (ToParamSchema, ToSchema)
+import           Database.Persist     (PersistCore (BackendKey),
+                                       PersistEntity (Key))
+import           Database.Persist.Sql (SqlBackend)
+import           Database.Persist.TH  (MkPersistSettings (mpsGenerateLenses, mpsPrefixFields),
+                                       mkMigrate, mkPersist, persistLowerCase,
+                                       share, sqlSettings)
+import           Katip                (LogItem (payloadKeys),
+                                       PayloadSelection (AllKeys),
+                                       ToObject (toObject), Verbosity)
+import           Servant              (FromHttpApiData (parseQueryParam))
 
 data StorageError = CommentNotFound
   deriving (Eq, Show)
 
-newtype ID = ID Int
-  deriving newtype (Show, Read, Eq, Ord, Num, ToSchema, ToParamSchema, FromHttpApiData, ToJSON, FromJSON, Binary)
+-- | Create Comment obj with persistent to support storage with SQLite & other SQL databases
+--   and include lens definitions.
+share
+  [ mkPersist sqlSettings { mpsGenerateLenses = True, mpsPrefixFields = False }
+  , mkMigrate "migrateAll"
+  ] [persistLowerCase|
+Comment
+  message Text
+  replies [CommentId]
+  upvotes Int
+  downvotes Int
+|]
 
-instance ToObject ID where
-  toObject :: ID -> Object
-  toObject (ID val) = singleton "ID" (toJSON val)
-instance LogItem ID where
+deriving instance Show Comment
+deriving instance Read Comment
+deriving instance Generic Comment
+deriving instance Generic (Key Comment)
+deriving instance ToJSON Comment
+
+instance ToSchema (BackendKey SqlBackend)
+instance ToSchema (Key Comment)
+
+instance ToObject CommentId where
+  toObject :: CommentId -> Object
+  toObject = singleton "ID" . toJSON
+instance LogItem CommentId where
   payloadKeys _ _ = AllKeys
 
-instance ToObject [ID]
-instance LogItem [ID] where
+instance ToObject [CommentId]
+instance LogItem [CommentId] where
   payloadKeys _ _ = AllKeys
-
-mkID :: Int -> ID
-mkID = ID
-
-data Comment = Comment
-  { _message   :: Text
-  , _replies   :: [ID]
-  , _upvotes   :: Int
-  , _downvotes :: Int
-  } deriving (Show, Read, Generic)
-
-makeLenses ''Comment
--- field label modifier used for compatibility with lens '_' syntax
-deriveJSON defaultOptions{fieldLabelModifier = drop 1} ''Comment
 
 instance ToSchema Comment
 instance FromHttpApiData Comment where
@@ -59,6 +73,8 @@ instance ToObject [Comment]
 instance LogItem [Comment] where
   payloadKeys _ _ = AllKeys
 
+instance Binary (BackendKey SqlBackend)
+instance Binary (Key Comment)
 instance Binary Comment
 
 data SortBy = Old | New | Popular | Controversial
@@ -87,8 +103,8 @@ mkComment :: Text -> Comment
 mkComment msg = Comment msg [] 0 0
 
 data PureStorage = PureStorage {
-  _store  :: Map ID Comment,
-  _nextID :: ID
+  _store  :: Map CommentId Comment,
+  _nextID :: CommentId
 } deriving (Read, Show, Generic)
 
 instance Binary PureStorage

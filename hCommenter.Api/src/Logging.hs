@@ -6,6 +6,9 @@ module Logging where
 
 import           ClassyPrelude             hiding (log, singleton)
 import           Control.Lens              (makeLenses, view, (%~))
+import           Control.Monad.Logger      (Loc, LogLevel (..), LogSource,
+                                            ToLogStr (toLogStr), fromLogStr,
+                                            toLogStr)
 import           Data.Aeson                (Object, Value)
 import           Effectful                 (Dispatch (Static), DispatchOf, Eff,
                                             Effect, IOE, (:>))
@@ -97,6 +100,23 @@ askForLoggerIO = do
   ns <- getKatipNamespace'
   env <- getLogEnv'
   pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
+
+-- | This is useful for when there is a need to work with a library that uses the
+--   'LoggingT' transformer from the monad-logger library.
+askForMonadLoggerIO :: (ToLogStr a, Log :> es) => Eff es (Loc -> LogSource -> LogLevel -> a -> IO ())
+askForMonadLoggerIO = do
+  logIO <- askForLoggerIO
+  pure (\_loc _src lvl msg -> logIO (mapLvl lvl) (mapMsg msg))
+
+  where
+    mapLvl = \case
+      LevelInfo    -> InfoS
+      LevelWarn    -> WarningS
+      LevelDebug   -> DebugS
+      LevelError   -> ErrorS
+      LevelOther _ -> WarningS
+
+    mapMsg = logStr . fromLogStr . toLogStr
 
 instance (IOE :> es, Log :> es) => Katip (Eff es) where
   getLogEnv = getLogEnv'

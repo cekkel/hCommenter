@@ -17,6 +17,7 @@ import           Database.Interface         (CommentStorage)
 import           Database.LocalStorage      (runCommentStorageIO)
 import           Database.Mockserver        (mockComments)
 import           Database.PureStorage       (runCommentStoragePure)
+import           Database.SqlPool           (SqlPool, runSqlPool)
 import           Database.StorageTypes
 import           Effectful                  (Eff, IOE, runEff, (:>))
 import           Effectful.Error.Static     (CallStack, Error, prettyCallStack,
@@ -74,7 +75,7 @@ initialiseLocalFile = do
   unless exists
     $ encodeFile fileName mockComments
 
-effToHandler :: Env -> Eff [CommentStorage, Error InputError, Error StorageError, Log, IOE] a -> Handler a
+effToHandler :: Env -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, IOE] a -> Handler a
 effToHandler env m = do
   scribe <- liftIO $ getConsoleScribe V0
   result <- liftIO $ runEff
@@ -83,6 +84,7 @@ effToHandler env m = do
             . logExplicitErrors
             . runAndLiftError StorageError
             . runAndLiftError InputError . fmap Right
+            . runSqlPool
             . commentHandler
             $ m
   Handler $ except $ handleServerResponse result

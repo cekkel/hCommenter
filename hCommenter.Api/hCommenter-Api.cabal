@@ -72,6 +72,8 @@ library
         Database.StorageTypes
         Database.PureStorage
         Database.LocalStorage
+        Database.SqliteStorage
+        Database.SqlPool
         Azure.TableStorage
 
     -- LANGUAGE extensions used by modules in this package.
@@ -95,9 +97,13 @@ library
         effectful-core,
         effectful-th,
         effectful-plugin,
+        monad-logger,
         katip,
         aeson,
-        binary
+        binary,
+        persistent,
+        persistent-sqlite,
+        resource-pool
 
     ghc-options: -fplugin=Effectful.Plugin
 

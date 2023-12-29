@@ -5,9 +5,8 @@ import           ClassyPrelude
 import           Control.Lens               (view, (%~), (&), (+~))
 import qualified Data.Map                   as M
 import           Database.Interface         (CommentStorage (..))
-import           Database.StorageTypes      (Comment, ID (ID), PureStorage,
-                                             SortBy (..), StorageError (..),
-                                             nextID, store)
+import           Database.StorageTypes      (Comment, PureStorage, SortBy (..),
+                                             StorageError (..), nextID, store)
 import           Effectful                  (Eff, (:>))
 import           Effectful.Dispatch.Dynamic (reinterpret)
 import           Effectful.Error.Static     (Error, throwError)
