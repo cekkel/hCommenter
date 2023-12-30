@@ -16,7 +16,6 @@ import           Data.Swagger               (HasInfo (info), HasTitle (title))
 import           Database.Interface         (CommentStorage)
 import           Database.LocalStorage      (runCommentStorageIO)
 import           Database.Mockserver        (mockComments)
-import           Database.PureStorage       (runCommentStoragePure)
 import           Database.SqlPool           (SqlPool, runSqlPool)
 import           Database.StorageTypes
 import           Effectful                  (Eff, IOE, runEff, (:>))
@@ -32,12 +31,11 @@ import           Servant                    (Application, Handler (Handler),
                                              type (:<|>) (..))
 import           Servant.Swagger            (HasSwagger (toSwagger))
 import           Server.Comment             (CommentsAPI, commentServer)
-import           Server.Reply               (ReplyAPI, replyServer)
 import           Server.ServerTypes
 import           Server.Voting              (VotingAPI, votingServer)
 import           System.Directory.Extra     (doesFileExist)
 
-type API = CommentsAPI :<|> ReplyAPI :<|> VotingAPI
+type API = CommentsAPI :<|> VotingAPI
 
 swaggerDefinition :: BS8.ByteString
 swaggerDefinition =
@@ -45,8 +43,8 @@ swaggerDefinition =
     & info.title .~ "hCommenter API"
 
 data Backend
-  = Static
-  | LocalFile
+  = LocalFile
+  | Static
   | ToBeDeterminedProd
   deriving (Show)
 
@@ -58,7 +56,7 @@ makeLenses ''Env
 serverAPI :: Env -> Server API
 serverAPI env = do
   hoistServer fullAPI (effToHandler env) $
-    commentServer :<|> replyServer :<|> votingServer
+    commentServer :<|> votingServer
 
 fullAPI :: Proxy API
 fullAPI = Proxy
@@ -91,9 +89,8 @@ effToHandler env m = do
 
   where
     commentHandler = case env ^. backend of
-      Static             -> runCommentStoragePure mockComments
       LocalFile          -> runCommentStorageIO fileName
-      ToBeDeterminedProd -> runCommentStoragePure mockComments
+      ToBeDeterminedProd -> runCommentStorageIO fileName
 
 runAndLiftError :: (e -> CustomError) -> Eff (Error e : es) (Either (CallStack, CustomError) a) -> Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError

@@ -7,19 +7,21 @@ import           Control.Lens               (view, (%~), (&), (+~), (^.))
 import           Data.Binary                (decodeFile, encodeFile)
 import qualified Data.Map                   as M
 import           Database.Interface         (CommentStorage (..))
-import           Database.Persist           (Entity (Entity), (==.))
+import           Database.Persist           (Entity (Entity), Filter,
+                                             PersistStoreWrite (insert, update),
+                                             selectList, (==.))
 import           Database.Persist.Sqlite    (PersistQueryRead (selectFirst),
                                              PersistStoreRead (get), SqlBackend,
                                              runSqlConn, runSqlite,
                                              withSqliteConn)
 import           Database.SqlPool           (SqlPool, withConn)
-import           Database.StorageTypes      (Comment, EntityField (Message),
-                                             ID (ID), PureStorage, SortBy (..),
-                                             StorageError (..), nextID, store)
+import           Database.StorageTypes      (Comment, CommentId,
+                                             EntityField (Message), PureStorage,
+                                             SortBy (..), StorageError (..),
+                                             nextID, store)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret, reinterpret)
 import           Effectful.Error.Static     (Error, throwError)
-import           Effectful.Reader.Dynamic   (Reader, runReader)
 
 runCommentStorageSQLite
   :: ( SqlPool :> es
@@ -31,34 +33,25 @@ runCommentStorageSQLite
   -> Eff es a
 runCommentStorageSQLite filePath = interpret $ \_ command -> do
   case command of
-    GetManyComments (ID start) (ID end) sortMethod -> withConn $ do
-      toList . M.take (sortedRange sortMethod start end) . view store
-        <$> liftIO (decodeFile filePath)
+    GetCommentsForConvo convoUrlQ sortMethod -> do
+      findComments []
 
-    GetComment cID -> do
+    GetCommentsForUser userNameQ sortMethod -> do
       -- storage <- liftIO (decodeFile filePath)
-      getCommentIfExists cID
+      findComments []
       -- pure undefined
 
-    NewComment comment -> do
-      storage <- liftIO $ decodeFile filePath
+    GetReplies cID -> do
+      -- storage <- liftIO (decodeFile filePath)
+      findComments []
+      -- pure undefined
 
-      let newID = storage ^. nextID
-          updatedStorage =
-            storage
-              & store %~ M.insert newID comment
-                -- This is the only time that a comment is added, so just increment the ID!
-                -- Security-wise it's fine since obviously this should not be used in production.
-              & nextID +~ 1
-
-      liftIO $ encodeFile filePath updatedStorage
-      pure newID
+    NewComment comment -> withConn $ do
+      cID <- insert comment
+      pure (cID, comment)
 
     EditComment cID f -> do
-      storage <- liftIO $ decodeFile filePath
-      let updatedStorage = storage & store %~ M.adjust f cID
-      liftIO $ encodeFile filePath updatedStorage
-      -- getCommentIfExists cID updatedStorage
+      -- update cID []
       pure undefined
 
     DeleteComment cID -> do
@@ -73,21 +66,37 @@ runCommentStorageSQLite filePath = interpret $ \_ command -> do
 --      )
 --   => Eff (Reader (Pool
 
-getCommentIfExists
+-- getCommentIfExists
+--   :: ( Error StorageError :> es
+--      , IOE :> es
+--      , SqlPool :> es
+--      )
+--   => Eff es Comment
+-- getCommentIfExists _ = withConn $ do
+--   maybeComment <- selectFirst [Message ==. "First"] []
+--   lift $ case maybeComment of
+--     Just (Entity _ c) -> pure c
+--     Nothing           -> throwError CommentNotFound
+
+findComments
   :: ( Error StorageError :> es
      , IOE :> es
      , SqlPool :> es
      )
-  => ID -> Eff es Comment
-getCommentIfExists _ = withConn $ do
-  maybeComment <- selectFirst [Message ==. "First"] []
-  lift $ case maybeComment of
-    Just (Entity _ c) -> pure c
-    Nothing           -> throwError CommentNotFound
+  => [Filter Comment]
+  -> Eff es [(CommentId, Comment)]
+findComments condition = withConn $ do
+  comments <- selectList condition []
+  lift $ case comments of
+    [] -> throwError CommentNotFound
+    xs -> pure $ entityToTuple <$> xs
 
-sortedRange :: SortBy -> Int -> Int -> Int
-sortedRange sortMethod start end = case sortMethod of
-  Popular       -> end - start
-  Controversial -> end - start
-  Old           -> end - start
-  New           -> end - start
+  where
+    entityToTuple (Entity cID comment) = (cID, comment)
+
+sortedComments :: SortBy -> [(CommentId, Comment)] -> [(CommentId, Comment)]
+sortedComments sortMethod = case sortMethod of
+  Popular       -> sortBy $ \x y -> compare x y
+  Controversial -> sortBy $ \x y -> compare x y
+  Old           -> sortBy $ \x y -> compare x y
+  New           -> sortBy $ \x y -> compare x y

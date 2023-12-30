@@ -4,7 +4,7 @@ import           ClassyPrelude
 import           Control.Lens          ((+~))
 import           Data.Aeson            (object, (.=))
 import           Database.Interface    (CommentStorage, editComment)
-import           Database.StorageTypes (downvotes, upvotes)
+import           Database.StorageTypes (CommentId, downvotes, upvotes)
 import qualified Effectful             as E
 import           Logging               (Log, addLogContext, addLogNamespace,
                                         logInfo)
@@ -12,11 +12,10 @@ import           Servant               (Capture, Description,
                                         HasServer (ServerT),
                                         NoContent (NoContent), PostNoContent,
                                         type (:<|>) (..), type (:>))
-import           Server.Comment        (ID)
 
 -- | Easy to abuse, needs authentication added later
 type VotingAPI =
-  "comment" :> Capture "id" ID :>
+  "comments" :> Capture "id" CommentId :>
     (
       "upvote" :> Description "Upvote a comment" :> PostNoContent :<|>
       "downvote" :> Description "Downvote a comment" :> PostNoContent

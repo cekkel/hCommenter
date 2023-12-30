@@ -3,13 +3,15 @@
 module Database.LocalStorage where
 
 import           ClassyPrelude
-import           Control.Lens               (view, (%~), (&), (+~), (^.))
+import           Control.Lens               ((%~), (&), (^.))
 import           Data.Binary                (decodeFile, encodeFile)
 import qualified Data.Map                   as M
 import           Database.Interface         (CommentStorage (..))
-import           Database.StorageTypes      (Comment, ID (ID), PureStorage,
-                                             SortBy (..), StorageError (..),
-                                             nextID, store)
+
+import           Database.Persist.Sql       (fromSqlKey, toSqlKey)
+import           Database.StorageTypes      (Comment, CommentId, SortBy (..),
+                                             StorageError (..), nextID,
+                                             postedBy, postedTo, store)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -23,13 +25,17 @@ runCommentStorageIO
   -> Eff es a
 runCommentStorageIO filePath =
   interpret $ \_ -> \case
-    GetManyComments (ID start) (ID end) sortMethod -> do
-      toList . M.take (sortedRange sortMethod start end) . view store
-        <$> liftIO (decodeFile filePath)
+    GetCommentsForConvo convoUrlQ sortMethod ->
+      sortedComments sortMethod
+        <$> findComments filePath (\_ comment -> comment ^. postedTo == toSqlKey 1)
 
-    GetComment cID -> do
-      storage <- liftIO (decodeFile filePath)
-      getCommentIfExists cID storage
+
+    GetCommentsForUser userNameQ sortMethod -> do
+      sortedComments sortMethod
+        <$> findComments filePath (\_ comment -> comment ^. postedBy == toSqlKey 1)
+
+    GetReplies cID -> do
+      findComments filePath (\otherCID _ -> cID == otherCID)
 
     NewComment comment -> do
       storage <- liftIO $ decodeFile filePath
@@ -40,35 +46,36 @@ runCommentStorageIO filePath =
               & store %~ M.insert newID comment
                 -- This is the only time that a comment is added, so just increment the ID!
                 -- Security-wise it's fine since obviously this should not be used in production.
-              & nextID +~ 1
+              & nextID %~ toSqlKey . (+ 1) . fromSqlKey
 
       liftIO $ encodeFile filePath updatedStorage
-      pure newID
+      pure (newID, comment)
 
     EditComment cID f -> do
       storage <- liftIO $ decodeFile filePath
-      let updatedStorage = storage & store %~ M.adjust f cID
-      liftIO $ encodeFile filePath updatedStorage
-      getCommentIfExists cID updatedStorage
+      case storage ^. store & M.lookup cID of
+        Nothing -> throwError CommentNotFound
+        Just comment -> do
+          let updatedStorage = storage & store %~ M.adjust f cID
+          liftIO $ encodeFile filePath updatedStorage
+          pure comment
 
     DeleteComment cID -> do
       storage <- liftIO $ decodeFile filePath
-      let updatedStorage = storage & store %~ M.delete cID
-      liftIO $ encodeFile filePath updatedStorage
+      case storage ^. store & M.lookup cID of
+        Nothing -> throwError CommentNotFound
+        Just _ -> do
+          let updatedStorage = storage & store %~ M.delete cID
+          liftIO $ encodeFile filePath updatedStorage
 
-getCommentIfExists
-  :: ( Error StorageError :> es
-     , IOE :> es
-     )
-  => ID -> PureStorage -> Eff es Comment
-getCommentIfExists cID storage = do
-  case M.lookup cID . view store $ storage of
-    Just c  -> pure c
-    Nothing -> throwError CommentNotFound
+findComments :: (Error StorageError :> es, IOE :> es) => FilePath -> (CommentId -> Comment -> Bool) -> Eff es [(CommentId, Comment)]
+findComments filePath condition = do
+  storage <- liftIO (decodeFile filePath)
+  pure $ filter (uncurry condition) $ M.assocs (storage ^. store)
 
-sortedRange :: SortBy -> Int -> Int -> Int
-sortedRange sortMethod start end = case sortMethod of
-  Popular       -> end - start
-  Controversial -> end - start
-  Old           -> end - start
-  New           -> end - start
+sortedComments :: SortBy -> [(CommentId, Comment)] -> [(CommentId, Comment)]
+sortedComments sortMethod = case sortMethod of
+  Popular       -> sortBy $ \x y -> compare x y
+  Controversial -> sortBy $ \x y -> compare x y
+  Old           -> sortBy $ \x y -> compare x y
+  New           -> sortBy $ \x y -> compare x y

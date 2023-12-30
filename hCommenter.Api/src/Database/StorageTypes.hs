@@ -34,21 +34,60 @@ share
   [ mkPersist sqlSettings { mpsGenerateLenses = True, mpsPrefixFields = False }
   , mkMigrate "migrateAll"
   ] [persistLowerCase|
+User
+  username Text
+  firstName Text
+  lastName Text
+  UniqueUsername username
+
+Conversation
+  convoTitle Text
+  convoUrl Text
+  UniqueUrl convoUrl
+
 Comment
+  postedBy UserId
+  postedTo ConversationId
   message Text
-  replies [CommentId]
+  parent CommentId Maybe
   upvotes Int
   downvotes Int
 |]
 
+deriving instance Show User
+deriving instance Eq User
+deriving instance Ord User
+deriving instance Generic User
+deriving instance Generic (Key User)
+deriving instance ToJSON User
+deriving instance FromJSON User
+
+deriving instance Show Conversation
+deriving instance Eq Conversation
+deriving instance Ord Conversation
+deriving instance Generic Conversation
+deriving instance Generic (Key Conversation)
+deriving instance ToJSON Conversation
+deriving instance FromJSON Conversation
+
 deriving instance Show Comment
 deriving instance Read Comment
+deriving instance Eq Comment
+deriving instance Ord Comment
 deriving instance Generic Comment
 deriving instance Generic (Key Comment)
 deriving instance ToJSON Comment
+deriving instance FromJSON Comment
 
 instance ToSchema (BackendKey SqlBackend)
+instance ToSchema (Key User)
+instance ToSchema (Key Conversation)
 instance ToSchema (Key Comment)
+
+instance ToParamSchema (BackendKey SqlBackend)
+instance ToParamSchema (Key User)
+instance ToParamSchema (Key Conversation)
+instance ToParamSchema (Key Comment)
 
 instance ToObject CommentId where
   toObject :: CommentId -> Object
@@ -74,6 +113,8 @@ instance LogItem [Comment] where
   payloadKeys _ _ = AllKeys
 
 instance Binary (BackendKey SqlBackend)
+instance Binary (Key User)
+instance Binary (Key Conversation)
 instance Binary (Key Comment)
 instance Binary Comment
 
@@ -96,16 +137,13 @@ instance FromHttpApiData SortBy where
   parseQueryParam :: Text -> Either Text SortBy
   parseQueryParam = maybe (Left "Invalid sorting method") Right . readMay
 
-emptyComment :: Comment
-emptyComment = mkComment ""
-
-mkComment :: Text -> Comment
-mkComment msg = Comment msg [] 0 0
+mkComment :: UserId -> ConversationId -> Text -> Comment
+mkComment uID sID msg = Comment uID sID msg Nothing 0 0
 
 data PureStorage = PureStorage {
   _store  :: Map CommentId Comment,
   _nextID :: CommentId
-} deriving (Read, Show, Generic)
+} deriving (Show, Generic)
 
 instance Binary PureStorage
 

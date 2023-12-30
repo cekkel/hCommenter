@@ -63,14 +63,13 @@ library
     -- Modules included in this library but not exported.
     other-modules:
         Logging
-        Server.Reply
         Server.Voting
         Server.Comment
         Server.ServerTypes
+        Middleware.Requests
         Database.Interface
         Database.Mockserver
         Database.StorageTypes
-        Database.PureStorage
         Database.LocalStorage
         Database.SqliteStorage
         Database.SqlPool
@@ -87,6 +86,7 @@ library
         servant-server,
         servant-swagger,
         swagger2,
+        wai,
         lens,
         bytestring,
         aeson,

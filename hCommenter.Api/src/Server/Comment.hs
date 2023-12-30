@@ -1,12 +1,13 @@
-module Server.Comment (commentServer, ID, SortBy (..), Comment, CommentsAPI, InputError (..)) where
+module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI, InputError (..)) where
 
 import           ClassyPrelude          hiding (Handler, log, sortBy)
-import           Control.Lens           ((.~))
+import           Control.Lens           ((.~), (^.))
+import           Data.Aeson             (object, (.=))
 import qualified Database.Interface     as DB
-import           Database.StorageTypes  (Comment, CommentId, ID, SortBy (..),
-                                         StorageError, message)
+import           Database.StorageTypes  (Comment, CommentId, SortBy (..),
+                                         message, parent, postedTo)
 import qualified Effectful              as E
-import           Effectful.Error.Static (Error, throwError)
+import           Effectful.Error.Static (Error)
 import           Katip                  (showLS)
 import           Logging                (Log, addLogContext, addLogNamespace,
                                          logInfo)
@@ -18,21 +19,26 @@ import           Servant                (Capture, Description, Get,
 import           Server.ServerTypes     (type InputError (BadArgument))
 
 type CommentsAPI =
-  "comment" :>
+  "comments" :>
     (
-      Description "Get a single comment by ID"
-        :> Capture "id" CommentId
-        :> Get '[JSON] Comment :<|>
-      Description "Get all comments in a range"
-        :> "range"
-        :> QueryParam "from" CommentId
-        :> QueryParam "to" CommentId
+      Description "Get all comments for a particular conversation (page)"
+        :> "conversation"
+        :> Capture "convoUrl" Text
         :> QueryParam "sortby" SortBy
-        :> Get '[JSON] [Comment] :<|>
+        :> Get '[JSON] [(CommentId, Comment)] :<|>
+      Description "Get all comments for a particular user"
+        :> "user"
+        :> Capture "username" Text
+        :> QueryParam "sortby" SortBy
+        :> Get '[JSON] [(CommentId, Comment)] :<|>
+      Description "Get all replies for a particular comment"
+        :> Capture "id" CommentId
+        :> "replies"
+        :> Get '[JSON] [(CommentId, Comment)] :<|>
       Description "Create a new comment and get new ID"
         :> "new"
         :> ReqBody '[JSON] Comment
-        :> PostCreated '[JSON] CommentId :<|>
+        :> PostCreated '[JSON] (CommentId, Comment) :<|>
       Description "Edit an existing comment"
         :> "edit"
         :> Capture "id" CommentId
@@ -50,57 +56,83 @@ commentServer
      , Error InputError E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)
-commentServer = getComment :<|> getComments :<|> newComment :<|> editComment :<|> deleteComment
+commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> newComment :<|> editComment :<|> deleteComment
   where
-    getComment cID = addLogNamespace "Comment" . addLogContext cID $ do
-      logInfo "Getting a comment"
-      comment <- DB.getComment cID
-      addLogContext comment $ do
-        logInfo "Returning comment"
-        pure comment
+    getConvoComments convoUrl mSort
+      = addLogNamespace "GetConvoComments"
+      . addLogContext (object ["ConvoURL" .= convoUrl])
+      $ do
+        sortBy <- case mSort of
+          Nothing -> do
+            logInfo "Defaulting sort method to 'Popular'"
+            pure Popular
+          Just val -> pure val
 
-    getComments mStart mEnd mSort = addLogNamespace "GetComments" $ case (mStart, mEnd) of
-      (Nothing, _) -> throwError $ BadArgument "Missing required 'start' parameter"
-      (_, Nothing) -> throwError $ BadArgument "Missing required 'end' parameter"
-      (Just start, Just end) -> addLogContext [start, end] . addLogContext sortMethod $ do
-        logInfo $
-          (
-            if isJust mSort
-            then "Getting comments with sorting method: '"
-            else "Getting comments with default sorting method: '"
-          ) <> showLS sortMethod <> "'."
+        logInfo $ "Getting all comments for conversation, sorted by " <> showLS sortBy
 
-        comments <- DB.getManyComments start end sortMethod
+        comments <- DB.getCommentsForConvo convoUrl sortBy
 
-        addLogContext comments $ do
-          logInfo "Returning comments successfully"
-          pure comments
+        logInfo $ showLS (length comments) <> " conversation comments retrieved successfully."
+        pure comments
 
-        where
-          sortMethod = fromMaybe Popular mSort
 
-    newComment comment = addLogNamespace "NewComment" . addLogContext comment $ do
-      logInfo "Creating new comment"
+    getUserComments username mSort
+      = addLogNamespace "GetUserComments"
+      . addLogContext (object ["Username" .= username])
+      $ do
+        sortBy <- case mSort of
+          Nothing -> do
+            logInfo "Defaulting sort method to 'Popular'"
+            pure Popular
+          Just val -> pure val
 
-      cID <- DB.newComment comment
+        logInfo $ "Getting all comments for conversation, sorted by " <> showLS sortBy
 
-      addLogContext cID $ do
-        logInfo "New comment created"
-        pure cID
+        comments <- DB.getCommentsForUser username sortBy
 
-    editComment cID commentText = addLogNamespace "EditComment" $ do
-      logInfo "Editing comment"
+        logInfo $ showLS (length comments) <> " user comments retrieved successfully."
+        pure comments
 
-      updatedComment <- DB.editComment cID (message .~ commentText)
+    getReplies cID
+      = addLogNamespace "GetUserComments"
+      $ do
+        logInfo $ "Getting all replies for comment with ID: " <> showLS cID
 
-      addLogContext updatedComment $ do
+        replies <- DB.getReplies cID
+
+        logInfo $ showLS (length replies) <> " replies retrieved successfully."
+        pure replies
+
+    newComment comment
+      = addLogNamespace "NewComment"
+      . addLogContext (object
+          [ "ConvoUrl" .= (comment ^. postedTo)
+          , "ParentId" .= (comment ^. parent)
+          ])
+      $ do
+        logInfo "Creating new comment"
+
+        (cID, createdComment) <- DB.newComment comment
+
+        logInfo $ "New comment created with ID: " <> showLS cID
+        pure (cID, createdComment)
+
+    editComment cID commentText
+      = addLogNamespace "EditComment"
+      $ do
+        logInfo $ "Editing comment with ID: " <> showLS cID
+
+        updatedComment <- DB.editComment cID (message .~ commentText)
+
         logInfo "Comment updated successfully"
         pure updatedComment
 
-    deleteComment cID = addLogNamespace "DeleteComment" $ do
-      logInfo "Deleting comment"
+    deleteComment cID
+      = addLogNamespace "DeleteComment"
+      $ do
+        logInfo "Deleting comment"
 
-      DB.deleteComment cID
+        DB.deleteComment cID
 
-      logInfo "Comment deleted successfully"
-      pure NoContent
+        logInfo "Comment deleted successfully"
+        pure NoContent
