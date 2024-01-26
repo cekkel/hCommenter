@@ -1,7 +1,6 @@
-{-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (swaggerDefinition, initialiseLocalFile, app, Backend (..)) where
+module Server (swaggerDefinition, initialiseLocalFile, app, Backend (..), Env (Env), getConsoleScribe) where
 
 import           ClassyPrelude              hiding (Handler)
 import           Control.Lens               (makeLenses, (&), (.~), (^.))
@@ -21,9 +20,10 @@ import           Database.StorageTypes
 import           Effectful                  (Eff, IOE, runEff, (:>))
 import           Effectful.Error.Static     (CallStack, Error, prettyCallStack,
                                              runError)
-import           Katip                      (Verbosity (V0), showLS)
+import           Katip                      (Scribe, Verbosity (V0), showLS)
 import           Logging                    (Log, getConsoleScribe, logError,
                                              logExceptions, runLog)
+import           Middleware.Requests        (addRequestLogging)
 import           Servant                    (Application, Handler (Handler),
                                              Proxy (..), Server,
                                              ServerError (errBody, errHTTPCode, errHeaders),
@@ -42,17 +42,6 @@ swaggerDefinition =
   encodePretty $ toSwagger (Proxy :: Proxy API)
     & info.title .~ "hCommenter API"
 
-data Backend
-  = LocalFile
-  | Static
-  | ToBeDeterminedProd
-  deriving (Show)
-
-newtype Env = Env {
-  _backend :: Backend
-}
-makeLenses ''Env
-
 serverAPI :: Env -> Server API
 serverAPI env = do
   hoistServer fullAPI (effToHandler env) $
@@ -61,8 +50,11 @@ serverAPI env = do
 fullAPI :: Proxy API
 fullAPI = Proxy
 
-app :: Backend -> Application
-app = serve fullAPI . serverAPI . Env
+app :: Env -> Application
+app env =
+  addRequestLogging env
+    $ serve fullAPI
+    $ serverAPI env
 
 fileName :: FilePath
 fileName = "localStorage.txt"
@@ -75,9 +67,9 @@ initialiseLocalFile = do
 
 effToHandler :: Env -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, IOE] a -> Handler a
 effToHandler env m = do
-  scribe <- liftIO $ getConsoleScribe V0
   result <- liftIO $ runEff
-            . runLog "hCommenter-API" "Dev" "Console" scribe
+            -- . runLog "hCommenter-API" "Dev" "Console" (env ^. scribe)
+            . runLog env
             . logExceptions
             . logExplicitErrors
             . runAndLiftError StorageError

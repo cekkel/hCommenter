@@ -5,7 +5,7 @@
 module Logging where
 
 import           ClassyPrelude             hiding (log, singleton)
-import           Control.Lens              (makeLenses, view, (%~))
+import           Control.Lens              (makeLenses, view, (%~), (^.))
 import           Control.Monad.Logger      (Loc, LogLevel (..), LogSource,
                                             ToLogStr (toLogStr), fromLogStr,
                                             toLogStr)
@@ -17,6 +17,8 @@ import           Effectful.Dispatch.Static (SideEffects (WithSideEffects),
                                             getStaticRep, localStaticRep,
                                             unsafeEff_)
 import           Katip
+import           Server.ServerTypes        (Env, appName, envName, scribe,
+                                            scribeName)
 
 data LogConfig = LogConfig {
   _logNamespace :: !Namespace,
@@ -31,24 +33,18 @@ data Log :: Effect where
 type instance DispatchOf Log = Static WithSideEffects
 newtype instance StaticRep Log = Log LogConfig
 
+-- | TODO: Verify performance.
 runLog
   :: (IOE :> es)
-  => Text
-  -- ^ Application component name
-  -> Text
-  -- ^ Environment (e.g. prod vs test)
-  -> Text
-  -- ^ Name of backend
-  -> Scribe
-  -- ^ Backend to use, e.g. console, file, newrelic
+  => Env
   -> Eff (Log : es) a
   -> Eff es a
-runLog component environment backendName backend logEff = do
-  let component' = Namespace [component]
-      environment' = Environment environment
+runLog env logEff = do
+  let component' = Namespace [env ^. appName]
+      environment' = Environment $ env ^. envName
 
   initialEnv <- liftIO $ initLogEnv component' environment'
-  envWithScribe <- liftIO $ registerScribe backendName backend defaultScribeSettings initialEnv
+  envWithScribe <- liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv
 
   flip evalStaticRep logEff $ Log LogConfig {
     _logNamespace = mempty
@@ -56,11 +52,20 @@ runLog component environment backendName backend logEff = do
   , _logEnv = envWithScribe
   }
 
-getConsoleScribe :: Verbosity -> IO Scribe
-getConsoleScribe = mkHandleScribe (ColorLog True) stdout (const (pure True))
+initLogEnvWithScribe :: Env -> IO LogEnv
+initLogEnvWithScribe env = do
+  let component' = Namespace [env ^. appName]
+      environment' = Environment $ env ^. envName
 
-getFileScribe :: Verbosity -> IO Scribe
-getFileScribe = mkFileScribe "logs.txt" (const $ pure True)
+  initialEnv <- liftIO $ initLogEnv component' environment'
+  liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv
+
+
+getConsoleScribe :: IO Scribe
+getConsoleScribe = mkHandleScribe (ColorLog True) stdout (const (pure True)) V0
+
+getFileScribe :: IO Scribe
+getFileScribe = mkFileScribe "logs.txt" (const $ pure True) V0
 
 log :: Log :> es => Severity -> LogStr -> Eff es ()
 log level msg = do
@@ -93,6 +98,13 @@ instance LogItem Object where
 instance ToObject Value
 instance LogItem Value where
   payloadKeys _ _ = AllKeys
+
+-- logIO :: Env -> IO ()
+-- logIO env = do
+--   ctx <- getKatipContext'
+--   ns <- getKatipNamespace'
+--   env <- getLogEnv'
+--   pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
 
 askForLoggerIO :: (Log :> es) => Eff es (Severity -> LogStr -> IO ())
 askForLoggerIO = do

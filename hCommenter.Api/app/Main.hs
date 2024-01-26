@@ -1,11 +1,12 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
 import qualified Data.ByteString.Lazy.Char8 as BL8 (writeFile)
 import           Network.Wai.Handler.Warp   (run)
 import           Options.Commander          (command_, raw, toplevel, optDef)
-import           Server                     (app, swaggerDefinition, initialiseLocalFile, Backend (..))
+import           Server                     (Env(Env), app, swaggerDefinition, initialiseLocalFile, Backend (..), getConsoleScribe)
 import           Text.Read                  (readMaybe)
 
 main :: IO ()
@@ -16,12 +17,13 @@ main = command_ . toplevel @"hCommenter CLI"
       Nothing -> putStrLn "\nInvalid port value."
       Just port -> case modeOpt of
         "swagger" -> BL8.writeFile "swagger.json" swaggerDefinition
-        "static"  -> messageConsoleAndRun port Static
         "local"   -> initialiseLocalFile >> messageConsoleAndRun port LocalFile
         "prod"    -> messageConsoleAndRun port ToBeDeterminedProd
         other     -> putStrLn $ "\nInvalid Mode: " <> other
 
 messageConsoleAndRun :: Int -> Backend -> IO ()
 messageConsoleAndRun port backend = do
+  scribe <- getConsoleScribe
+
   putStrLn $ "\nListening in " <> show backend <> " mode, on port " <> show port <> "...\n"
-  run port $ app backend
+  run port $ app $ Env backend "hCommenter.Api" "Dev" "Console" scribe
