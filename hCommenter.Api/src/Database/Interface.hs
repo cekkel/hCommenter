@@ -15,7 +15,7 @@ type ParentId = CommentId
 data CommentStorage :: Effect where
   GetCommentsForConvo :: ConvoUrl -> SortBy -> CommentStorage m [(CommentId, Comment)]
   GetCommentsForUser :: Username -> SortBy -> CommentStorage m [(CommentId, Comment)]
-  GetReplies :: ParentId -> CommentStorage m [(CommentId, Comment)]
+  GetReplies :: ParentId -> SortBy -> CommentStorage m [(CommentId, Comment)]
   NewComment :: Comment -> CommentStorage m (CommentId, Comment)
   EditComment :: CommentId -> (Comment -> Comment) -> CommentStorage m Comment
   DeleteComment :: CommentId -> CommentStorage m ()

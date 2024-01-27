@@ -12,12 +12,13 @@ import           Text.Read                  (readMaybe)
 main :: IO ()
 main = command_ . toplevel @"hCommenter CLI"
   . optDef @"p" @"port" "8080" $ \(portOpt :: String) ->
-    optDef @"m" @"mode" "local" $ \(modeOpt :: String) -> do
+    optDef @"m" @"mode" "binary" $ \(modeOpt :: String) -> do
     raw $ case readMaybe portOpt of
       Nothing -> putStrLn "\nInvalid port value."
       Just port -> case modeOpt of
         "swagger" -> BL8.writeFile "swagger.json" swaggerDefinition
-        "local"   -> initialiseLocalFile >> messageConsoleAndRun port LocalFile
+        "binary"   -> initialiseLocalFile >> messageConsoleAndRun port LocalFile
+        "sqlite"   -> initialiseLocalFile >> messageConsoleAndRun port SQLite
         "prod"    -> messageConsoleAndRun port ToBeDeterminedProd
         other     -> putStrLn $ "\nInvalid Mode: " <> other
 

@@ -10,8 +10,9 @@ import           Database.Interface         (CommentStorage (..))
 
 import           Database.Persist.Sql       (fromSqlKey, toSqlKey)
 import           Database.StorageTypes      (Comment, CommentId, SortBy (..),
-                                             StorageError (..), nextID,
-                                             postedBy, postedTo, store)
+                                             StorageError (..), dateCreated,
+                                             downvotes, nextID, postedBy,
+                                             postedTo, store, upvotes)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -34,8 +35,9 @@ runCommentStorageIO filePath =
       sortedComments sortMethod
         <$> findComments filePath (\_ comment -> comment ^. postedBy == toSqlKey 1)
 
-    GetReplies cID -> do
-      findComments filePath (\otherCID _ -> cID == otherCID)
+    GetReplies cID sortMethod -> do
+      sortedComments sortMethod
+        <$> findComments filePath (\otherCID _ -> cID == otherCID)
 
     NewComment comment -> do
       storage <- liftIO $ decodeFile filePath
@@ -73,9 +75,10 @@ findComments filePath condition = do
   storage <- liftIO (decodeFile filePath)
   pure $ filter (uncurry condition) $ M.assocs (storage ^. store)
 
+-- | TODO: Needs revisiting
 sortedComments :: SortBy -> [(CommentId, Comment)] -> [(CommentId, Comment)]
-sortedComments sortMethod = case sortMethod of
-  Popular       -> sortBy $ \x y -> compare x y
-  Controversial -> sortBy $ \x y -> compare x y
-  Old           -> sortBy $ \x y -> compare x y
-  New           -> sortBy $ \x y -> compare x y
+sortedComments sortMethod = sortBy $ \(_, c1) (_, c2) -> case sortMethod of
+  Popular       -> compare (c1 ^. upvotes) (c2 ^. upvotes)
+  Controversial -> compare (c1 ^. downvotes) (c2 ^. downvotes)
+  Old           -> compare (c1 ^. dateCreated) (c2 ^. dateCreated)
+  New           -> flip compare (c1 ^. dateCreated) (c2 ^. dateCreated)

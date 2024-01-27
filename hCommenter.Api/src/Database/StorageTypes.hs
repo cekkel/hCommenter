@@ -8,24 +8,29 @@
 
 module Database.StorageTypes where
 
-import           ClassyPrelude        hiding (Handler, singleton, sortBy)
-import           Control.Lens         (makeLenses)
-import           Data.Aeson           (FromJSON, Object, ToJSON (toJSON))
-import           Data.Aeson.KeyMap    (singleton)
-import           Data.Binary          (Binary)
-import           Data.Swagger         (ToParamSchema, ToSchema)
-import           Database.Persist     (PersistCore (BackendKey),
-                                       PersistEntity (Key))
-import           Database.Persist.Sql (SqlBackend)
-import           Database.Persist.TH  (MkPersistSettings (mpsGenerateLenses, mpsPrefixFields),
-                                       mkMigrate, mkPersist, persistLowerCase,
-                                       share, sqlSettings)
-import           Katip                (LogItem (payloadKeys),
-                                       PayloadSelection (AllKeys),
-                                       ToObject (toObject), Verbosity)
-import           Servant              (FromHttpApiData (parseQueryParam))
+import           ClassyPrelude              hiding (Handler, singleton, sortBy)
+import           Control.Lens               (makeLenses)
+import           Data.Aeson                 (FromJSON, Object, ToJSON (toJSON))
+import           Data.Aeson.KeyMap          (singleton)
+import           Data.Binary                (Binary)
+import           Data.Binary.Instances.Time ()
+import           Data.Swagger               (ToParamSchema, ToSchema)
+import           Database.Persist           (PersistCore (BackendKey),
+                                             PersistEntity (Key))
+import           Database.Persist.Sql       (SqlBackend)
+import           Database.Persist.TH        (MkPersistSettings (mpsGenerateLenses, mpsPrefixFields),
+                                             mkMigrate, mkPersist,
+                                             persistLowerCase, share,
+                                             sqlSettings)
+import           Katip                      (LogItem (payloadKeys),
+                                             PayloadSelection (AllKeys),
+                                             ToObject (toObject), Verbosity)
+import           Servant                    (FromHttpApiData (parseQueryParam))
 
-data StorageError = CommentNotFound
+data StorageError
+  = CommentNotFound
+  | UserNotFound
+  | ConvoNotFound
   deriving (Eq, Show)
 
 -- | Create Comment obj with persistent to support storage with SQLite & other SQL databases
@@ -50,6 +55,7 @@ Comment
   postedTo ConversationId
   message Text
   parent CommentId Maybe
+  dateCreated UTCTime default=CURRENT_TIME
   upvotes Int
   downvotes Int
 |]
@@ -138,7 +144,7 @@ instance FromHttpApiData SortBy where
   parseQueryParam = maybe (Left "Invalid sorting method") Right . readMay
 
 mkComment :: UserId -> ConversationId -> Text -> Comment
-mkComment uID sID msg = Comment uID sID msg Nothing 0 0
+mkComment uID sID msg = Comment uID sID msg Nothing undefined 0 0
 
 data PureStorage = PureStorage {
   _store  :: Map CommentId Comment,

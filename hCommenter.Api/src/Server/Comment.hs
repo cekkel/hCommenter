@@ -34,6 +34,7 @@ type CommentsAPI =
       Description "Get all replies for a particular comment"
         :> Capture "id" CommentId
         :> "replies"
+        :> QueryParam "sortby" SortBy
         :> Get '[JSON] [(CommentId, Comment)] :<|>
       Description "Create a new comment and get new ID"
         :> "new"
@@ -93,12 +94,18 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> newCo
         logInfo $ showLS (length comments) <> " user comments retrieved successfully."
         pure comments
 
-    getReplies cID
+    getReplies cID mSort
       = addLogNamespace "GetUserComments"
       $ do
+        sortBy <- case mSort of
+          Nothing -> do
+            logInfo "Defaulting sort method to 'Popular'"
+            pure Popular
+          Just val -> pure val
+
         logInfo $ "Getting all replies for comment with ID: " <> showLS cID
 
-        replies <- DB.getReplies cID
+        replies <- DB.getReplies cID sortBy
 
         logInfo $ showLS (length replies) <> " replies retrieved successfully."
         pure replies

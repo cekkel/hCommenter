@@ -9,6 +9,7 @@ import           Katip                 (Scribe)
 
 data Backend
   = LocalFile
+  | SQLite
   | ToBeDeterminedProd
   deriving (Show)
 

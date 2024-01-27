@@ -1,102 +1,83 @@
 {-# LANGUAGE GADTs #-}
 
-module Database.SqliteStorage where
+module Database.SqliteStorage (runCommentStorageSQL) where
 
 import           ClassyPrelude              hiding (Reader)
-import           Control.Lens               (view, (%~), (&), (+~), (^.))
-import           Data.Binary                (decodeFile, encodeFile)
-import qualified Data.Map                   as M
+import           Control.Lens               ((^.))
 import           Database.Interface         (CommentStorage (..))
-import           Database.Persist           (Entity (Entity), Filter,
+import           Database.Persist           (Entity (Entity),
+                                             PersistEntity (Key),
                                              PersistStoreWrite (insert, update),
-                                             selectList, (==.))
-import           Database.Persist.Sqlite    (PersistQueryRead (selectFirst),
-                                             PersistStoreRead (get), SqlBackend,
-                                             runSqlConn, runSqlite,
-                                             withSqliteConn)
+                                             PersistUniqueRead (getBy),
+                                             SelectOpt (Asc, Desc), selectList,
+                                             (=.), (==.))
+import qualified Database.Persist           as P
+import           Database.Persist.Sqlite    (PersistStoreRead (get))
 import           Database.SqlPool           (SqlPool, withConn)
 import           Database.StorageTypes      (Comment, CommentId,
-                                             EntityField (Message), PureStorage,
-                                             SortBy (..), StorageError (..),
-                                             nextID, store)
+                                             EntityField (..), SortBy (..),
+                                             StorageError (..),
+                                             Unique (UniqueUrl, UniqueUsername),
+                                             downvotes, message, upvotes)
 import           Effectful                  (Eff, IOE, (:>))
-import           Effectful.Dispatch.Dynamic (interpret, reinterpret)
+import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
 
-runCommentStorageSQLite
+entityToTuple :: Entity record -> (Key record, record)
+entityToTuple (Entity key value) = (key, value)
+
+runCommentStorageSQL
   :: ( SqlPool :> es
      , Error StorageError :> es
      , IOE :> es
      )
-  => FilePath
-  -> Eff (CommentStorage : es) a
+  => Eff (CommentStorage : es) a
   -> Eff es a
-runCommentStorageSQLite filePath = interpret $ \_ command -> do
+runCommentStorageSQL = interpret $ \_ command -> do
   case command of
-    GetCommentsForConvo convoUrlQ sortMethod -> do
-      findComments []
+    GetCommentsForConvo convoUrlQ sortMethod -> withConn $ do
+      convo <- getBy $ UniqueUrl convoUrlQ
+      case convo of
+        Nothing -> lift $ throwError ConvoNotFound
+        Just (Entity convoId _) -> do
+          map entityToTuple <$> selectList [PostedTo ==. convoId] (generateSort sortMethod)
 
-    GetCommentsForUser userNameQ sortMethod -> do
-      -- storage <- liftIO (decodeFile filePath)
-      findComments []
-      -- pure undefined
+    GetCommentsForUser userNameQ sortMethod -> withConn $ do
+      user <- getBy $ UniqueUsername userNameQ
+      case user of
+        Nothing -> lift $ throwError UserNotFound
+        Just (Entity userId _) -> do
+          map entityToTuple <$> selectList [PostedBy ==. userId] (generateSort sortMethod)
 
-    GetReplies cID -> do
+    GetReplies cID sortMethod -> withConn $ do
       -- storage <- liftIO (decodeFile filePath)
-      findComments []
+      map entityToTuple <$> selectList [Parent ==. Just cID] (generateSort sortMethod)
       -- pure undefined
 
     NewComment comment -> withConn $ do
       cID <- insert comment
       pure (cID, comment)
 
-    EditComment cID f -> do
+    EditComment cID f -> withConn $ do
       -- update cID []
-      pure undefined
+      comment <- get cID
+      case comment of
+        Nothing -> lift $ throwError CommentNotFound
+        Just val -> do
+          let upComment = f val
+          update cID [
+              Message =. (upComment ^. message)
+            , Upvotes =. (upComment ^. upvotes)
+            , Downvotes =. (upComment ^. downvotes)
+            ]
+          pure upComment
 
-    DeleteComment cID -> do
-      storage <- liftIO $ decodeFile filePath
-      let updatedStorage = storage & store %~ M.delete cID
-      liftIO $ encodeFile filePath updatedStorage
+    DeleteComment cID -> withConn $ P.delete cID
 
--- useSqlLite context = runReader . (runNoLoggingT . withSqliteConn ":memory:" . runSqlConn $ context)
--- initSqlBackendPool
---   :: ( Log :> es
---      , IOE :> es
---      )
---   => Eff (Reader (Pool
-
--- getCommentIfExists
---   :: ( Error StorageError :> es
---      , IOE :> es
---      , SqlPool :> es
---      )
---   => Eff es Comment
--- getCommentIfExists _ = withConn $ do
---   maybeComment <- selectFirst [Message ==. "First"] []
---   lift $ case maybeComment of
---     Just (Entity _ c) -> pure c
---     Nothing           -> throwError CommentNotFound
-
-findComments
-  :: ( Error StorageError :> es
-     , IOE :> es
-     , SqlPool :> es
-     )
-  => [Filter Comment]
-  -> Eff es [(CommentId, Comment)]
-findComments condition = withConn $ do
-  comments <- selectList condition []
-  lift $ case comments of
-    [] -> throwError CommentNotFound
-    xs -> pure $ entityToTuple <$> xs
-
-  where
-    entityToTuple (Entity cID comment) = (cID, comment)
-
-sortedComments :: SortBy -> [(CommentId, Comment)] -> [(CommentId, Comment)]
-sortedComments sortMethod = case sortMethod of
-  Popular       -> sortBy $ \x y -> compare x y
-  Controversial -> sortBy $ \x y -> compare x y
-  Old           -> sortBy $ \x y -> compare x y
-  New           -> sortBy $ \x y -> compare x y
+-- | TODO: Needs revisiting since sorts in persistent are basic.
+generateSort :: SortBy -> [SelectOpt Comment]
+generateSort sortMethod = case sortMethod of
+  Popular       -> [Desc Upvotes]
+  Controversial -> [Desc Downvotes]
+  Old           -> [Asc DateCreated]
+  New           -> [Desc DateCreated]

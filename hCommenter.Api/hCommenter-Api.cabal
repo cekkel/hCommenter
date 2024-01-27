@@ -73,7 +73,6 @@ library
         Database.LocalStorage
         Database.SqliteStorage
         Database.SqlPool
-        Azure.TableStorage
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -102,6 +101,7 @@ library
         katip,
         aeson,
         binary,
+        binary-instances,
         persistent,
         persistent-sqlite,
         resource-pool

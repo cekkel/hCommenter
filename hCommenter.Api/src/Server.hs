@@ -3,7 +3,7 @@
 module Server (swaggerDefinition, initialiseLocalFile, app, Backend (..), Env (Env), getConsoleScribe) where
 
 import           ClassyPrelude              hiding (Handler)
-import           Control.Lens               (makeLenses, (&), (.~), (^.))
+import           Control.Lens               ((&), (.~), (^.))
 import           Control.Monad.Trans.Except (except)
 import qualified Data.Aeson                 as JSON
 import           Data.Aeson.Encode.Pretty   (encodePretty)
@@ -16,11 +16,12 @@ import           Database.Interface         (CommentStorage)
 import           Database.LocalStorage      (runCommentStorageIO)
 import           Database.Mockserver        (mockComments)
 import           Database.SqlPool           (SqlPool, runSqlPool)
+import           Database.SqliteStorage     (runCommentStorageSQL)
 import           Database.StorageTypes
 import           Effectful                  (Eff, IOE, runEff, (:>))
 import           Effectful.Error.Static     (CallStack, Error, prettyCallStack,
                                              runError)
-import           Katip                      (Scribe, Verbosity (V0), showLS)
+import           Katip                      (showLS)
 import           Logging                    (Log, getConsoleScribe, logError,
                                              logExceptions, runLog)
 import           Middleware.Requests        (addRequestLogging)
@@ -82,6 +83,7 @@ effToHandler env m = do
   where
     commentHandler = case env ^. backend of
       LocalFile          -> runCommentStorageIO fileName
+      SQLite             -> runCommentStorageSQL
       ToBeDeterminedProd -> runCommentStorageIO fileName
 
 runAndLiftError :: (e -> CustomError) -> Eff (Error e : es) (Either (CallStack, CustomError) a) -> Eff es (Either (CallStack, CustomError) a)
@@ -102,6 +104,8 @@ handleServerResponse (Right val) = Right val
 handleServerResponse (Left (_, err)) = case err of
   StorageError innerErr -> Left $ servantErrorWithText err404 $ case innerErr of
     CommentNotFound -> "Can't find the comment"
+    UserNotFound    -> "Can't find the user"
+    ConvoNotFound   -> "Can't find the conversation"
   InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
     BadArgument txt -> "Bad argument: " <> txt
 
