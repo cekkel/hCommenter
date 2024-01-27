@@ -15,8 +15,8 @@ import           Data.Swagger               (HasInfo (info), HasTitle (title))
 import           Database.Interface         (CommentStorage)
 import           Database.LocalStorage      (runCommentStorageIO)
 import           Database.Mockserver        (mockComments)
-import           Database.SqlPool           (SqlPool, runSqlPool)
-import           Database.SqliteStorage     (runCommentStorageSQL)
+import           Database.SqlPool           (SqlPool)
+import           Database.SqlStorage        (runCommentStorageSQL)
 import           Database.StorageTypes
 import           Effectful                  (Eff, IOE, runEff, (:>))
 import           Effectful.Error.Static     (CallStack, Error, prettyCallStack,
@@ -69,22 +69,19 @@ initialiseLocalFile = do
 effToHandler :: Env -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, IOE] a -> Handler a
 effToHandler env m = do
   result <- liftIO $ runEff
-            -- . runLog "hCommenter-API" "Dev" "Console" (env ^. scribe)
             . runLog env
             . logExceptions
             . logExplicitErrors
             . runAndLiftError StorageError
             . runAndLiftError InputError . fmap Right
-            . runSqlPool
             . commentHandler
             $ m
   Handler $ except $ handleServerResponse result
 
   where
     commentHandler = case env ^. backend of
-      LocalFile          -> runCommentStorageIO fileName
-      SQLite             -> runCommentStorageSQL
-      ToBeDeterminedProd -> runCommentStorageIO fileName
+      LocalFile  -> runCommentStorageIO fileName
+      sqlBackend -> runCommentStorageSQL sqlBackend
 
 runAndLiftError :: (e -> CustomError) -> Eff (Error e : es) (Either (CallStack, CustomError) a) -> Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError

@@ -9,6 +9,7 @@ import qualified Data.Map                   as M
 import           Database.Interface         (CommentStorage (..))
 
 import           Database.Persist.Sql       (fromSqlKey, toSqlKey)
+import           Database.SqlPool           (SqlPool)
 import           Database.StorageTypes      (Comment, CommentId, SortBy (..),
                                              StorageError (..), dateCreated,
                                              downvotes, nextID, postedBy,
@@ -22,10 +23,11 @@ runCommentStorageIO
      , IOE :> es
      )
   => FilePath
-  -> Eff (CommentStorage : es) a
+  -> Eff (CommentStorage : SqlPool : es) a
   -> Eff es a
-runCommentStorageIO filePath =
-  interpret $ \_ -> \case
+runCommentStorageIO filePath
+  = interpret (\_ _ -> error "SQLPool is not implemented for 'LocalFile' backend (this should not be reached)")
+  . interpret (\_ -> \case
     GetCommentsForConvo convoUrlQ sortMethod ->
       sortedComments sortMethod
         <$> findComments filePath (\_ comment -> comment ^. postedTo == toSqlKey 1)
@@ -69,6 +71,7 @@ runCommentStorageIO filePath =
         Just _ -> do
           let updatedStorage = storage & store %~ M.delete cID
           liftIO $ encodeFile filePath updatedStorage
+  )
 
 findComments :: (Error StorageError :> es, IOE :> es) => FilePath -> (CommentId -> Comment -> Bool) -> Eff es [(CommentId, Comment)]
 findComments filePath condition = do

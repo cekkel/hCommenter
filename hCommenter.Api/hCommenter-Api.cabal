@@ -71,7 +71,7 @@ library
         Database.Mockserver
         Database.StorageTypes
         Database.LocalStorage
-        Database.SqliteStorage
+        Database.SqlStorage
         Database.SqlPool
 
     -- LANGUAGE extensions used by modules in this package.

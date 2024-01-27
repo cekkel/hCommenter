@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
 
-module Database.SqlPool where
+module Database.SqlPool (SqlPool, withConn, runSqlPool) where
 import           ClassyPrelude              hiding (Reader, ask)
 import           Control.Monad.Logger       (LoggingT (runLoggingT))
 import           Data.Pool                  (Pool, withResource)
@@ -17,6 +17,7 @@ import           Effectful.Dispatch.Dynamic (localSeqUnliftIO, reinterpret)
 import           Effectful.Reader.Static    (Reader, ask, runReader)
 import           Effectful.TH               (makeEffect)
 import           Logging                    (Log, askForMonadLoggerIO)
+import           Server.ServerTypes         (Backend (LocalFile, SQLite, ToBeDeterminedProd))
 
 data SqlPool :: Effect where
   WithConn :: ReaderT SqlBackend m a -> SqlPool m a
@@ -27,21 +28,27 @@ runSqlPool
   :: ( Log :> es
      , IOE :> es
      )
-  => Eff (SqlPool : es) a
+  => Backend
+  -> Eff (SqlPool : es) a
   -> Eff es a
-runSqlPool = reinterpret initSqlPool $ \env -> \case
+runSqlPool backend = reinterpret initSqlPool $ \env -> \case
   WithConn action -> do
     pool <- ask
     localSeqUnliftIO env $ \unlift -> do
       withResource pool $ unlift . runReaderT action
 
-initSqlPool
+  where initSqlPool = case backend of
+          LocalFile          -> error "SqlPool is not implemented for 'LocalFile' backend (this error should never be shown)"
+          SQLite             -> initSqlitePool
+          ToBeDeterminedProd -> initSqlitePool
+
+initSqlitePool
   :: ( Log :> es
      , IOE :> es
      )
   => Eff (Reader (Pool SqlBackend) : es) a
   -> Eff es a
-initSqlPool action = do
+initSqlitePool action = do
   logIO <- askForMonadLoggerIO
   flip runLoggingT logIO $
     withSqlitePool "" 2 $ \pool -> do
