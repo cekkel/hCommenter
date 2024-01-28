@@ -11,9 +11,11 @@ import           Database.Interface         (CommentStorage (..))
 import           Database.Persist.Sql       (fromSqlKey, toSqlKey)
 import           Database.SqlPool           (SqlPool)
 import           Database.StorageTypes      (Comment, CommentId, SortBy (..),
-                                             StorageError (..), dateCreated,
-                                             downvotes, nextID, postedBy,
-                                             postedTo, store, upvotes)
+                                             StorageError (..), commentConvoUrl,
+                                             commentDateCreated,
+                                             commentDownvotes, commentStore,
+                                             commentUpvotes, commentUsername,
+                                             nextID)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -30,12 +32,12 @@ runCommentStorageIO filePath
   . interpret (\_ -> \case
     GetCommentsForConvo convoUrlQ sortMethod ->
       sortedComments sortMethod
-        <$> findComments filePath (\_ comment -> comment ^. postedTo == toSqlKey 1)
+        <$> findComments filePath (\_ comment -> comment ^. commentConvoUrl == convoUrlQ)
 
 
     GetCommentsForUser userNameQ sortMethod -> do
       sortedComments sortMethod
-        <$> findComments filePath (\_ comment -> comment ^. postedBy == toSqlKey 1)
+        <$> findComments filePath (\_ comment -> comment ^. commentUsername == userNameQ)
 
     GetReplies cID sortMethod -> do
       sortedComments sortMethod
@@ -47,7 +49,7 @@ runCommentStorageIO filePath
       let newID = storage ^. nextID
           updatedStorage =
             storage
-              & store %~ M.insert newID comment
+              & commentStore %~ M.insert newID comment
                 -- This is the only time that a comment is added, so just increment the ID!
                 -- Security-wise it's fine since obviously this should not be used in production.
               & nextID %~ toSqlKey . (+ 1) . fromSqlKey
@@ -57,31 +59,31 @@ runCommentStorageIO filePath
 
     EditComment cID f -> do
       storage <- liftIO $ decodeFile filePath
-      case storage ^. store & M.lookup cID of
+      case storage ^. commentStore & M.lookup cID of
         Nothing -> throwError CommentNotFound
         Just comment -> do
-          let updatedStorage = storage & store %~ M.adjust f cID
+          let updatedStorage = storage & commentStore %~ M.adjust f cID
           liftIO $ encodeFile filePath updatedStorage
           pure comment
 
     DeleteComment cID -> do
       storage <- liftIO $ decodeFile filePath
-      case storage ^. store & M.lookup cID of
+      case storage ^. commentStore & M.lookup cID of
         Nothing -> throwError CommentNotFound
         Just _ -> do
-          let updatedStorage = storage & store %~ M.delete cID
+          let updatedStorage = storage & commentStore %~ M.delete cID
           liftIO $ encodeFile filePath updatedStorage
   )
 
 findComments :: (Error StorageError :> es, IOE :> es) => FilePath -> (CommentId -> Comment -> Bool) -> Eff es [(CommentId, Comment)]
 findComments filePath condition = do
   storage <- liftIO (decodeFile filePath)
-  pure $ filter (uncurry condition) $ M.assocs (storage ^. store)
+  pure $ filter (uncurry condition) $ M.assocs (storage ^. commentStore)
 
 -- | TODO: Needs revisiting
 sortedComments :: SortBy -> [(CommentId, Comment)] -> [(CommentId, Comment)]
 sortedComments sortMethod = sortBy $ \(_, c1) (_, c2) -> case sortMethod of
-  Popular       -> compare (c1 ^. upvotes) (c2 ^. upvotes)
-  Controversial -> compare (c1 ^. downvotes) (c2 ^. downvotes)
-  Old           -> compare (c1 ^. dateCreated) (c2 ^. dateCreated)
-  New           -> flip compare (c1 ^. dateCreated) (c2 ^. dateCreated)
+  Popular       -> compare (c1 ^. commentUpvotes) (c2 ^. commentUpvotes)
+  Controversial -> compare (c1 ^. commentDownvotes) (c2 ^. commentDownvotes)
+  Old           -> compare (c1 ^. commentDateCreated) (c2 ^. commentDateCreated)
+  New           -> flip compare (c1 ^. commentDateCreated) (c2 ^. commentDateCreated)

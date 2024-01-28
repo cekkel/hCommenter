@@ -3,10 +3,9 @@
 
 module Main where
 
-import qualified Data.ByteString.Lazy.Char8 as BL8 (writeFile)
 import           Network.Wai.Handler.Warp   (run)
 import           Options.Commander          (command_, raw, toplevel, optDef)
-import           Server                     (Env(Env), app, swaggerDefinition, initialiseLocalFile, Backend (..), getConsoleScribe)
+import           Server                     (Env(Env), app, initialiseLocalFile, Backend (..), getConsoleScribe, initDevSqliteDB)
 import           Text.Read                  (readMaybe)
 
 main :: IO ()
@@ -16,9 +15,8 @@ main = command_ . toplevel @"hCommenter CLI"
     raw $ case readMaybe portOpt of
       Nothing -> putStrLn "\nInvalid port value."
       Just port -> case modeOpt of
-        "swagger" -> BL8.writeFile "swagger.json" swaggerDefinition
         "binary"   -> initialiseLocalFile >> messageConsoleAndRun port LocalFile
-        "sqlite"   -> initialiseLocalFile >> messageConsoleAndRun port SQLite
+        "sqlite"   -> messageConsoleAndRun port SQLite
         "prod"    -> messageConsoleAndRun port ToBeDeterminedProd
         other     -> putStrLn $ "\nInvalid Mode: " <> other
 
@@ -27,4 +25,12 @@ messageConsoleAndRun port backend = do
   scribe <- getConsoleScribe
 
   putStrLn $ "\nListening in " <> show backend <> " mode, on port " <> show port <> "...\n"
-  run port $ app $ Env backend "hCommenter.Api" "Dev" "Console" scribe
+
+  let env = Env backend "hCommenter.Api" "Dev" "Console" scribe
+
+  case backend of
+    SQLite -> initDevSqliteDB backend env
+    LocalFile -> initialiseLocalFile
+    ToBeDeterminedProd -> pure ()
+  
+  run port $ app env 

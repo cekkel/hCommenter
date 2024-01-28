@@ -66,6 +66,7 @@ library
         Server.Voting
         Server.Comment
         Server.ServerTypes
+        Server.Swagger
         Middleware.Requests
         Database.Interface
         Database.Mockserver

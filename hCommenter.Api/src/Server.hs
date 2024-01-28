@@ -1,20 +1,18 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (swaggerDefinition, initialiseLocalFile, app, Backend (..), Env (Env), getConsoleScribe) where
+module Server (initialiseLocalFile, initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
 
 import           ClassyPrelude              hiding (Handler)
-import           Control.Lens               ((&), (.~), (^.))
+import           Control.Lens               ((^.))
 import           Control.Monad.Trans.Except (except)
 import qualified Data.Aeson                 as JSON
-import           Data.Aeson.Encode.Pretty   (encodePretty)
 import           Data.Bifoldable            (bitraverse_)
-import           Data.Binary                (encodeFile)
-import qualified Data.ByteString.Lazy.Char8 as BS8 (ByteString)
 import           Data.Either.Extra          (mapLeft)
-import           Data.Swagger               (HasInfo (info), HasTitle (title))
+import           Data.Swagger               (Swagger)
 import           Database.Interface         (CommentStorage)
 import           Database.LocalStorage      (runCommentStorageIO)
-import           Database.Mockserver        (mockComments)
+import           Database.Mockserver        (fileName, initDevSqliteDB,
+                                             initialiseLocalFile)
 import           Database.SqlPool           (SqlPool)
 import           Database.SqlStorage        (runCommentStorageSQL)
 import           Database.StorageTypes
@@ -33,20 +31,22 @@ import           Servant                    (Application, Handler (Handler),
 import           Servant.Swagger            (HasSwagger (toSwagger))
 import           Server.Comment             (CommentsAPI, commentServer)
 import           Server.ServerTypes
+import           Server.Swagger             (SwaggerAPI, withMetadata)
 import           Server.Voting              (VotingAPI, votingServer)
-import           System.Directory.Extra     (doesFileExist)
 
-type API = CommentsAPI :<|> VotingAPI
+type FunctionalAPI = CommentsAPI :<|> VotingAPI
+type API = SwaggerAPI :<|> FunctionalAPI
 
-swaggerDefinition :: BS8.ByteString
-swaggerDefinition =
-  encodePretty $ toSwagger (Proxy :: Proxy API)
-    & info.title .~ "hCommenter API"
+swaggerServer :: Eff es Swagger
+swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
 
 serverAPI :: Env -> Server API
 serverAPI env = do
   hoistServer fullAPI (effToHandler env) $
-    commentServer :<|> votingServer
+    swaggerServer :<|> commentServer :<|> votingServer
+
+functionalAPI :: Proxy FunctionalAPI
+functionalAPI = Proxy
 
 fullAPI :: Proxy API
 fullAPI = Proxy
@@ -56,15 +56,6 @@ app env =
   addRequestLogging env
     $ serve fullAPI
     $ serverAPI env
-
-fileName :: FilePath
-fileName = "localStorage.txt"
-
-initialiseLocalFile :: IO ()
-initialiseLocalFile = do
-  exists <- doesFileExist fileName
-  unless exists
-    $ encodeFile fileName mockComments
 
 effToHandler :: Env -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, IOE] a -> Handler a
 effToHandler env m = do

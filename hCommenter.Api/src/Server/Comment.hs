@@ -5,7 +5,8 @@ import           Control.Lens           ((.~), (^.))
 import           Data.Aeson             (object, (.=))
 import qualified Database.Interface     as DB
 import           Database.StorageTypes  (Comment, CommentId, SortBy (..),
-                                         message, parent, postedTo)
+                                         commentConvoUrl, commentMessage,
+                                         commentParent)
 import qualified Effectful              as E
 import           Effectful.Error.Static (Error)
 import           Katip                  (showLS)
@@ -113,8 +114,8 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> newCo
     newComment comment
       = addLogNamespace "NewComment"
       . addLogContext (object
-          [ "ConvoUrl" .= (comment ^. postedTo)
-          , "ParentId" .= (comment ^. parent)
+          [ "ConvoUrl" .= (comment ^. commentConvoUrl)
+          , "ParentId" .= (comment ^. commentParent)
           ])
       $ do
         logInfo "Creating new comment"
@@ -129,7 +130,7 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> newCo
       $ do
         logInfo $ "Editing comment with ID: " <> showLS cID
 
-        updatedComment <- DB.editComment cID (message .~ commentText)
+        updatedComment <- DB.editComment cID (commentMessage .~ commentText)
 
         logInfo "Comment updated successfully"
         pure updatedComment

@@ -51,7 +51,7 @@ initSqlitePool
 initSqlitePool action = do
   logIO <- askForMonadLoggerIO
   flip runLoggingT logIO $
-    withSqlitePool "" 2 $ \pool -> do
+    withSqlitePool "sqliteStorage.db" 2 $ \pool -> do
       lift $ withEffToIO (ConcUnlift Ephemeral Unlimited) $ \unlift -> do
         liftIO $ withResource pool $ runReaderT $ runMigration migrateAll
         unlift $ runReader pool action
