@@ -4,7 +4,9 @@ import           ClassyPrelude
 import           Control.Lens           ((^.))
 import           Data.Binary            (encodeFile)
 import qualified Data.Map               as M
-import           Database.Persist.Sql   (PersistStoreWrite (repsertMany),
+import           Database.Persist       (Filter)
+import           Database.Persist.Sql   (PersistQueryWrite (deleteWhere),
+                                         PersistStoreWrite (insertMany_),
                                          toSqlKey)
 import           Database.SqlPool       (runSqlPool, withConn)
 import           Database.StorageTypes
@@ -50,6 +52,11 @@ initDevSqliteDB backend env = do
   mockComments <- mkMockComments
 
   runEff $ runLog env . runSqlPool backend $ withConn $ do
-    repsertMany $ M.toList $ mockComments ^. convoStore
-    repsertMany $ M.toList $ mockComments ^. userStore
-    repsertMany $ M.toList $ mockComments ^. commentStore
+    -- Manually delete all data in database before refreshing with mock data.
+    deleteWhere ([] :: [Filter Conversation])
+    deleteWhere ([] :: [Filter User])
+    deleteWhere ([] :: [Filter Comment])
+
+    insertMany_ $ map snd $ M.toList $ mockComments ^. convoStore
+    insertMany_ $ map snd $ M.toList $ mockComments ^. userStore
+    insertMany_ $ map snd $ M.toList $ mockComments ^. commentStore

@@ -24,8 +24,6 @@ messageConsoleAndRun :: Int -> Backend -> IO ()
 messageConsoleAndRun port backend = do
   scribe <- getConsoleScribe
 
-  putStrLn $ "\nListening in " <> show backend <> " mode, on port " <> show port <> "...\n"
-
   let env = Env backend "hCommenter.Api" "Dev" "Console" scribe
 
   case backend of
@@ -33,4 +31,5 @@ messageConsoleAndRun port backend = do
     LocalFile -> initialiseLocalFile
     ToBeDeterminedProd -> pure ()
   
+  putStrLn $ "\nListening in " <> show backend <> " mode, on port " <> show port <> "...\n"
   run port $ app env 
