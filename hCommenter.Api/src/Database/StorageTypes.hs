@@ -10,15 +10,18 @@ module Database.StorageTypes where
 
 import           ClassyPrelude              hiding (Handler, singleton, sortBy)
 import           Control.Lens               (makeLenses)
-import           Data.Aeson                 (FromJSON, Object, ToJSON (toJSON))
+import           Data.Aeson                 (FromJSON, Object,
+                                             Options (fieldLabelModifier),
+                                             ToJSON (toJSON), defaultOptions)
 import           Data.Aeson.KeyMap          (singleton)
+import           Data.Aeson.TH              (deriveJSON)
 import           Data.Binary                (Binary)
 import           Data.Binary.Instances.Time ()
 import           Data.Swagger               (ToParamSchema, ToSchema)
 import           Database.Persist           (PersistCore (BackendKey),
                                              PersistEntity (Key))
 import           Database.Persist.Sql       (SqlBackend)
-import           Database.Persist.TH        (MkPersistSettings (mpsGenerateLenses),
+import           Database.Persist.TH        (MkPersistSettings (mpsFieldLabelModifier, mpsGenerateLenses),
                                              mkMigrate, mkPersist,
                                              persistLowerCase, share,
                                              sqlSettings)
@@ -38,6 +41,7 @@ data StorageError
 share
   [ mkPersist sqlSettings
       { mpsGenerateLenses = True
+      , mpsFieldLabelModifier = \_ field -> field
       }
   , mkMigrate "migrateAll"
   ] [persistLowerCase|
@@ -47,31 +51,33 @@ User
   lastName    Text
 
   Primary username
-  UniqueUsername username
-  deriving Show Read Eq Ord Generic ToJSON FromJSON
+  deriving Show Read Eq Ord Generic
 
 Conversation
   convoUrl    Text
   convoTitle  Text
 
   Primary convoUrl
-  UniqueUrl convoUrl
-  deriving Show Read Eq Ord Generic ToJSON FromJSON
+  deriving Show Read Eq Ord Generic
 
 Comment
   dateCreated UTCTime default=CURRENT_TIME
-  parent      CommentId Maybe
   message     Text
   upvotes     Int
   downvotes   Int
 
-  username    Text
-  convoUrl    Text
+  parent      CommentId Maybe
+  author     Text
+  location    Text
 
-  Foreign User OnDeleteCascade OnUpdateCascade fk_posted_by username
-  Foreign Conversation fk_posted_to convoUrl
-  deriving Show Read Eq Ord Generic ToJSON FromJSON
+  Foreign Comment fk_parent parent
+  Foreign User fk_posted_by author
+  Foreign Conversation fk_posted_to location
+  deriving Show Read Eq Ord Generic
 |]
+
+-- Ignore leading underscore that's introduced for lens.
+deriveJSON defaultOptions {fieldLabelModifier = drop 1} ''Comment
 
 deriving instance Generic (Key Conversation)
 deriving instance Generic (Key User)
@@ -128,7 +134,7 @@ mkComment
   -> IO Comment
 mkComment username convoUrl msg = do
   currTime <- getCurrentTime
-  pure $ Comment currTime Nothing msg 0 0 username convoUrl
+  pure $ Comment currTime msg 0 0 Nothing username convoUrl
 
 data PureStorage = PureStorage {
   _convoStore   :: Map (Key Conversation) Conversation,

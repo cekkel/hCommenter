@@ -11,11 +11,10 @@ import           Database.Interface         (CommentStorage (..))
 import           Database.Persist.Sql       (fromSqlKey, toSqlKey)
 import           Database.SqlPool           (SqlPool)
 import           Database.StorageTypes      (Comment, CommentId, SortBy (..),
-                                             StorageError (..), commentConvoUrl,
-                                             commentDateCreated,
-                                             commentDownvotes, commentStore,
-                                             commentUpvotes, commentUsername,
-                                             nextID)
+                                             StorageError (..), author,
+                                             commentStore, dateCreated,
+                                             downvotes, location, nextID,
+                                             upvotes)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -32,12 +31,12 @@ runCommentStorageIO filePath
   . interpret (\_ -> \case
     GetCommentsForConvo convoUrlQ sortMethod ->
       sortedComments sortMethod
-        <$> findComments filePath (\_ comment -> comment ^. commentConvoUrl == convoUrlQ)
+        <$> findComments filePath (\_ comment -> comment ^. location == convoUrlQ)
 
 
     GetCommentsForUser userNameQ sortMethod -> do
       sortedComments sortMethod
-        <$> findComments filePath (\_ comment -> comment ^. commentUsername == userNameQ)
+        <$> findComments filePath (\_ comment -> comment ^. author == userNameQ)
 
     GetReplies cID sortMethod -> do
       sortedComments sortMethod
@@ -83,7 +82,7 @@ findComments filePath condition = do
 -- | TODO: Needs revisiting
 sortedComments :: SortBy -> [(CommentId, Comment)] -> [(CommentId, Comment)]
 sortedComments sortMethod = sortBy $ \(_, c1) (_, c2) -> case sortMethod of
-  Popular       -> compare (c1 ^. commentUpvotes) (c2 ^. commentUpvotes)
-  Controversial -> compare (c1 ^. commentDownvotes) (c2 ^. commentDownvotes)
-  Old           -> compare (c1 ^. commentDateCreated) (c2 ^. commentDateCreated)
-  New           -> flip compare (c1 ^. commentDateCreated) (c2 ^. commentDateCreated)
+  Popular       -> compare (c1 ^. upvotes) (c2 ^. upvotes)
+  Controversial -> compare (c1 ^. downvotes) (c2 ^. downvotes)
+  Old           -> compare (c1 ^. dateCreated) (c2 ^. dateCreated)
+  New           -> flip compare (c1 ^. dateCreated) (c2 ^. dateCreated)

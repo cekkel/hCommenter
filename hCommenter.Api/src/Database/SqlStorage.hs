@@ -13,12 +13,9 @@ import           Database.Persist           (Entity (Entity),
 import qualified Database.Persist           as P
 import           Database.Persist.Sqlite    (PersistStoreRead (get))
 import           Database.SqlPool           (SqlPool, runSqlPool, withConn)
-import           Database.StorageTypes      (Comment,
-                                             Conversation (Conversation),
-                                             EntityField (..), SortBy (..),
-                                             StorageError (..), User (User),
-                                             commentDownvotes, commentMessage,
-                                             commentUpvotes)
+import           Database.StorageTypes      (Comment, EntityField (..),
+                                             SortBy (..), StorageError (..),
+                                             downvotes, message, upvotes)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -39,10 +36,10 @@ runCommentStorageSQL
 runCommentStorageSQL backend = runSqlPool backend . interpret (\_ action ->
   withConn $ case action of
     GetCommentsForConvo convoUrlQ sortMethod -> do
-      map entityToTuple <$> selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
+      map entityToTuple <$> selectList [CommentLocation ==. convoUrlQ] (generateSort sortMethod)
 
     GetCommentsForUser userNameQ sortMethod -> do
-      map entityToTuple <$> selectList [CommentUsername ==. userNameQ] (generateSort sortMethod)
+      map entityToTuple <$> selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)
 
     GetReplies cID sortMethod -> do
       map entityToTuple <$> selectList [CommentParent ==. Just cID] (generateSort sortMethod)
@@ -58,9 +55,9 @@ runCommentStorageSQL backend = runSqlPool backend . interpret (\_ action ->
         Just val -> do
           let upComment = f val
           update cID [
-              CommentMessage =. (upComment ^. commentMessage)
-            , CommentUpvotes =. (upComment ^. commentUpvotes)
-            , CommentDownvotes =. (upComment ^. commentDownvotes)
+              CommentMessage =. (upComment ^. message)
+            , CommentUpvotes =. (upComment ^. upvotes)
+            , CommentDownvotes =. (upComment ^. downvotes)
             ]
           pure upComment
 

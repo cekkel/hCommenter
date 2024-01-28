@@ -53,9 +53,9 @@ initDevSqliteDB backend env = do
 
   runEff $ runLog env . runSqlPool backend $ withConn $ do
     -- Manually delete all data in database before refreshing with mock data.
+    deleteWhere ([] :: [Filter Comment]) -- Comments must go first due to FK constraint
     deleteWhere ([] :: [Filter Conversation])
     deleteWhere ([] :: [Filter User])
-    deleteWhere ([] :: [Filter Comment])
 
     insertMany_ $ map snd $ M.toList $ mockComments ^. convoStore
     insertMany_ $ map snd $ M.toList $ mockComments ^. userStore

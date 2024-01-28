@@ -4,8 +4,7 @@ import           ClassyPrelude
 import           Control.Lens          ((+~))
 import           Data.Aeson            (object, (.=))
 import           Database.Interface    (CommentStorage, editComment)
-import           Database.StorageTypes (CommentId, commentDownvotes,
-                                        commentUpvotes)
+import           Database.StorageTypes (CommentId, downvotes, upvotes)
 import qualified Effectful             as E
 import           Logging               (Log, addLogContext, addLogNamespace,
                                         logInfo)
@@ -27,7 +26,7 @@ votingServer
      , Log E.:> es
      )
   => ServerT VotingAPI (E.Eff es)
-votingServer cID = vote "UpvoteComment" commentUpvotes :<|> vote "DownvoteComment" commentDownvotes
+votingServer cID = vote "UpvoteComment" upvotes :<|> vote "DownvoteComment" downvotes
   where
     vote namespace voteBox = addLogNamespace namespace . addLogContext (object ["CommentID" .= cID]) $ do
       logInfo "Incrementing vote box"
