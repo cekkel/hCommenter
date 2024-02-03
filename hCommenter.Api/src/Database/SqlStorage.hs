@@ -13,9 +13,10 @@ import           Database.Persist           (Entity (Entity),
 import qualified Database.Persist           as P
 import           Database.Persist.Sqlite    (PersistStoreRead (get))
 import           Database.SqlPool           (SqlPool, runSqlPool, withConn)
-import           Database.StorageTypes      (Comment, EntityField (..),
+import           Database.StorageTypes      (Comment (..), EntityField (..),
                                              SortBy (..), StorageError (..),
-                                             downvotes, message, upvotes)
+                                             downvotes, fromNewComment, message,
+                                             upvotes)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -44,9 +45,11 @@ runCommentStorageSQL backend = runSqlPool backend . interpret (\_ action ->
     GetReplies cID sortMethod -> do
       map entityToTuple <$> selectList [CommentParent ==. Just cID] (generateSort sortMethod)
 
-    NewComment comment -> do
-      cID <- insert comment
-      pure (cID, comment)
+    InsertComment comment -> do
+      fullComment <- liftIO $ fromNewComment comment
+
+      cID <- insert fullComment
+      pure (cID, fullComment)
 
     EditComment cID f -> do
       comment <- get cID

@@ -13,8 +13,8 @@ import           Database.SqlPool           (SqlPool)
 import           Database.StorageTypes      (Comment, CommentId, SortBy (..),
                                              StorageError (..), author,
                                              commentStore, dateCreated,
-                                             downvotes, location, nextID,
-                                             upvotes)
+                                             downvotes, fromNewComment,
+                                             location, nextID, upvotes)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -42,19 +42,20 @@ runCommentStorageIO filePath
       sortedComments sortMethod
         <$> findComments filePath (\otherCID _ -> cID == otherCID)
 
-    NewComment comment -> do
+    InsertComment comment -> do
       storage <- liftIO $ decodeFile filePath
+      fullComment <- liftIO $ fromNewComment comment
 
       let newID = storage ^. nextID
           updatedStorage =
             storage
-              & commentStore %~ M.insert newID comment
+              & commentStore %~ M.insert newID fullComment
                 -- This is the only time that a comment is added, so just increment the ID!
                 -- Security-wise it's fine since obviously this should not be used in production.
               & nextID %~ toSqlKey . (+ 1) . fromSqlKey
 
       liftIO $ encodeFile filePath updatedStorage
-      pure (newID, comment)
+      pure (newID, fullComment)
 
     EditComment cID f -> do
       storage <- liftIO $ decodeFile filePath

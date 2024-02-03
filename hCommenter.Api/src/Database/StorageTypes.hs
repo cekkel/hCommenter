@@ -9,15 +9,19 @@
 module Database.StorageTypes where
 
 import           ClassyPrelude              hiding (Handler, singleton, sortBy)
-import           Control.Lens               (makeLenses)
-import           Data.Aeson                 (FromJSON, Object,
-                                             Options (fieldLabelModifier),
-                                             ToJSON (toJSON), defaultOptions)
+import           Control.Lens               (makeLenses, (^.))
+import           Data.Aeson                 (FromJSON, Object, ToJSON (toJSON),
+                                             defaultOptions)
+import qualified Data.Aeson                 as JSON
 import           Data.Aeson.KeyMap          (singleton)
 import           Data.Aeson.TH              (deriveJSON)
 import           Data.Binary                (Binary)
 import           Data.Binary.Instances.Time ()
-import           Data.Swagger               (ToParamSchema, ToSchema)
+import           Data.Swagger               (ToParamSchema,
+                                             ToSchema (declareNamedSchema),
+                                             defaultSchemaOptions,
+                                             genericDeclareNamedSchema)
+import qualified Data.Swagger.Schema        as Schema
 import           Database.Persist           (PersistCore (BackendKey),
                                              PersistEntity (Key))
 import           Database.Persist.Sql       (SqlBackend)
@@ -51,14 +55,14 @@ User
   lastName    Text
 
   Primary username
-  deriving Show Read Eq Ord Generic
+  deriving Show Read Eq Generic
 
 Conversation
   convoUrl    Text
   convoTitle  Text
 
   Primary convoUrl
-  deriving Show Read Eq Ord Generic
+  deriving Show Read Eq Generic
 
 Comment
   dateCreated UTCTime default=CURRENT_TIME
@@ -73,11 +77,34 @@ Comment
   Foreign Comment fk_parent parent
   Foreign User fk_posted_by author
   Foreign Conversation fk_posted_to location
-  deriving Show Read Eq Ord Generic
+  deriving Show Read Eq Generic
 |]
 
 -- Ignore leading underscore that's introduced for lens.
-deriveJSON defaultOptions {fieldLabelModifier = drop 1} ''Comment
+deriveJSON defaultOptions {JSON.fieldLabelModifier = drop 1} ''Comment
+
+data NewComment = NewComment {
+  _new_message  :: Text,
+  _new_parent   :: Maybe (Key Comment),
+  _new_author   :: Text,
+  _new_location :: Text
+} deriving (Show, Read, Eq, Generic)
+
+makeLenses ''NewComment
+deriveJSON defaultOptions {JSON.fieldLabelModifier = drop 4} ''NewComment
+
+fromNewComment :: NewComment -> IO Comment
+fromNewComment comment = do
+  currTime <- getCurrentTime
+  pure $ Comment {
+    _dateCreated = currTime,
+    _message = comment ^. new_message,
+    _upvotes = 0,
+    _downvotes = 0,
+    _parent = comment ^. new_parent,
+    _author = comment ^. new_author,
+    _location = comment ^. new_location
+  }
 
 deriving instance Generic (Key Conversation)
 deriving instance Generic (Key User)
@@ -85,9 +112,13 @@ deriving instance Generic (Key Comment)
 
 instance ToSchema (BackendKey SqlBackend)
 instance ToSchema (Key Comment)
-instance ToSchema Comment
-instance FromHttpApiData Comment where
-  parseQueryParam :: Text -> Either Text Comment
+instance ToSchema Comment where
+  declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions {Schema.fieldLabelModifier = drop 1}
+instance ToSchema NewComment where
+  declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions {Schema.fieldLabelModifier = drop 5}
+
+instance FromHttpApiData NewComment where
+  parseQueryParam :: Text -> Either Text NewComment
   parseQueryParam = maybe (Left "Comment not formatted correctly") Right . readMay
 
 instance ToObject Comment

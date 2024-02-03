@@ -4,8 +4,9 @@ import           ClassyPrelude          hiding (Handler, log, sortBy)
 import           Control.Lens           ((.~), (^.))
 import           Data.Aeson             (object, (.=))
 import qualified Database.Interface     as DB
-import           Database.StorageTypes  (Comment, CommentId, SortBy (..),
-                                         location, message, parent)
+import           Database.StorageTypes  (Comment, CommentId, NewComment,
+                                         SortBy (..), message, new_location,
+                                         new_parent)
 import qualified Effectful              as E
 import           Effectful.Error.Static (Error)
 import           Katip                  (showLS)
@@ -38,7 +39,7 @@ type CommentsAPI =
         :> Get '[JSON] [(CommentId, Comment)] :<|>
       Description "Create a new comment and get new ID"
         :> "new"
-        :> ReqBody '[JSON] Comment
+        :> ReqBody '[JSON] NewComment
         :> PostCreated '[JSON] (CommentId, Comment) :<|>
       Description "Edit an existing comment"
         :> "edit"
@@ -57,7 +58,7 @@ commentServer
      , Error InputError E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)
-commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> newComment :<|> editComment :<|> deleteComment
+commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> insertComment :<|> editComment :<|> deleteComment
   where
     getConvoComments convoUrl mSort
       = addLogNamespace "GetConvoComments"
@@ -110,16 +111,16 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> newCo
         logInfo $ showLS (length replies) <> " replies retrieved successfully."
         pure replies
 
-    newComment comment
+    insertComment comment
       = addLogNamespace "NewComment"
       . addLogContext (object
-          [ "ConvoUrl" .= (comment ^. location)
-          , "ParentId" .= (comment ^. parent)
+          [ "ConvoUrl" .= (comment ^. new_location)
+          , "ParentId" .= (comment ^. new_parent)
           ])
       $ do
         logInfo "Creating new comment"
 
-        (cID, createdComment) <- DB.newComment comment
+        (cID, createdComment) <- DB.insertComment comment
 
         logInfo $ "New comment created with ID: " <> showLS cID
         pure (cID, createdComment)
