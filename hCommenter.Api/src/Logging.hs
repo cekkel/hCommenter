@@ -1,44 +1,65 @@
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Logging where
 
-import           ClassyPrelude             hiding (log, singleton)
-import           Control.Lens              (makeLenses, view, (%~), (^.))
-import           Control.Monad.Logger      (Loc, LogLevel (..), LogSource,
-                                            ToLogStr (toLogStr), fromLogStr,
-                                            toLogStr)
-import           Data.Aeson                (Object, Value)
-import           Effectful                 (Dispatch (Static), DispatchOf, Eff,
-                                            Effect, IOE, (:>))
-import           Effectful.Dispatch.Static (SideEffects (WithSideEffects),
-                                            StaticRep, evalStaticRep,
-                                            getStaticRep, localStaticRep,
-                                            unsafeEff_)
-import           Katip
-import           Server.ServerTypes        (Env, appName, envName, scribe,
-                                            scribeName)
+import ClassyPrelude hiding (log, singleton)
+import Control.Lens (makeLenses, view, (%~), (^.))
+import Control.Monad.Logger
+  ( Loc
+  , LogLevel (..)
+  , LogSource
+  , ToLogStr (toLogStr)
+  , fromLogStr
+  , toLogStr
+  )
+import Data.Aeson (Object, Value)
+import Effectful
+  ( Dispatch (Static)
+  , DispatchOf
+  , Eff
+  , Effect
+  , IOE
+  , (:>)
+  )
+import Effectful.Dispatch.Static
+  ( SideEffects (WithSideEffects)
+  , StaticRep
+  , evalStaticRep
+  , getStaticRep
+  , localStaticRep
+  , unsafeEff_
+  )
+import Katip
+import Server.ServerTypes
+  ( Env
+  , appName
+  , envName
+  , scribe
+  , scribeName
+  )
 
-data LogConfig = LogConfig {
-  _logNamespace :: !Namespace,
-  _logContext   :: !LogContexts,
-  _logEnv       :: !LogEnv
-}
+data LogConfig = LogConfig
+  { _logNamespace :: !Namespace
+  , _logContext :: !LogContexts
+  , _logEnv :: !LogEnv
+  }
 
 makeLenses ''LogConfig
 
-data Log :: Effect where
+data Log :: Effect
 
 type instance DispatchOf Log = Static WithSideEffects
+
 newtype instance StaticRep Log = Log LogConfig
 
 -- | TODO: Verify performance.
-runLog
-  :: (IOE :> es)
-  => Env
-  -> Eff (Log : es) a
-  -> Eff es a
+runLog ::
+  (IOE :> es) =>
+  Env ->
+  Eff (Log : es) a ->
+  Eff es a
 runLog env logEff = do
   let component' = Namespace [env ^. appName]
       environment' = Environment $ env ^. envName
@@ -46,11 +67,13 @@ runLog env logEff = do
   initialEnv <- liftIO $ initLogEnv component' environment'
   envWithScribe <- liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv
 
-  flip evalStaticRep logEff $ Log LogConfig {
-    _logNamespace = mempty
-  , _logContext = mempty
-  , _logEnv = envWithScribe
-  }
+  flip evalStaticRep logEff $
+    Log
+      LogConfig
+        { _logNamespace = mempty
+        , _logContext = mempty
+        , _logEnv = envWithScribe
+        }
 
 initLogEnvWithScribe :: Env -> IO LogEnv
 initLogEnvWithScribe env = do
@@ -60,25 +83,24 @@ initLogEnvWithScribe env = do
   initialEnv <- liftIO $ initLogEnv component' environment'
   liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv
 
-
 getConsoleScribe :: IO Scribe
 getConsoleScribe = mkHandleScribe (ColorLog True) stdout (const (pure True)) V0
 
 getFileScribe :: IO Scribe
 getFileScribe = mkFileScribe "logs.txt" (const $ pure True) V0
 
-log :: Log :> es => Severity -> LogStr -> Eff es ()
+log :: (Log :> es) => Severity -> LogStr -> Eff es ()
 log level msg = do
   f <- askForLoggerIO
   unsafeEff_ $ f level msg
 
-logInfo :: Log :> es => LogStr -> Eff es ()
+logInfo :: (Log :> es) => LogStr -> Eff es ()
 logInfo = log InfoS
 
-logWarn :: Log :> es => LogStr -> Eff es ()
+logWarn :: (Log :> es) => LogStr -> Eff es ()
 logWarn = log WarningS
 
-logError :: Log :> es => LogStr -> Eff es ()
+logError :: (Log :> es) => LogStr -> Eff es ()
 logError = log ErrorS
 
 logExceptions :: (IOE :> es, Log :> es) => Eff es a -> Eff es a
@@ -86,7 +108,7 @@ logExceptions action = action `catchAny` \e -> logErr e >> throwIO e
   where
     logErr e = logFM ErrorS ("An exception has occurred: " <> showLS e)
 
-addLogNamespace :: Log :> es => Namespace -> Eff es a -> Eff es a
+addLogNamespace :: (Log :> es) => Namespace -> Eff es a -> Eff es a
 addLogNamespace ns = localKatipNamespace' (<> ns)
 
 addLogContext :: (Log :> es, LogItem i) => i -> Eff es a -> Eff es a
@@ -96,6 +118,7 @@ instance LogItem Object where
   payloadKeys _ _ = AllKeys
 
 instance ToObject Value
+
 instance LogItem Value where
   payloadKeys _ _ = AllKeys
 
@@ -113,19 +136,19 @@ askForLoggerIO = do
   env <- getLogEnv'
   pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
 
--- | This is useful for when there is a need to work with a library that uses the
---   'LoggingT' transformer from the monad-logger library.
+{- | This is useful for when there is a need to work with a library that uses the
+  'LoggingT' transformer from the monad-logger library.
+-}
 askForMonadLoggerIO :: (ToLogStr a, Log :> es) => Eff es (Loc -> LogSource -> LogLevel -> a -> IO ())
 askForMonadLoggerIO = do
   logIO <- askForLoggerIO
   pure (\_loc _src lvl msg -> logIO (mapLvl lvl) (mapMsg msg))
-
   where
     mapLvl = \case
-      LevelInfo    -> InfoS
-      LevelWarn    -> WarningS
-      LevelDebug   -> DebugS
-      LevelError   -> ErrorS
+      LevelInfo -> InfoS
+      LevelWarn -> WarningS
+      LevelDebug -> DebugS
+      LevelError -> ErrorS
       LevelOther _ -> WarningS
 
     mapMsg = logStr . fromLogStr . toLogStr

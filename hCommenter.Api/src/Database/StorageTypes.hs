@@ -58,10 +58,10 @@ User
   deriving Show Read Eq Generic
 
 Conversation
-  convoUrl    Text
-  convoTitle  Text
+  url    Text
+  title  Text
 
-  Primary convoUrl
+  Primary url
   deriving Show Read Eq Generic
 
 Comment
@@ -71,12 +71,12 @@ Comment
   downvotes   Int
 
   parent      CommentId Maybe
-  author     Text
-  location    Text
+  author      Text
+  convoUrl    Text
 
   Foreign Comment fk_parent parent
   Foreign User fk_posted_by author
-  Foreign Conversation fk_posted_to location
+  Foreign Conversation fk_posted_to convoUrl
   deriving Show Read Eq Generic
 |]
 
@@ -87,7 +87,7 @@ data NewComment = NewComment {
   _new_message  :: Text,
   _new_parent   :: Maybe (Key Comment),
   _new_author   :: Text,
-  _new_location :: Text
+  _new_convoUrl :: Text
 } deriving (Show, Read, Eq, Generic)
 
 makeLenses ''NewComment
@@ -103,7 +103,7 @@ fromNewComment comment = do
     _downvotes = 0,
     _parent = comment ^. new_parent,
     _author = comment ^. new_author,
-    _location = comment ^. new_location
+    _convoUrl = comment ^. new_convoUrl
   }
 
 deriving instance Generic (Key Conversation)

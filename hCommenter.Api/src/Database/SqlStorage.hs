@@ -37,7 +37,7 @@ runCommentStorageSQL
 runCommentStorageSQL backend = runSqlPool backend . interpret (\_ action ->
   withConn $ case action of
     GetCommentsForConvo convoUrlQ sortMethod -> do
-      map entityToTuple <$> selectList [CommentLocation ==. convoUrlQ] (generateSort sortMethod)
+      map entityToTuple <$> selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
 
     GetCommentsForUser userNameQ sortMethod -> do
       map entityToTuple <$> selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)

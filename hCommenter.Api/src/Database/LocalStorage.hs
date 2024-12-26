@@ -12,9 +12,9 @@ import           Database.Persist.Sql       (fromSqlKey, toSqlKey)
 import           Database.SqlPool           (SqlPool)
 import           Database.StorageTypes      (Comment, CommentId, SortBy (..),
                                              StorageError (..), author,
-                                             commentStore, dateCreated,
-                                             downvotes, fromNewComment,
-                                             location, nextID, upvotes)
+                                             commentStore, convoUrl,
+                                             dateCreated, downvotes,
+                                             fromNewComment, nextID, upvotes)
 import           Effectful                  (Eff, IOE, (:>))
 import           Effectful.Dispatch.Dynamic (interpret)
 import           Effectful.Error.Static     (Error, throwError)
@@ -31,7 +31,7 @@ runCommentStorageIO filePath
   . interpret (\_ -> \case
     GetCommentsForConvo convoUrlQ sortMethod ->
       sortedComments sortMethod
-        <$> findComments filePath (\_ comment -> comment ^. location == convoUrlQ)
+        <$> findComments filePath (\_ comment -> comment ^. convoUrl == convoUrlQ)
 
 
     GetCommentsForUser userNameQ sortMethod -> do
