@@ -1,0 +1,23 @@
+indentation: 2
+column-limit: 140
+function-arrows: leading
+comma-style: leading
+import-export-style: leading
+indent-wheres: false
+record-brace-space: true
+newlines-between-decls: 1
+haddock-style: multi-line-compact
+haddock-style-module: multi-line-compact
+let-style: newline
+in-style: left-align
+single-constraint-parens: always
+single-deriving-parens: always
+unicode: never
+respectful: false
+# fixities Fixity information for operators
+# reexports 	Module reexports Fourmolu should know about
+import-grouping: by-scope-then-qualified
+sort-constraints: true
+sort-derived-classes: true
+sort-deriving-clauses: true
+# local-modules
