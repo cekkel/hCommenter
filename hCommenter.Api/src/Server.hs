@@ -96,7 +96,10 @@ effToHandler env m = do
       LocalFile -> runCommentStorageIO fileName
       sqlBackend -> runCommentStorageSQL sqlBackend
 
-runAndLiftError :: (e -> CustomError) -> Eff (Error e : es) (Either (CallStack, CustomError) a) -> Eff es (Either (CallStack, CustomError) a)
+runAndLiftError ::
+  (e -> CustomError) ->
+  Eff (Error e : es) (Either (CallStack, CustomError) a) ->
+  Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
 logExplicitErrors :: (Show e, Log :> es) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)

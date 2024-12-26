@@ -1,16 +1,31 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TypeFamilies #-}
 
-module Database.Interface (getCommentsForConvo, getCommentsForUser, getReplies, insertComment, editComment, deleteComment, CommentStorage(..)) where
+module Database.Interface
+  ( getCommentsForConvo
+  , getCommentsForUser
+  , getReplies
+  , insertComment
+  , editComment
+  , deleteComment
+  , CommentStorage (..)
+  )
+where
 
-import           ClassyPrelude
-import           Database.StorageTypes (Comment, CommentId, NewComment,
-                                        SortBy (..))
-import           Effectful             (Dispatch (Dynamic), DispatchOf, Effect)
-import           Effectful.TH          (makeEffect)
+import ClassyPrelude
+import Database.StorageTypes
+  ( Comment
+  , CommentId
+  , NewComment
+  , SortBy (..)
+  )
+import Effectful (Dispatch (Dynamic), DispatchOf, Effect)
+import Effectful.TH (makeEffect)
 
 type ConvoUrl = Text
+
 type Username = Text
+
 type ParentId = CommentId
 
 data CommentStorage :: Effect where
@@ -22,4 +37,5 @@ data CommentStorage :: Effect where
   DeleteComment :: CommentId -> CommentStorage m ()
 
 type instance DispatchOf CommentStorage = 'Dynamic
+
 makeEffect ''CommentStorage

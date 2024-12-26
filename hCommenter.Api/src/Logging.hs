@@ -61,8 +61,9 @@ runLog ::
   Eff (Log : es) a ->
   Eff es a
 runLog env logEff = do
-  let component' = Namespace [env ^. appName]
-      environment' = Environment $ env ^. envName
+  let
+    component' = Namespace [env ^. appName]
+    environment' = Environment $ env ^. envName
 
   initialEnv <- liftIO $ initLogEnv component' environment'
   envWithScribe <- liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv
@@ -77,8 +78,9 @@ runLog env logEff = do
 
 initLogEnvWithScribe :: Env -> IO LogEnv
 initLogEnvWithScribe env = do
-  let component' = Namespace [env ^. appName]
-      environment' = Environment $ env ^. envName
+  let
+    component' = Namespace [env ^. appName]
+    environment' = Environment $ env ^. envName
 
   initialEnv <- liftIO $ initLogEnv component' environment'
   liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv

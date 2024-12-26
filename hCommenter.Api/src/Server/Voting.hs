@@ -1,31 +1,40 @@
 module Server.Voting (VotingAPI, votingServer) where
 
-import           ClassyPrelude
-import           Control.Lens          ((+~))
-import           Data.Aeson            (object, (.=))
-import           Database.Interface    (CommentStorage, editComment)
-import           Database.StorageTypes (CommentId, downvotes, upvotes)
-import qualified Effectful             as E
-import           Logging               (Log, addLogContext, addLogNamespace,
-                                        logInfo)
-import           Servant               (Capture, Description,
-                                        HasServer (ServerT),
-                                        NoContent (NoContent), PostNoContent,
-                                        type (:<|>) (..), type (:>))
+import ClassyPrelude
+import Control.Lens ((+~))
+import Data.Aeson (object, (.=))
+import Database.Interface (CommentStorage, editComment)
+import Database.StorageTypes (CommentId, downvotes, upvotes)
+import Effectful qualified as E
+import Logging
+  ( Log
+  , addLogContext
+  , addLogNamespace
+  , logInfo
+  )
+import Servant
+  ( Capture
+  , Description
+  , HasServer (ServerT)
+  , NoContent (NoContent)
+  , PostNoContent
+  , type (:<|>) (..)
+  , type (:>)
+  )
 
 -- | Easy to abuse, needs authentication added later
 type VotingAPI =
-  "comments" :> Capture "id" CommentId :>
-    (
-      "upvote" :> Description "Upvote a comment" :> PostNoContent :<|>
-      "downvote" :> Description "Downvote a comment" :> PostNoContent
-    )
+  "comments"
+    :> Capture "id" CommentId
+    :> ( "upvote" :> Description "Upvote a comment" :> PostNoContent
+          :<|> "downvote" :> Description "Downvote a comment" :> PostNoContent
+       )
 
-votingServer
-  :: ( CommentStorage E.:> es
-     , Log E.:> es
-     )
-  => ServerT VotingAPI (E.Eff es)
+votingServer ::
+  ( CommentStorage E.:> es
+  , Log E.:> es
+  ) =>
+  ServerT VotingAPI (E.Eff es)
 votingServer cID = vote "UpvoteComment" upvotes :<|> vote "DownvoteComment" downvotes
   where
     vote namespace voteBox = addLogNamespace namespace . addLogContext (object ["CommentID" .= cID]) $ do
