@@ -1,9 +1,10 @@
-module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI, InputError (..)) where
+module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
 import ClassyPrelude hiding (Handler, log, sortBy)
 import Control.Lens ((.~), (^.))
 import Data.Aeson (object, (.=))
 import Database.Interface qualified as DB
+import Database.Persist.Sql (fromSqlKey)
 import Database.StorageTypes
   ( Comment
   , CommentId
@@ -22,6 +23,7 @@ import Logging
   , addLogNamespace
   , logInfo
   )
+import Mapping.ExternalTypes (ViewComment)
 import Servant
   ( Capture
   , Description
@@ -37,38 +39,44 @@ import Servant
   , type (:<|>) (..)
   , type (:>)
   )
-import Server.ServerTypes (ErrorResponse (error), type InputError (BadArgument))
+import Server.ServerTypes (InputError)
 
 type CommentsAPI =
   "comments"
-    :> ( Description "Get all comments for a particular conversation (page)"
-          :> "conversation"
-          :> Capture "convoUrl" Text
-          :> QueryParam "sortby" SortBy
-          :> Get '[JSON] [(CommentId, Comment)]
-          :<|> Description "Get all comments for a particular user"
-            :> "user"
-            :> Capture "username" Text
+    :> ( ( Description "Get all comments for a particular conversation (page)"
+            :> "conversation"
+            :> Capture "convoUrl" Text
             :> QueryParam "sortby" SortBy
-            :> Get '[JSON] [(CommentId, Comment)]
-          :<|> Description "Get all replies for a particular comment"
-            :> Capture "id" CommentId
-            :> "replies"
-            :> QueryParam "sortby" SortBy
-            :> Get '[JSON] [(CommentId, Comment)]
-          :<|> Description "Create a new comment and get new ID"
-            :> "new"
-            :> ReqBody '[JSON] NewComment
-            :> PostCreated '[JSON] (CommentId, Comment)
-          :<|> Description "Edit an existing comment"
-            :> "edit"
-            :> Capture "id" CommentId
-            :> ReqBody '[JSON] Text
-            :> Post '[JSON] Comment
-          :<|> Description "Delete a comment"
-            :> "delete"
-            :> Capture "id" CommentId
-            :> PostNoContent
+            :> Get '[JSON] [ViewComment]
+         )
+          :<|> ( Description "Get all comments for a particular user"
+                  :> "user"
+                  :> Capture "username" Text
+                  :> QueryParam "sortby" SortBy
+                  :> Get '[JSON] [ViewComment]
+               )
+          :<|> ( Description "Get all replies for a particular comment"
+                  :> Capture "id" CommentId
+                  :> "replies"
+                  :> QueryParam "sortby" SortBy
+                  :> Get '[JSON] [ViewComment]
+               )
+          :<|> ( Description "Create a new comment and get new ID"
+                  :> "new"
+                  :> ReqBody '[JSON] NewComment
+                  :> PostCreated '[JSON] Int64
+               )
+          :<|> ( Description "Edit an existing comment"
+                  :> "edit"
+                  :> Capture "id" CommentId
+                  :> ReqBody '[JSON] Text
+                  :> Post '[JSON] ViewComment
+               )
+          :<|> ( Description "Delete a comment"
+                  :> "delete"
+                  :> Capture "id" CommentId
+                  :> PostNoContent
+               )
        )
 
 commentServer ::
@@ -140,10 +148,10 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
         $ do
           logInfo "Creating new comment"
 
-          (cID, createdComment) <- DB.insertComment comment
+          cID <- DB.insertComment comment
 
           logInfo $ "New comment created with ID: " <> showLS cID
-          pure (cID, createdComment)
+          pure $ fromSqlKey cID
 
     editComment cID commentText =
       addLogNamespace "EditComment" $

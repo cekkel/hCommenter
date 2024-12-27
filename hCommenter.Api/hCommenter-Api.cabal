@@ -74,6 +74,9 @@ library
         Database.LocalStorage
         Database.SqlStorage
         Database.SqlPool
+        Mapping.Typeclass
+        Mapping.ExternalTypes
+        Mapping.Comments
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -121,6 +124,7 @@ library
         DataKinds,
         ExplicitNamespaces,
         LambdaCase,
+        TypeFamilies,
 
 executable hCommenter-Api
     -- Import common warning flags.

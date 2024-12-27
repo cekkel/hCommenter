@@ -11,7 +11,7 @@ import Text.Read (readMaybe)
 main :: IO ()
 main = command_
   . toplevel @"hCommenter CLI"
-  . optDef @"p" @"port" "8080"
+  . optDef @"p" @"port" "5001"
   $ \(portOpt :: String) ->
     optDef @"m" @"mode" "binary" $ \(modeOpt :: String) -> do
       raw $ case readMaybe portOpt of

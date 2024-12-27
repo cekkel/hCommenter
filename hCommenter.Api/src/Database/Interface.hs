@@ -13,28 +13,27 @@ module Database.Interface
 where
 
 import ClassyPrelude
+import Database.Persist.Sql (Key)
 import Database.StorageTypes
   ( Comment
-  , CommentId
   , NewComment
   , SortBy (..)
   )
 import Effectful (Dispatch (Dynamic), DispatchOf, Effect)
 import Effectful.TH (makeEffect)
+import Mapping.ExternalTypes
 
 type ConvoUrl = Text
 
 type Username = Text
 
-type ParentId = CommentId
-
 data CommentStorage :: Effect where
-  GetCommentsForConvo :: ConvoUrl -> SortBy -> CommentStorage m [(CommentId, Comment)]
-  GetCommentsForUser :: Username -> SortBy -> CommentStorage m [(CommentId, Comment)]
-  GetReplies :: ParentId -> SortBy -> CommentStorage m [(CommentId, Comment)]
-  InsertComment :: NewComment -> CommentStorage m (CommentId, Comment)
-  EditComment :: CommentId -> (Comment -> Comment) -> CommentStorage m Comment
-  DeleteComment :: CommentId -> CommentStorage m ()
+  GetCommentsForConvo :: ConvoUrl -> SortBy -> CommentStorage m [ViewComment]
+  GetCommentsForUser :: Username -> SortBy -> CommentStorage m [ViewComment]
+  GetReplies :: Key Comment -> SortBy -> CommentStorage m [ViewComment]
+  InsertComment :: NewComment -> CommentStorage m (Key Comment)
+  EditComment :: Key Comment -> (Comment -> Comment) -> CommentStorage m ViewComment
+  DeleteComment :: Key Comment -> CommentStorage m ()
 
 type instance DispatchOf CommentStorage = 'Dynamic
 

@@ -7,7 +7,6 @@ import Control.Lens ((^.))
 import Database.Interface (CommentStorage (..))
 import Database.Persist
   ( Entity (Entity)
-  , PersistEntity (Key)
   , PersistStoreWrite (insert, update)
   , SelectOpt (Asc, Desc)
   , selectList
@@ -31,10 +30,8 @@ import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
 import Logging (Log)
+import Mapping.Typeclass (MapsFrom (mapFrom))
 import Server.ServerTypes (Backend)
-
-entityToTuple :: Entity record -> (Key record, record)
-entityToTuple (Entity key value) = (key, value)
 
 runCommentStorageSQL ::
   ( Log :> es
@@ -50,16 +47,17 @@ runCommentStorageSQL backend =
       ( \_ action ->
           withConn $ case action of
             GetCommentsForConvo convoUrlQ sortMethod -> do
-              map entityToTuple <$> selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
+              map mapFrom <$> selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
             GetCommentsForUser userNameQ sortMethod -> do
-              map entityToTuple <$> selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)
+              map mapFrom <$> selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)
             GetReplies cID sortMethod -> do
-              map entityToTuple <$> selectList [CommentParent ==. Just cID] (generateSort sortMethod)
+              replies <- map mapFrom <$> selectList [CommentParent ==. Just cID] (generateSort sortMethod)
+              pure replies
             InsertComment comment -> do
               fullComment <- liftIO $ fromNewComment comment
 
               cID <- insert fullComment
-              pure (cID, fullComment)
+              pure cID
             EditComment cID f -> do
               comment <- get cID
               case comment of
@@ -73,7 +71,7 @@ runCommentStorageSQL backend =
                     , CommentUpvotes =. (upComment ^. upvotes)
                     , CommentDownvotes =. (upComment ^. downvotes)
                     ]
-                  pure upComment
+                  pure $ mapFrom (Entity cID upComment)
             DeleteComment cID -> P.delete cID
       )
 

@@ -7,7 +7,7 @@ import Control.Lens ((%~), (&), (^.))
 import Data.Binary (decodeFile, encodeFile)
 import Data.Map qualified as M
 import Database.Interface (CommentStorage (..))
-import Database.Persist.Sql (fromSqlKey, toSqlKey)
+import Database.Persist.Sql (Entity (Entity), fromSqlKey, toSqlKey)
 import Database.SqlPool (SqlPool)
 import Database.StorageTypes
   ( Comment
@@ -26,6 +26,7 @@ import Database.StorageTypes
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
+import Mapping.Typeclass (MapsFrom (mapFrom))
 
 runCommentStorageIO ::
   ( Error StorageError :> es
@@ -39,13 +40,16 @@ runCommentStorageIO filePath =
     . interpret
       ( \_ -> \case
           GetCommentsForConvo convoUrlQ sortMethod ->
-            sortedComments sortMethod
+            map mapFrom
+              <$> sortedComments sortMethod
               <$> findComments filePath (\_ comment -> comment ^. convoUrl == convoUrlQ)
           GetCommentsForUser userNameQ sortMethod -> do
-            sortedComments sortMethod
+            map mapFrom
+              <$> sortedComments sortMethod
               <$> findComments filePath (\_ comment -> comment ^. author == userNameQ)
           GetReplies cID sortMethod -> do
-            sortedComments sortMethod
+            map mapFrom
+              <$> sortedComments sortMethod
               <$> findComments filePath (\otherCID _ -> cID == otherCID)
           InsertComment comment -> do
             storage <- liftIO $ decodeFile filePath
@@ -61,7 +65,7 @@ runCommentStorageIO filePath =
                   & nextID %~ toSqlKey . (+ 1) . fromSqlKey
 
             liftIO $ encodeFile filePath updatedStorage
-            pure (newID, fullComment)
+            pure newID
           EditComment cID f -> do
             storage <- liftIO $ decodeFile filePath
             case storage ^. commentStore & M.lookup cID of
@@ -70,7 +74,7 @@ runCommentStorageIO filePath =
                 let
                   updatedStorage = storage & commentStore %~ M.adjust f cID
                 liftIO $ encodeFile filePath updatedStorage
-                pure comment
+                pure $ mapFrom $ Entity cID comment
           DeleteComment cID -> do
             storage <- liftIO $ decodeFile filePath
             case storage ^. commentStore & M.lookup cID of
@@ -81,14 +85,18 @@ runCommentStorageIO filePath =
                 liftIO $ encodeFile filePath updatedStorage
       )
 
-findComments :: (Error StorageError :> es, IOE :> es) => FilePath -> (CommentId -> Comment -> Bool) -> Eff es [(CommentId, Comment)]
+findComments :: (Error StorageError :> es, IOE :> es) => FilePath -> (CommentId -> Comment -> Bool) -> Eff es [Entity Comment]
 findComments filePath condition = do
   storage <- liftIO (decodeFile filePath)
-  pure $ filter (uncurry condition) $ M.assocs (storage ^. commentStore)
+
+  let
+    allComments = M.assocs (storage ^. commentStore)
+
+  pure $ uncurry Entity <$> filter (uncurry condition) allComments
 
 -- | TODO: Needs revisiting
-sortedComments :: SortBy -> [(CommentId, Comment)] -> [(CommentId, Comment)]
-sortedComments sortMethod = sortBy $ \(_, c1) (_, c2) -> case sortMethod of
+sortedComments :: SortBy -> [Entity Comment] -> [Entity Comment]
+sortedComments sortMethod = sortBy $ \(Entity _ c1) (Entity _ c2) -> case sortMethod of
   Popular -> compare (c1 ^. upvotes) (c2 ^. upvotes)
   Controversial -> compare (c1 ^. downvotes) (c2 ^. downvotes)
   Old -> compare (c1 ^. dateCreated) (c2 ^. dateCreated)

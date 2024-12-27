@@ -32,7 +32,7 @@ import Database.Persist
   ( PersistCore (BackendKey)
   , PersistEntity (Key)
   )
-import Database.Persist.Sql (SqlBackend)
+import Database.Persist.Sql (SqlBackend, toSqlKey)
 import Database.Persist.TH
   ( MkPersistSettings (mpsFieldLabelModifier, mpsGenerateLenses)
   , mkMigrate
@@ -103,14 +103,14 @@ deriveJSON defaultOptions{JSON.fieldLabelModifier = drop 1} ''Comment
 
 data NewComment = NewComment
   { _new_message :: Text
-  , _new_parent :: Maybe (Key Comment)
+  , _new_parent :: Maybe Int64
   , _new_author :: Text
   , _new_convoUrl :: Text
   }
   deriving (Show, Read, Eq, Generic)
 
 makeLenses ''NewComment
-deriveJSON defaultOptions{JSON.fieldLabelModifier = drop 4} ''NewComment
+deriveJSON defaultOptions{JSON.fieldLabelModifier = drop 5} ''NewComment
 
 fromNewComment :: NewComment -> IO Comment
 fromNewComment comment = do
@@ -121,7 +121,7 @@ fromNewComment comment = do
       , _message = comment ^. new_message
       , _upvotes = 0
       , _downvotes = 0
-      , _parent = comment ^. new_parent
+      , _parent = toSqlKey <$> comment ^. new_parent
       , _author = comment ^. new_author
       , _convoUrl = comment ^. new_convoUrl
       }
@@ -131,13 +131,6 @@ deriving instance Generic (Key Conversation)
 deriving instance Generic (Key User)
 
 deriving instance Generic (Key Comment)
-
-instance ToSchema (BackendKey SqlBackend)
-
-instance ToSchema (Key Comment)
-
-instance ToSchema Comment where
-  declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions{Schema.fieldLabelModifier = drop 1}
 
 instance ToSchema NewComment where
   declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions{Schema.fieldLabelModifier = drop 5}
@@ -211,7 +204,7 @@ data PureStorage = PureStorage
   { _convoStore :: Map (Key Conversation) Conversation
   , _userStore :: Map (Key User) User
   -- ^ Key is the Username
-  , _commentStore :: Map CommentId Comment
+  , _commentStore :: Map (Key Comment) Comment
   , _nextID :: CommentId
   }
   deriving (Show, Generic)
