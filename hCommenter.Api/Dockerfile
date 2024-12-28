@@ -33,7 +33,7 @@ FROM scratch
 COPY --from=build-stage /opt/hCommenter/hCommenter-Api /
 
 # Port 80 to support azure app service expectations
-ENV API_PORT=80
-EXPOSE 80
+ENV API_PORT=8080
+EXPOSE 8080
 
 ENTRYPOINT ["/hCommenter-Api"]

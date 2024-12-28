@@ -11,7 +11,7 @@ import Text.Read (readMaybe)
 main :: IO ()
 main = command_
   . toplevel @"hCommenter CLI"
-  . optDef @"p" @"port" "5001"
+  . optDef @"p" @"port" "8080"
   $ \(portOpt :: String) ->
     optDef @"m" @"mode" "binary" $ \(modeOpt :: String) -> do
       raw $ case readMaybe portOpt of
@@ -26,7 +26,8 @@ messageConsoleAndRun :: Int -> Backend -> IO ()
 messageConsoleAndRun port backend = do
   scribe <- getConsoleScribe
 
-  let env = Env backend "hCommenter.Api" "Dev" "Console" scribe
+  let
+    env = Env backend "hCommenter.Api" "Dev" "Console" scribe
 
   case backend of
     SQLite -> initDevSqliteDB backend env
