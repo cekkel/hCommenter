@@ -44,8 +44,8 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # - name: Login to Azure Container Registry
-      #   run: az acr login --name ${{ env.RESOURCE_GROUP }}
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.RESOURCE_GROUP }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
