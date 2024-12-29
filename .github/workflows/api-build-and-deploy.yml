@@ -31,7 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     steps:
+      - name: Checkout branch to deploy
       - uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Azure
         uses: azure/login@v2
@@ -46,9 +50,6 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az acr login --name $RESOURCE_GROUP
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Build and push
         uses: docker/build-push-action@v6
