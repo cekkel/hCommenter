@@ -23,9 +23,8 @@ permissions:
   contents: read
 
 jobs:
-  runs-on: ubuntu-latest
-
   build:
+    runs-on: ubuntu-latest
     environment: dev
     steps:
       - uses: actions/checkout@v3
@@ -47,6 +46,9 @@ jobs:
         run: docker push $CONTAINER_REGISTRY/$API_NAME:$GITHUB_REF
 
   deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: dev
     env:
       APP_ENVIRONMENT: dev-hcommenter
     steps:
