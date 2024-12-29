@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: API - Build and Deploy
 
 env:
   RESOURCE_GROUP: "hcommenter"
