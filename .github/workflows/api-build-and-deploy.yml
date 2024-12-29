@@ -1,0 +1,94 @@
+name: API - Build and Deploy
+
+env:
+  RESOURCE_GROUP: "hcommenter"
+  LOCATION: "australiaeast"
+  API_NAME: "hcommenter-api"
+  FRONTEND_NAME: "hcommenter-ui"
+  GITHUB_USERNAME: "CharlesEkkel"
+  CONTAINER_REGISTRY: hcommenter.azurecr.io
+  IDENTITY: hcommenter-identity
+  TARGET_PORT: 8080
+
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: "Workflow run reason tags"
+  push:
+    branches:
+      - "dev"
+  pull_request:
+    branches:
+      - "dev"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: Build
+    steps:
+      - name: Checkout branch to deploy
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+        # Explicitly log in so that it uses federated credentials, since Docker actions
+        # currently don't seem to support them.
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.RESOURCE_GROUP }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: hCommenter.Api/
+          push: true
+          tags: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # - name: Run tests
+      #   run: cabal test all
+
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      APP_ENVIRONMENT: dev-hcommenter
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.RESOURCE_GROUP }}
+
+      # For this stage to work, the ACR must have admin access enabled in its settings
+      - name: Deploy to Azure Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: $RESOURCE_GROUP
+          imageToDeploy: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
+          resourceGroup: $RESOURCE_GROUP
+          containerAppName: $API_NAME
+          containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
+          targetPort: $TARGET_PORT
+          location: $LOCATION
+
+  #  deploy-production:
+  #    steps:
