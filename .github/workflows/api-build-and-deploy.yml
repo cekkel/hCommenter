@@ -44,8 +44,8 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Login to Azure Container Registry
-        run: az acr login --name $RESOURCE_GROUP
+      # - name: Login to Azure Container Registry
+      #   run: az acr login --name ${{ env.RESOURCE_GROUP }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -74,25 +74,25 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to Azure Container Registry
-        run: az acr login --name $RESOURCE_GROUP
+        run: az acr login --name ${{ env.RESOURCE_GROUP }}
+
+      # - name: Deploy to Azure Container App
+      #   run: |
+      #     az containerapp up \
+      #       --name "${{ env.API_NAME }}" \
+      #       --image "${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}" \
+      #       --environment "${{ env.APP_ENVIRONMENT }}"
 
       - name: Deploy to Azure Container App
-        run: |
-          az containerapp up \
-            --name "${{ env.API_NAME }}" \
-            --image "${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}" \
-            --environment "${{ env.APP_ENVIRONMENT }}"
-
-      #  - name: Deploy to Azure Container App
-      #    uses: azure/container-apps-deploy-action@v1
-      #    with:
-      #      acrName: $RESOURCE_GROUP
-      #      imageToDeploy: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
-      #      resourceGroup: $RESOURCE_GROUP
-      #      containerAppName: $API_NAME
-      #      containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
-      #      targetPort: $TARGET_PORT
-      #      location: $LOCATION
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: $RESOURCE_GROUP
+          imageToDeploy: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
+          resourceGroup: $RESOURCE_GROUP
+          containerAppName: $API_NAME
+          containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
+          targetPort: $TARGET_PORT
+          location: $LOCATION
 
   #  deploy-production:
   #    steps:
