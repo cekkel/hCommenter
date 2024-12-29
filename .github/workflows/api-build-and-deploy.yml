@@ -79,6 +79,7 @@ jobs:
       - name: Deploy to Azure Container App
         uses: azure/container-apps-deploy-action@v1
         with:
+          acrName: $RESOURCE_GROUP
           imageToDeploy: $CONTAINER_REGISTRY/$API_NAME:$GITHUB_REF
           resourceGroup: $RESOURCE_GROUP
           containerAppName: $API_NAME
