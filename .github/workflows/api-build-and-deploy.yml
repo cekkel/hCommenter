@@ -77,10 +77,11 @@ jobs:
         run: az acr login --name $RESOURCE_GROUP
 
       - name: Deploy to Azure Container App
-        run: az containerapp up \
-          --name "${{ env.API_NAME }}" \
-          --image "${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}" \
-          --environment "${{ env.APP_ENVIRONMENT }}"
+        run: |
+          az containerapp up \
+            --name "${{ env.API_NAME }}" \
+            --image "${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}" \
+            --environment "${{ env.APP_ENVIRONMENT }}"
 
       #  - name: Deploy to Azure Container App
       #    uses: azure/container-apps-deploy-action@v1
