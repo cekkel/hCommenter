@@ -80,7 +80,7 @@ jobs:
         uses: azure/container-apps-deploy-action@v1
         with:
           acrName: $RESOURCE_GROUP
-          imageToDeploy: $CONTAINER_REGISTRY/$API_NAME:$GITHUB_REF
+          imageToDeploy: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
           resourceGroup: $RESOURCE_GROUP
           containerAppName: $API_NAME
           containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
