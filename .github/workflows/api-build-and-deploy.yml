@@ -52,7 +52,7 @@ jobs:
         with:
           context: hCommenter.Api/
           push: true
-          tags: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ env.GITHUB_SHA }}
+          tags: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
