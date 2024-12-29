@@ -45,11 +45,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to Azure Container Registry
-        uses: azure/cli@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az acr login --name $RESOURCE_GROUP
+        run: az acr login --name $RESOURCE_GROUP
 
       - name: Build and push
         uses: docker/build-push-action@v6
