@@ -41,13 +41,15 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Build docker image
-        run: docker build . --tag $CONTAINER_REGISTRY/$API_NAME:$GITHUB_REF
+        run: docker build . --tag $CONTAINER_REGISTRY/$API_NAME:$GITHUB_SHA
+        working-directory: hCommenter.Api/
 
       # - name: Run tests
       #   run: cabal test all
 
       - name: Push docker image to registry
-        run: docker push $CONTAINER_REGISTRY/$API_NAME:$GITHUB_REF
+        run: docker push $CONTAINER_REGISTRY/$API_NAME:$GITHUB_SHA
+        working-directory: hCommenter.Api/
 
   deploy-dev:
     needs: build
