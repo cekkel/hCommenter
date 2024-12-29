@@ -29,7 +29,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: Build
     steps:
       - name: Checkout branch to deploy
         uses: actions/checkout@v3
@@ -37,6 +37,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+        # Explicitly log in so that it uses federated credentials, since Docker actions
+        # currently don't seem to support them.
       - name: Log in to Azure
         uses: azure/login@v2
         with:
@@ -66,9 +68,6 @@ jobs:
     env:
       APP_ENVIRONMENT: dev-hcommenter
     steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Log in to Azure
         uses: azure/login@v2
         with:
@@ -79,23 +78,17 @@ jobs:
       - name: Login to Azure Container Registry
         run: az acr login --name ${{ env.RESOURCE_GROUP }}
 
+      # For this stage to work, the ACR must have admin access enabled in its settings
       - name: Deploy to Azure Container App
-        run: |
-          az containerapp up \
-            --name "${{ env.API_NAME }}" \
-            --image "${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}" \
-            --environment "${{ env.APP_ENVIRONMENT }}"
-
-      # - name: Deploy to Azure Container App
-      #   uses: azure/container-apps-deploy-action@v1
-      #   with:
-      #     acrName: $RESOURCE_GROUP
-      #     imageToDeploy: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
-      #     resourceGroup: $RESOURCE_GROUP
-      #     containerAppName: $API_NAME
-      #     containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
-      #     targetPort: $TARGET_PORT
-      #     location: $LOCATION
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: $RESOURCE_GROUP
+          imageToDeploy: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.sha }}
+          resourceGroup: $RESOURCE_GROUP
+          containerAppName: $API_NAME
+          containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
+          targetPort: $TARGET_PORT
+          location: $LOCATION
 
   #  deploy-production:
   #    steps:
