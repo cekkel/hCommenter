@@ -34,22 +34,33 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Log in to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Build docker image
-        run: docker build . --tag $CONTAINER_REGISTRY/$API_NAME:$GITHUB_SHA
-        working-directory: hCommenter.Api/
+      - name: Login to Azure Container Registry
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az acr login --name $RESOURCE_GROUP
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: hCommenter.Api/
+          push: true
+          tags: $CONTAINER_REGISTRY/$API_NAME:$GITHUB_SHA
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # - name: Run tests
       #   run: cabal test all
-
-      - name: Push docker image to registry
-        run: docker push $CONTAINER_REGISTRY/$API_NAME:$GITHUB_SHA
-        working-directory: hCommenter.Api/
 
   deploy-dev:
     needs: build
