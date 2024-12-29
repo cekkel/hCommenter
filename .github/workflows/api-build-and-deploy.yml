@@ -11,6 +11,10 @@ env:
   TARGET_PORT: 8080
 
 on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: "Workflow run reason tags"
   push:
     branches:
       - "dev"
