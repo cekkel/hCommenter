@@ -70,7 +70,7 @@ jobs:
         with:
           context: hCommenter.Api/
           push: true
-          tags: ${{ env.IMAGE_TAG }}
+          tags: ${{ steps.construct_tag.outputs.image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
