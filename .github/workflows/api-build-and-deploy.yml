@@ -34,6 +34,22 @@ jobs:
       - name: Checkout branch to deploy
         uses: actions/checkout@v3
 
+      # Store the branch name for use in tagging the build.
+      - name: Get branch name (merge)
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Get branch name (pull request)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
+
+      # Then store the tag name as a whole for easy re-use.
+      - name: Construct docker image tag
+        shell: bash
+        run: echo "IMAGE_TAG=${CONTAINER_REGISTRY}/${API_NAME}:${BRANCH_NAME}" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -43,7 +59,7 @@ jobs:
         with:
           context: hCommenter.Api/
           push: true
-          tags: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.ref }}
+          tags: ${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -68,7 +84,7 @@ jobs:
       - name: Deploy to Azure Container App
         uses: azure/container-apps-deploy-action@v1
         with:
-          imageToDeploy: ${{ env.CONTAINER_REGISTRY }}/${{ env.API_NAME }}:${{ github.ref }}
+          imageToDeploy: ${{ env.IMAGE_TAG }}
           resourceGroup: $RESOURCE_GROUP
           containerAppName: $API_NAME
           containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
