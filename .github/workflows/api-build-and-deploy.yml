@@ -103,11 +103,11 @@ jobs:
         with:
           registryUrl: ${{ env.REGISTRY }}/${{ env.GITHUB_ORG }}
           imageToDeploy: ${{ needs.build.outputs.image_tag }}
-          resourceGroup: $RESOURCE_GROUP
-          containerAppName: $API_NAME
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          containerAppName: ${{ env.API_NAME }}
           containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
-          targetPort: $TARGET_PORT
-          location: $LOCATION
+          targetPort: ${{ env.TARGET_PORT }}
+          location: ${{ env.LOCATION }}
 
   #  deploy-production:
   #    steps:
