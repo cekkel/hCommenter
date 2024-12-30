@@ -81,6 +81,22 @@ jobs:
     env:
       APP_ENVIRONMENT: dev-hcommenter
     steps:
+      # Store the branch name for use in tagging the build.
+      - name: Get branch name (merge)
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Get branch name (pull request)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
+
+      # Then store the tag name as a whole for easy re-use.
+      - name: Construct docker image tag
+        shell: bash
+        run: echo "IMAGE_TAG=${REGISTRY}/${GITHUB_ORG}/${API_NAME}:${BRANCH_NAME}" >> $GITHUB_ENV
+
       - name: Log in to Azure
         uses: azure/login@v2
         with:
