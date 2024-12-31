@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (initialiseLocalFile, initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
+module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
 
 import ClassyPrelude hiding (Handler)
 import Control.Lens ((^.))
@@ -10,11 +10,8 @@ import Data.Bifoldable (bitraverse_)
 import Data.Either.Extra (mapLeft)
 import Data.Swagger (Swagger)
 import Database.Interface (CommentStorage)
-import Database.LocalStorage (runCommentStorageIO)
 import Database.Mockserver
-  ( fileName
-  , initDevSqliteDB
-  , initialiseLocalFile
+  ( initDevSqliteDB
   )
 import Database.SqlPool (SqlPool)
 import Database.SqlStorage (runCommentStorageSQL)
@@ -49,7 +46,7 @@ import Servant
   )
 import Servant.Swagger (HasSwagger (toSwagger))
 import Server.Comment (CommentsAPI, commentServer)
-import Server.ServerTypes
+import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
 
@@ -93,7 +90,7 @@ effToHandler env m = do
   Handler $ except $ handleServerResponse result
   where
     commentHandler = case env ^. backend of
-      LocalFile -> runCommentStorageIO fileName
+      LocalFile -> error "Mode not supported"
       sqlBackend -> runCommentStorageSQL sqlBackend
 
 runAndLiftError ::

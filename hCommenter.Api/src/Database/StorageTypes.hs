@@ -19,8 +19,6 @@ import Data.Aeson
 import Data.Aeson qualified as JSON
 import Data.Aeson.KeyMap (singleton)
 import Data.Aeson.TH (deriveJSON)
-import Data.Binary (Binary)
-import Data.Binary.Instances.Time ()
 import Data.Swagger
   ( ToParamSchema
   , ToSchema (declareNamedSchema)
@@ -149,20 +147,6 @@ instance ToObject [Comment]
 instance LogItem [Comment] where
   payloadKeys _ _ = AllKeys
 
-instance Binary (BackendKey SqlBackend)
-
-instance Binary (Key Conversation)
-
-instance Binary (Key User)
-
-instance Binary (Key Comment)
-
-instance Binary Comment
-
-instance Binary Conversation
-
-instance Binary User
-
 data SortBy = Old | New | Popular | Controversial
   deriving (Eq, Ord, Show, Read, Generic)
 
@@ -208,7 +192,5 @@ data PureStorage = PureStorage
   , _nextID :: CommentId
   }
   deriving (Show, Generic)
-
-instance Binary PureStorage
 
 makeLenses ''PureStorage

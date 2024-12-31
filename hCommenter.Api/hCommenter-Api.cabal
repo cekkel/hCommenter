@@ -70,8 +70,8 @@ library
         Middleware.Requests
         Database.Interface
         Database.Mockserver
-        Database.StorageTypes
         Database.LocalStorage
+        Database.StorageTypes
         Database.SqlStorage
         Database.SqlPool
         Mapping.Typeclass
@@ -104,8 +104,6 @@ library
         monad-logger,
         katip,
         aeson,
-        binary,
-        binary-instances,
         persistent,
         persistent-sqlite,
         resource-pool

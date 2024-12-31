@@ -2,7 +2,6 @@ module Database.Mockserver where
 
 import ClassyPrelude
 import Control.Lens ((^.))
-import Data.Binary (encodeFile)
 import Data.Map qualified as M
 import Database.Persist (Filter)
 import Database.Persist.Sql
@@ -42,16 +41,6 @@ mkMockComments = do
           ]
       )
       (toSqlKey 4)
-
-fileName :: FilePath
-fileName = "localStorage.txt"
-
-initialiseLocalFile :: IO ()
-initialiseLocalFile = do
-  exists <- doesFileExist fileName
-  unless exists $ do
-    mockComments <- mkMockComments
-    encodeFile fileName mockComments
 
 initDevSqliteDB :: Backend -> Env -> IO ()
 initDevSqliteDB backend env = do
