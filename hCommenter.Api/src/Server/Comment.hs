@@ -1,7 +1,6 @@
 module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
 import ClassyPrelude hiding (Handler, log, sortBy)
-import Control.Lens ((.~), (^.))
 import Data.Aeson (object, (.=))
 import Database.Interface qualified as DB
 import Database.Persist.Sql (fromSqlKey)
@@ -10,9 +9,6 @@ import Database.StorageTypes
   , CommentId
   , NewComment
   , SortBy (..)
-  , message
-  , new_convoUrl
-  , new_parent
   )
 import Effectful qualified as E
 import Effectful.Error.Static (Error)
@@ -24,6 +20,7 @@ import Logging
   , logInfo
   )
 import Mapping.ExternalTypes (ViewComment)
+import Optics
 import Servant
   ( Capture
   , Description
@@ -141,8 +138,8 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
       addLogNamespace "NewComment"
         . addLogContext
           ( object
-              [ "ConvoUrl" .= (comment ^. new_convoUrl)
-              , "ParentId" .= (comment ^. new_parent)
+              [ "ConvoUrl" .= (comment ^. #convoUrl)
+              , "ParentId" .= (comment ^. #parent)
               ]
           )
         $ do
@@ -158,7 +155,7 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
         do
           logInfo $ "Editing comment with ID: " <> showLS cID
 
-          updatedComment <- DB.editComment cID (message .~ commentText)
+          updatedComment <- DB.editComment cID (#message .~ commentText)
 
           logInfo "Comment updated successfully"
           pure updatedComment

@@ -1,8 +1,6 @@
 module Database.Mockserver where
 
 import ClassyPrelude
-import Control.Lens ((^.))
-import Data.Binary (encodeFile)
 import Data.Map qualified as M
 import Database.Persist (Filter)
 import Database.Persist.Sql
@@ -14,8 +12,8 @@ import Database.SqlPool (runSqlPool, withConn)
 import Database.StorageTypes
 import Effectful (runEff)
 import Logging (runLog)
+import Optics
 import Server.ServerTypes (Backend, Env)
-import System.Directory.Extra (doesFileExist)
 
 mkMockComments :: IO PureStorage
 mkMockComments = do
@@ -43,16 +41,6 @@ mkMockComments = do
       )
       (toSqlKey 4)
 
-fileName :: FilePath
-fileName = "localStorage.txt"
-
-initialiseLocalFile :: IO ()
-initialiseLocalFile = do
-  exists <- doesFileExist fileName
-  unless exists $ do
-    mockComments <- mkMockComments
-    encodeFile fileName mockComments
-
 initDevSqliteDB :: Backend -> Env -> IO ()
 initDevSqliteDB backend env = do
   mockComments <- mkMockComments
@@ -63,6 +51,6 @@ initDevSqliteDB backend env = do
     deleteWhere ([] :: [Filter Conversation])
     deleteWhere ([] :: [Filter User])
 
-    insertMany_ $ map snd $ M.toList $ mockComments ^. convoStore
-    insertMany_ $ map snd $ M.toList $ mockComments ^. userStore
-    insertMany_ $ map snd $ M.toList $ mockComments ^. commentStore
+    insertMany_ $ map snd $ M.toList $ mockComments ^. #convoStore
+    insertMany_ $ map snd $ M.toList $ mockComments ^. #userStore
+    insertMany_ $ map snd $ M.toList $ mockComments ^. #commentStore

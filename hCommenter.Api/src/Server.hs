@@ -1,20 +1,16 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (initialiseLocalFile, initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
+module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
 
 import ClassyPrelude hiding (Handler)
-import Control.Lens ((^.))
 import Control.Monad.Trans.Except (except)
 import Data.Aeson qualified as JSON
 import Data.Bifoldable (bitraverse_)
 import Data.Either.Extra (mapLeft)
 import Data.Swagger (Swagger)
 import Database.Interface (CommentStorage)
-import Database.LocalStorage (runCommentStorageIO)
 import Database.Mockserver
-  ( fileName
-  , initDevSqliteDB
-  , initialiseLocalFile
+  ( initDevSqliteDB
   )
 import Database.SqlPool (SqlPool)
 import Database.SqlStorage (runCommentStorageSQL)
@@ -35,6 +31,7 @@ import Logging
   , runLog
   )
 import Middleware.Requests (addRequestLogging)
+import Optics
 import Servant
   ( Application
   , Handler (Handler)
@@ -49,11 +46,12 @@ import Servant
   )
 import Servant.Swagger (HasSwagger (toSwagger))
 import Server.Comment (CommentsAPI, commentServer)
-import Server.ServerTypes
+import Server.Health (HealthAPI, healthServer)
+import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
 
-type FunctionalAPI = CommentsAPI :<|> VotingAPI
+type FunctionalAPI = HealthAPI :<|> CommentsAPI :<|> VotingAPI
 
 type API = SwaggerAPI :<|> FunctionalAPI
 
@@ -63,7 +61,7 @@ swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
 serverAPI :: Env -> Server API
 serverAPI env = do
   hoistServer fullAPI (effToHandler env) $
-    swaggerServer :<|> commentServer :<|> votingServer
+    swaggerServer :<|> healthServer :<|> commentServer :<|> votingServer
 
 functionalAPI :: Proxy FunctionalAPI
 functionalAPI = Proxy
@@ -93,7 +91,7 @@ effToHandler env m = do
   Handler $ except $ handleServerResponse result
   where
     commentHandler = case env ^. backend of
-      LocalFile -> runCommentStorageIO fileName
+      LocalFile -> error "Mode not supported"
       sqlBackend -> runCommentStorageSQL sqlBackend
 
 runAndLiftError ::

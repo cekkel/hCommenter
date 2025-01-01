@@ -1,10 +1,9 @@
 module Server.Voting (VotingAPI, votingServer) where
 
 import ClassyPrelude
-import Control.Lens ((+~))
 import Data.Aeson (object, (.=))
 import Database.Interface (CommentStorage, editComment)
-import Database.StorageTypes (CommentId, downvotes, upvotes)
+import Database.StorageTypes (Comment, Key)
 import Effectful qualified as E
 import Logging
   ( Log
@@ -12,6 +11,7 @@ import Logging
   , addLogNamespace
   , logInfo
   )
+import Optics
 import Servant
   ( Capture
   , Description
@@ -25,7 +25,7 @@ import Servant
 -- | Easy to abuse, needs authentication added later
 type VotingAPI =
   "comments"
-    :> Capture "id" CommentId
+    :> Capture "id" (Key Comment)
     :> ( "upvote" :> Description "Upvote a comment" :> PostNoContent
           :<|> "downvote" :> Description "Downvote a comment" :> PostNoContent
        )
@@ -35,10 +35,10 @@ votingServer ::
   , Log E.:> es
   ) =>
   ServerT VotingAPI (E.Eff es)
-votingServer cID = vote "UpvoteComment" upvotes :<|> vote "DownvoteComment" downvotes
+votingServer cID = vote "UpvoteComment" #upvotes :<|> vote "DownvoteComment" #downvotes
   where
     vote namespace voteBox = addLogNamespace namespace . addLogContext (object ["CommentID" .= cID]) $ do
       logInfo "Incrementing vote box"
-      _ <- editComment cID (voteBox +~ 1)
+      _ <- editComment cID (voteBox %~ (+ 1))
       logInfo "Vote box incremented successfully"
       pure NoContent

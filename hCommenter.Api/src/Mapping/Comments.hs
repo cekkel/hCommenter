@@ -1,21 +1,21 @@
 module Mapping.Comments where
 
 import ClassyPrelude
-import Control.Lens ((^.))
-import Database.Persist.Sql (Key, fromSqlKey)
-import Database.StorageTypes qualified as S
+import Database.Persist.Sql (fromSqlKey)
+import Database.StorageTypes
 import Mapping.ExternalTypes (ViewComment (..))
+import Optics
 
-storageToViewComment :: Key S.Comment -> S.Comment -> ViewComment
+storageToViewComment :: Key Comment -> Comment -> ViewComment
 storageToViewComment commentId comment =
   ViewComment
     { _id = fromSqlKey commentId
-    , _created = comment ^. S.dateCreated
-    , _message = comment ^. S.message
-    , _score = calculateScore (comment ^. S.upvotes) (comment ^. S.downvotes)
+    , _created = comment ^. #dateCreated
+    , _message = comment ^. #message
+    , _score = calculateScore (comment ^. #upvotes) (comment ^. #downvotes)
     , _children = []
-    , _authorName = comment ^. S.author
-    , _conversationUrl = comment ^. S.convoUrl
+    , _authorName = comment ^. #author
+    , _conversationUrl = comment ^. #convoUrl
     }
 
 calculateScore :: Int -> Int -> Int

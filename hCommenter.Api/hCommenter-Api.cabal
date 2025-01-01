@@ -65,13 +65,14 @@ library
         Logging
         Server.Voting
         Server.Comment
+        Server.Health
         Server.ServerTypes
         Server.Swagger
         Middleware.Requests
         Database.Interface
         Database.Mockserver
-        Database.StorageTypes
         Database.LocalStorage
+        Database.StorageTypes
         Database.SqlStorage
         Database.SqlPool
         Mapping.Typeclass
@@ -91,7 +92,7 @@ library
         swagger2,
         wai,
         http-types,
-        lens,
+        optics,
         bytestring,
         aeson,
         aeson-pretty,
@@ -104,8 +105,6 @@ library
         monad-logger,
         katip,
         aeson,
-        binary,
-        binary-instances,
         persistent,
         persistent-sqlite,
         resource-pool
@@ -121,10 +120,11 @@ library
     default-extensions:
         NoImplicitPrelude,
         OverloadedStrings,
-        DataKinds,
-        ExplicitNamespaces,
-        LambdaCase,
         TypeFamilies,
+        NoMonomorphismRestriction,
+        AllowAmbiguousTypes,
+        DuplicateRecordFields,
+        OverloadedLabels,
 
 executable hCommenter-Api
     -- Import common warning flags.
