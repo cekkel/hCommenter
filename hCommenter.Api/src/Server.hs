@@ -3,7 +3,6 @@
 module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
 
 import ClassyPrelude hiding (Handler)
-import Control.Lens ((^.))
 import Control.Monad.Trans.Except (except)
 import Data.Aeson qualified as JSON
 import Data.Bifoldable (bitraverse_)
@@ -32,6 +31,7 @@ import Logging
   , runLog
   )
 import Middleware.Requests (addRequestLogging)
+import Optics
 import Servant
   ( Application
   , Handler (Handler)

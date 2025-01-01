@@ -3,7 +3,6 @@
 module Database.SqlStorage (runCommentStorageSQL) where
 
 import ClassyPrelude hiding (Reader)
-import Control.Lens ((^.))
 import Database.Interface (CommentStorage (..))
 import Database.Persist
   ( Entity (Entity)
@@ -21,16 +20,14 @@ import Database.StorageTypes
   , EntityField (..)
   , SortBy (..)
   , StorageError (..)
-  , downvotes
   , fromNewComment
-  , message
-  , upvotes
   )
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
 import Logging (Log)
 import Mapping.Typeclass (MapsFrom (mapFrom))
+import Optics
 import Server.ServerTypes (Backend)
 
 runCommentStorageSQL ::
@@ -67,9 +64,9 @@ runCommentStorageSQL backend =
                     upComment = f val
                   update
                     cID
-                    [ CommentMessage =. (upComment ^. message)
-                    , CommentUpvotes =. (upComment ^. upvotes)
-                    , CommentDownvotes =. (upComment ^. downvotes)
+                    [ CommentMessage =. (upComment ^. #message)
+                    , CommentUpvotes =. (upComment ^. #upvotes)
+                    , CommentDownvotes =. (upComment ^. #downvotes)
                     ]
                   pure $ mapFrom (Entity cID upComment)
             DeleteComment cID -> P.delete cID

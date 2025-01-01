@@ -91,7 +91,7 @@ library
         swagger2,
         wai,
         http-types,
-        lens,
+        optics,
         bytestring,
         aeson,
         aeson-pretty,
@@ -119,10 +119,11 @@ library
     default-extensions:
         NoImplicitPrelude,
         OverloadedStrings,
-        DataKinds,
-        ExplicitNamespaces,
-        LambdaCase,
         TypeFamilies,
+        NoMonomorphismRestriction,
+        AllowAmbiguousTypes,
+        DuplicateRecordFields,
+        OverloadedLabels,
 
 executable hCommenter-Api
     -- Import common warning flags.

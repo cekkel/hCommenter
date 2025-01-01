@@ -3,9 +3,9 @@
 module Mapping.ExternalTypes where
 
 import ClassyPrelude
-import Control.Lens (makeLenses)
 import Data.Aeson (ToJSON)
 import Data.Swagger (ToSchema)
+import Optics
 
 data ViewComment = ViewComment
   { _id :: Int64

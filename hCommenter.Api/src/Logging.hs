@@ -5,7 +5,6 @@
 module Logging where
 
 import ClassyPrelude hiding (log, singleton)
-import Control.Lens (makeLenses, view, (%~), (^.))
 import Control.Monad.Logger
   ( Loc
   , LogLevel (..)
@@ -32,6 +31,7 @@ import Effectful.Dispatch.Static
   , unsafeEff_
   )
 import Katip
+import Optics
 import Server.ServerTypes
   ( Env
   , appName

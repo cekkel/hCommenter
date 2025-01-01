@@ -9,14 +9,12 @@
 module Database.StorageTypes where
 
 import ClassyPrelude hiding (Handler, singleton, sortBy)
-import Control.Lens (makeLenses, (^.))
 import Data.Aeson
   ( FromJSON
   , Object
   , ToJSON (toJSON)
   , defaultOptions
   )
-import Data.Aeson qualified as JSON
 import Data.Aeson.KeyMap (singleton)
 import Data.Aeson.TH (deriveJSON)
 import Data.Swagger
@@ -25,14 +23,13 @@ import Data.Swagger
   , defaultSchemaOptions
   , genericDeclareNamedSchema
   )
-import Data.Swagger.Schema qualified as Schema
 import Database.Persist
   ( PersistCore (BackendKey)
   , PersistEntity (Key)
   )
 import Database.Persist.Sql (SqlBackend, toSqlKey)
 import Database.Persist.TH
-  ( MkPersistSettings (mpsFieldLabelModifier, mpsGenerateLenses)
+  ( MkPersistSettings (mpsFieldLabelModifier)
   , mkMigrate
   , mkPersist
   , persistLowerCase
@@ -45,6 +42,7 @@ import Katip
   , ToObject (toObject)
   , Verbosity
   )
+import Optics
 import Servant (FromHttpApiData (parseQueryParam))
 
 data StorageError
@@ -59,8 +57,7 @@ data StorageError
 share
   [ mkPersist
       sqlSettings
-        { mpsGenerateLenses = True
-        , mpsFieldLabelModifier = \_ field -> field
+        { mpsFieldLabelModifier = \_ field -> field
         }
   , mkMigrate "migrateAll"
   ]
@@ -96,32 +93,32 @@ Comment
   deriving Show Read Eq Generic
 |]
 
--- Ignore leading underscore that's introduced for lens.
-deriveJSON defaultOptions{JSON.fieldLabelModifier = drop 1} ''Comment
+makeFieldLabelsNoPrefix ''Comment
+deriveJSON defaultOptions ''Comment
 
 data NewComment = NewComment
-  { _new_message :: Text
-  , _new_parent :: Maybe Int64
-  , _new_author :: Text
-  , _new_convoUrl :: Text
+  { message :: Text
+  , parent :: Maybe Int64
+  , author :: Text
+  , convoUrl :: Text
   }
   deriving (Show, Read, Eq, Generic)
 
-makeLenses ''NewComment
-deriveJSON defaultOptions{JSON.fieldLabelModifier = drop 5} ''NewComment
+makeFieldLabelsNoPrefix ''NewComment
+deriveJSON defaultOptions ''NewComment
 
 fromNewComment :: NewComment -> IO Comment
 fromNewComment comment = do
   currTime <- getCurrentTime
   pure $
     Comment
-      { _dateCreated = currTime
-      , _message = comment ^. new_message
-      , _upvotes = 0
-      , _downvotes = 0
-      , _parent = toSqlKey <$> comment ^. new_parent
-      , _author = comment ^. new_author
-      , _convoUrl = comment ^. new_convoUrl
+      { dateCreated = currTime
+      , message = comment ^. #message
+      , upvotes = 0
+      , downvotes = 0
+      , parent = toSqlKey <$> comment ^. #parent
+      , author = comment ^. #author
+      , convoUrl = comment ^. #convoUrl
       }
 
 deriving instance Generic (Key Conversation)
@@ -131,7 +128,7 @@ deriving instance Generic (Key User)
 deriving instance Generic (Key Comment)
 
 instance ToSchema NewComment where
-  declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions{Schema.fieldLabelModifier = drop 5}
+  declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions
 
 instance FromHttpApiData NewComment where
   parseQueryParam :: Text -> Either Text NewComment
@@ -185,12 +182,12 @@ mkComment username convoUrl msg = do
   pure $ Comment currTime msg 0 0 Nothing username convoUrl
 
 data PureStorage = PureStorage
-  { _convoStore :: Map (Key Conversation) Conversation
-  , _userStore :: Map (Key User) User
+  { convoStore :: Map (Key Conversation) Conversation
+  , userStore :: Map (Key User) User
   -- ^ Key is the Username
-  , _commentStore :: Map (Key Comment) Comment
-  , _nextID :: CommentId
+  , commentStore :: Map (Key Comment) Comment
+  , nextID :: CommentId
   }
   deriving (Show, Generic)
 
-makeLenses ''PureStorage
+makeFieldLabelsNoPrefix ''PureStorage
