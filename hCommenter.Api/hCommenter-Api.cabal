@@ -65,6 +65,7 @@ library
         Logging
         Server.Voting
         Server.Comment
+        Server.Health
         Server.ServerTypes
         Server.Swagger
         Middleware.Requests

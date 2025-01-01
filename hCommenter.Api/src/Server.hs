@@ -46,11 +46,12 @@ import Servant
   )
 import Servant.Swagger (HasSwagger (toSwagger))
 import Server.Comment (CommentsAPI, commentServer)
+import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
 
-type FunctionalAPI = CommentsAPI :<|> VotingAPI
+type FunctionalAPI = HealthAPI :<|> CommentsAPI :<|> VotingAPI
 
 type API = SwaggerAPI :<|> FunctionalAPI
 
@@ -60,7 +61,7 @@ swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
 serverAPI :: Env -> Server API
 serverAPI env = do
   hoistServer fullAPI (effToHandler env) $
-    swaggerServer :<|> commentServer :<|> votingServer
+    swaggerServer :<|> healthServer :<|> commentServer :<|> votingServer
 
 functionalAPI :: Proxy FunctionalAPI
 functionalAPI = Proxy
