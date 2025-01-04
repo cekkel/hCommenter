@@ -3,7 +3,7 @@ module Server.Health (healthServer, HealthAPI) where
 import ClassyPrelude
 import Effectful qualified as E
 import Effectful.Error.Static (Error)
-import Logging (Log, logInfo)
+import Logging.LogEffect (Log, logInfo)
 import Servant
   ( Description
   , GetNoContent

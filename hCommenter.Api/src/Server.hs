@@ -15,7 +15,8 @@ import Database.Mockserver
 import Database.SqlPool (SqlPool)
 import Database.SqlStorage (runCommentStorageSQL)
 import Database.StorageTypes
-import Effectful (Eff, IOE, runEff, (:>))
+import Effectful (Eff, IOE, runEff)
+import Effectful qualified as E
 import Effectful.Error.Static
   ( CallStack
   , Error
@@ -23,13 +24,14 @@ import Effectful.Error.Static
   , runError
   )
 import Katip (showLS)
-import Logging
+import Logging.LogEffect
   ( Log
   , getConsoleScribe
   , logError
   , logExceptions
   , runLog
   )
+import Middleware.Headers (Enriched, enrichApiWithHeaders)
 import Middleware.Requests (addRequestLogging)
 import Optics
 import Servant
@@ -51,9 +53,9 @@ import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorRespon
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
 
-type FunctionalAPI = HealthAPI :<|> CommentsAPI :<|> VotingAPI
+type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
 
-type API = SwaggerAPI :<|> FunctionalAPI
+type API = SwaggerAPI :<|> Enriched FunctionalAPI
 
 swaggerServer :: Eff es Swagger
 swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
@@ -61,7 +63,7 @@ swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
 serverAPI :: Env -> Server API
 serverAPI env = do
   hoistServer fullAPI (effToHandler env) $
-    swaggerServer :<|> healthServer :<|> commentServer :<|> votingServer
+    swaggerServer :<|> enrichApiWithHeaders functionalAPI (healthServer :<|> commentServer :<|> votingServer)
 
 functionalAPI :: Proxy FunctionalAPI
 functionalAPI = Proxy
@@ -100,7 +102,7 @@ runAndLiftError ::
   Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
-logExplicitErrors :: (Show e, Log :> es) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
+logExplicitErrors :: (Show e, Log E.:> es) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
 logExplicitErrors currEff = do
   value <- currEff
   bitraverse_ handleLeft pure value

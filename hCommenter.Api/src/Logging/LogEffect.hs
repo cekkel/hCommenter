@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Logging where
+module Logging.LogEffect where
 
 import ClassyPrelude hiding (log, singleton)
 import Control.Monad.Logger
@@ -13,7 +13,7 @@ import Control.Monad.Logger
   , fromLogStr
   , toLogStr
   )
-import Data.Aeson (Object, Value)
+import Data.Aeson (Object, Value, object)
 import Effectful
   ( Dispatch (Static)
   , DispatchOf
@@ -31,6 +31,7 @@ import Effectful.Dispatch.Static
   , unsafeEff_
   )
 import Katip
+import Logging.LogContext (LogField, logFieldToObjectPair)
 import Optics
 import Server.ServerTypes
   ( Env
@@ -113,8 +114,10 @@ logExceptions action = action `catchAny` \e -> logErr e >> throwIO e
 addLogNamespace :: (Log :> es) => Namespace -> Eff es a -> Eff es a
 addLogNamespace ns = localKatipNamespace' (<> ns)
 
-addLogContext :: (Log :> es, LogItem i) => i -> Eff es a -> Eff es a
-addLogContext item = localKatipContext' (<> liftPayload item)
+addLogContext :: forall es a. (Log :> es) => [LogField] -> Eff es a -> Eff es a
+addLogContext fields = localKatipContext' (<> liftPayload context)
+  where
+    context = object $ logFieldToObjectPair <$> fields
 
 instance LogItem Object where
   payloadKeys _ _ = AllKeys

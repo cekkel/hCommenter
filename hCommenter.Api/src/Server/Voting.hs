@@ -1,11 +1,12 @@
 module Server.Voting (VotingAPI, votingServer) where
 
 import ClassyPrelude
-import Data.Aeson (object, (.=))
 import Database.Interface (CommentStorage, editComment)
+import Database.Persist.Sql (fromSqlKey)
 import Database.StorageTypes (Comment, Key)
 import Effectful qualified as E
-import Logging
+import Logging.LogContext (LogField (CommentId))
+import Logging.LogEffect
   ( Log
   , addLogContext
   , addLogNamespace
@@ -37,8 +38,9 @@ votingServer ::
   ServerT VotingAPI (E.Eff es)
 votingServer cID = vote "UpvoteComment" #upvotes :<|> vote "DownvoteComment" #downvotes
   where
-    vote namespace voteBox = addLogNamespace namespace . addLogContext (object ["CommentID" .= cID]) $ do
-      logInfo "Incrementing vote box"
-      _ <- editComment cID (voteBox %~ (+ 1))
-      logInfo "Vote box incremented successfully"
-      pure NoContent
+    vote namespace voteBox =
+      addLogNamespace namespace . addLogContext [CommentId (Just $ fromSqlKey cID)] $ do
+        logInfo "Incrementing vote box"
+        _ <- editComment cID (voteBox %~ (+ 1))
+        logInfo "Vote box incremented successfully"
+        pure NoContent

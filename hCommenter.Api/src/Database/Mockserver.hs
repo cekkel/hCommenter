@@ -11,7 +11,7 @@ import Database.Persist.Sql
 import Database.SqlPool (runSqlPool, withConn)
 import Database.StorageTypes
 import Effectful (runEff)
-import Logging (runLog)
+import Logging.LogEffect (runLog)
 import Optics
 import Server.ServerTypes (Backend, Env)
 

@@ -1,19 +1,18 @@
 module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
 import ClassyPrelude hiding (Handler, log, sortBy)
-import Data.Aeson (object, (.=))
 import Database.Interface qualified as DB
-import Database.Persist.Sql (fromSqlKey)
+import Database.Persist.Sql (PersistEntity (Key), fromSqlKey)
 import Database.StorageTypes
   ( Comment
-  , CommentId
   , NewComment
   , SortBy (..)
   )
 import Effectful qualified as E
 import Effectful.Error.Static (Error)
 import Katip (showLS)
-import Logging
+import Logging.LogContext (LogField (ConvoUrl, ParentId, Username))
+import Logging.LogEffect
   ( Log
   , addLogContext
   , addLogNamespace
@@ -53,7 +52,7 @@ type CommentsAPI =
                   :> Get '[JSON] [ViewComment]
                )
           :<|> ( Description "Get all replies for a particular comment"
-                  :> Capture "id" CommentId
+                  :> Capture "id" (Key Comment)
                   :> "replies"
                   :> QueryParam "sortby" SortBy
                   :> Get '[JSON] [ViewComment]
@@ -65,13 +64,13 @@ type CommentsAPI =
                )
           :<|> ( Description "Edit an existing comment"
                   :> "edit"
-                  :> Capture "id" CommentId
+                  :> Capture "id" (Key Comment)
                   :> ReqBody '[JSON] Text
                   :> Post '[JSON] ViewComment
                )
           :<|> ( Description "Delete a comment"
                   :> "delete"
-                  :> Capture "id" CommentId
+                  :> Capture "id" (Key Comment)
                   :> PostNoContent
                )
        )
@@ -86,7 +85,7 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
   where
     getConvoComments convoUrl mSort =
       addLogNamespace "GetConvoComments"
-        . addLogContext (object ["ConvoURL" .= convoUrl])
+        . addLogContext [ConvoUrl convoUrl]
         $ do
           sortBy <- case mSort of
             Nothing -> do
@@ -103,7 +102,7 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
 
     getUserComments username mSort =
       addLogNamespace "GetUserComments"
-        . addLogContext (object ["Username" .= username])
+        . addLogContext [Username username]
         $ do
           sortBy <- case mSort of
             Nothing -> do
@@ -137,11 +136,9 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
     insertComment comment =
       addLogNamespace "NewComment"
         . addLogContext
-          ( object
-              [ "ConvoUrl" .= (comment ^. #convoUrl)
-              , "ParentId" .= (comment ^. #parent)
-              ]
-          )
+          [ ConvoUrl (comment ^. #convoUrl)
+          , ParentId (comment ^. #parent)
+          ]
         $ do
           logInfo "Creating new comment"
 

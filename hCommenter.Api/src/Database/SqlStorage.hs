@@ -25,7 +25,7 @@ import Database.StorageTypes
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
-import Logging (Log)
+import Logging.LogEffect (Log)
 import Mapping.Typeclass (MapsFrom (mapFrom))
 import Optics
 import Server.ServerTypes (Backend)

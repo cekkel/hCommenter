@@ -22,7 +22,7 @@ import Effectful
 import Effectful.Dispatch.Dynamic (localSeqUnliftIO, reinterpret)
 import Effectful.Reader.Static (Reader, ask, runReader)
 import Effectful.TH (makeEffect)
-import Logging (Log, askForMonadLoggerIO)
+import Logging.LogEffect (Log, askForMonadLoggerIO)
 import Server.ServerTypes (Backend (LocalFile, SQLite, ToBeDeterminedProd))
 
 data SqlPool :: Effect where

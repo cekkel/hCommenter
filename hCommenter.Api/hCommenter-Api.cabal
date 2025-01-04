@@ -62,13 +62,15 @@ library
 
     -- Modules included in this library but not exported.
     other-modules:
-        Logging
+        Logging.LogEffect
+        Logging.LogContext
         Server.Voting
         Server.Comment
         Server.Health
         Server.ServerTypes
         Server.Swagger
         Middleware.Requests
+        Middleware.Headers
         Database.Interface
         Database.Mockserver
         Database.LocalStorage

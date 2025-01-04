@@ -3,10 +3,12 @@ module Middleware.Requests where
 import ClassyPrelude
 import Effectful (runEff)
 import Katip (logStr)
-import Logging (logInfo, runLog)
+import Logging.LogContext (LogField (CorrelationID))
+import Logging.LogEffect (addLogContext, logInfo, runLog)
+import Middleware.Headers (correlationIDHeaderName)
 import Network.HTTP.Types (Status (statusMessage))
 import Network.Wai
-  ( Request (rawPathInfo, requestMethod)
+  ( Request (rawPathInfo, requestHeaders, requestMethod)
   , Response
   , responseStatus
   )
@@ -15,21 +17,29 @@ import Server.ServerTypes (Env)
 
 addRequestLogging :: Env -> Application -> Application
 addRequestLogging env baseApp req responseF = do
-  logRequest env req
-  liftIO $ baseApp req (responseF <=< logResponse env)
+  let
+    headers = requestHeaders req
+    maybeCorrelationId = decodeUtf8 . snd <$> find (\(name, _) -> name == correlationIDHeaderName) headers
+    correlationId = fromMaybe "No CorrelationID" maybeCorrelationId
 
-logRequest :: Env -> Request -> IO ()
-logRequest env req = runEff . runLog env $ do
-  logInfo . logStr . mconcat $
-    [ requestMethod req
-    , " "
-    , rawPathInfo req
-    ]
+  logRequest env correlationId req
+  liftIO $ baseApp req (responseF <=< logResponse env correlationId)
 
-logResponse :: Env -> Response -> IO Response
-logResponse env response = runEff $ runLog env $ do
-  logInfo . logStr . mconcat $
-    [ "Responded: "
-    , (statusMessage $ responseStatus response)
-    ]
-  pure response
+-- TODO: use more efficient logging here.
+logRequest :: Env -> Text -> Request -> IO ()
+logRequest env correlationId req = runEff . runLog env $
+  addLogContext [CorrelationID correlationId] $ do
+    logInfo . logStr . mconcat $
+      [ requestMethod req
+      , " "
+      , rawPathInfo req
+      ]
+
+logResponse :: Env -> Text -> Response -> IO Response
+logResponse env correlationId response = runEff . runLog env $
+  addLogContext [CorrelationID correlationId] $ do
+    logInfo . logStr . mconcat $
+      [ "Responded: "
+      , (statusMessage $ responseStatus response)
+      ]
+    pure response
