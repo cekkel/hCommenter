@@ -19,14 +19,17 @@ addRequestLogging env baseApp req responseF = do
   liftIO $ baseApp req (responseF <=< logResponse env)
 
 logRequest :: Env -> Request -> IO ()
-logRequest env req =
-  (runEff . runLog env) $
-    (logInfo . logStr . mconcat)
-      [ requestMethod req
-      , rawPathInfo req
-      ]
+logRequest env req = runEff . runLog env $ do
+  logInfo . logStr . mconcat $
+    [ requestMethod req
+    , " "
+    , rawPathInfo req
+    ]
 
 logResponse :: Env -> Response -> IO Response
 logResponse env response = runEff $ runLog env $ do
-  logInfo $ logStr $ statusMessage $ responseStatus response
+  logInfo . logStr . mconcat $
+    [ "Responded: "
+    , (statusMessage $ responseStatus response)
+    ]
   pure response
