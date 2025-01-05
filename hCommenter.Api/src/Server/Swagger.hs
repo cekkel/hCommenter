@@ -1,6 +1,5 @@
 module Server.Swagger where
 
-import ClassyPrelude
 import Data.Function ((&))
 import Data.Swagger
   ( Swagger

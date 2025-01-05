@@ -10,8 +10,7 @@ module Database.StorageTypes where
 
 import ClassyPrelude hiding (Handler, singleton, sortBy)
 import Data.Aeson
-  ( FromJSON
-  , Object
+  ( Object
   , ToJSON (toJSON)
   , defaultOptions
   )
@@ -136,20 +135,10 @@ instance FromHttpApiData NewComment where
 
 instance ToObject Comment
 
-instance LogItem Comment where
-  payloadKeys _ _ = AllKeys
-
-instance ToObject [Comment]
-
-instance LogItem [Comment] where
-  payloadKeys _ _ = AllKeys
-
 data SortBy = Old | New | Popular | Controversial
   deriving (Eq, Ord, Show, Read, Generic)
 
-instance ToJSON SortBy
-
-instance FromJSON SortBy
+deriveJSON defaultOptions ''SortBy
 
 instance ToObject SortBy where
   toObject :: SortBy -> Object

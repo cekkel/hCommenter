@@ -10,4 +10,5 @@ class MapsFrom a b where
   mapFrom :: a -> b
 
 instance MapsFrom (Entity Comment) ViewComment where
+  mapFrom :: Entity Comment -> ViewComment
   mapFrom (Entity key comment) = storageToViewComment key comment

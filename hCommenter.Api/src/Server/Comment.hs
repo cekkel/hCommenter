@@ -39,22 +39,20 @@ import Server.ServerTypes (InputError)
 
 type CommentsAPI =
   "comments"
+    :> QueryParam "sortby" SortBy
     :> ( ( Description "Get all comments for a particular conversation (page)"
             :> "conversation"
             :> Capture "convoUrl" Text
-            :> QueryParam "sortby" SortBy
             :> Get '[JSON] [ViewComment]
          )
           :<|> ( Description "Get all comments for a particular user"
                   :> "user"
                   :> Capture "username" Text
-                  :> QueryParam "sortby" SortBy
                   :> Get '[JSON] [ViewComment]
                )
           :<|> ( Description "Get all replies for a particular comment"
                   :> Capture "id" (Key Comment)
                   :> "replies"
-                  :> QueryParam "sortby" SortBy
                   :> Get '[JSON] [ViewComment]
                )
           :<|> ( Description "Create a new comment and get new ID"
@@ -81,17 +79,15 @@ commentServer ::
   , Error InputError E.:> es
   ) =>
   ServerT CommentsAPI (E.Eff es)
-commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> insertComment :<|> editComment :<|> deleteComment
+commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|> insertComment :<|> editComment :<|> deleteComment
   where
-    getConvoComments convoUrl mSort =
+    mSortBy = maybe (logInfo "Defaulting missing sort method to 'Popular'" >> pure Popular) pure mSort
+
+    getConvoComments convoUrl =
       addLogNamespace "GetConvoComments"
         . addLogContext [ConvoUrl convoUrl]
         $ do
-          sortBy <- case mSort of
-            Nothing -> do
-              logInfo "Defaulting sort method to 'Popular'"
-              pure Popular
-            Just val -> ClassyPrelude.error "hello" >> pure val
+          sortBy <- mSortBy
 
           logInfo $ "Getting all comments for conversation, sorted by " <> showLS sortBy
 
@@ -100,15 +96,11 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
           logInfo $ showLS (length comments) <> " conversation comments retrieved successfully."
           pure comments
 
-    getUserComments username mSort =
+    getUserComments username =
       addLogNamespace "GetUserComments"
         . addLogContext [Username username]
         $ do
-          sortBy <- case mSort of
-            Nothing -> do
-              logInfo "Defaulting sort method to 'Popular'"
-              pure Popular
-            Just val -> pure val
+          sortBy <- mSortBy
 
           logInfo $ "Getting all comments for conversation, sorted by " <> showLS sortBy
 
@@ -117,14 +109,10 @@ commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> inser
           logInfo $ showLS (length comments) <> " user comments retrieved successfully."
           pure comments
 
-    getReplies cID mSort =
+    getReplies cID =
       addLogNamespace "GetUserComments" $
         do
-          sortBy <- case mSort of
-            Nothing -> do
-              logInfo "Defaulting sort method to 'Popular'"
-              pure Popular
-            Just val -> pure val
+          sortBy <- mSortBy
 
           logInfo $ "Getting all replies for comment with ID: " <> showLS cID
 

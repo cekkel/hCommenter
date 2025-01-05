@@ -52,6 +52,7 @@ common warnings
     ghc-options: 
         -Wall
         -fno-warn-orphans
+        -fno-warn-unused-imports
 
 library
     -- Import common warning flags.
