@@ -80,7 +80,7 @@ tests:
       - src
     dependencies:
       - hspec
-      - QuickCheck
+      - hedgehog
       - temporary
       - mockery
       - interpolate

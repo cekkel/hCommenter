@@ -11,11 +11,19 @@ run-hpack:
 		$(HPACK); \
 	fi
 
+check-hpack:
+	@if [ ! -f "$(CABAL_FILE)" ] || [ "$(CABAL_FILE)" -ot "package.yaml" ]; then \
+		@echo "Cabal file is out of date, hpack needs to be run."; \
+		@false; \
+	fi
+
 build: run-hpack
 	cabal build
 
-# Delete build artifacts
-clean:
-	cabal clean
+build-no-deps: check-hpack
+	cabal build --only-dependencies -j
 
-.PHONY: all run-hpack build clean
+build-static: check-hpack
+	cabal build --enable-executable-static
+
+.PHONY: all run-hpack build build-no-deps build-static

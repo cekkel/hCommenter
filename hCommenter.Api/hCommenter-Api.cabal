@@ -166,7 +166,6 @@ test-suite spec
         hspec-discover:hspec-discover
     build-depends:
         HUnit,
-        QuickCheck,
         aeson,
         aeson-pretty,
         base ==4.20.*,
@@ -178,6 +177,7 @@ test-suite spec
         effectful-plugin,
         effectful-th,
         extra,
+        hedgehog,
         hspec,
         http-types,
         interpolate,
