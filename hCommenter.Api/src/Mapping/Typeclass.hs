@@ -1,6 +1,5 @@
 module Mapping.Typeclass where
 
-import ClassyPrelude
 import Database.Persist.Sql (Entity (Entity))
 import Database.StorageTypes (Comment)
 import Mapping.Comments (storageToViewComment)

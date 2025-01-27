@@ -20,7 +20,7 @@ main = command_
           "binary" -> messageConsoleAndRun port LocalFile
           "sqlite" -> messageConsoleAndRun port SQLite
           "prod" -> messageConsoleAndRun port ToBeDeterminedProd
-          other -> putStrLn $ "\nInvalid Mode: " <> other
+          other -> putStrLn $ "\nInvalid Mode: " <> pack other
 
 messageConsoleAndRun :: Int -> Backend -> IO ()
 messageConsoleAndRun port backend = do
@@ -34,5 +34,5 @@ messageConsoleAndRun port backend = do
     LocalFile -> pure ()
     ToBeDeterminedProd -> pure ()
 
-  putStrLn $ "\nListening in " <> show backend <> " mode, on port " <> show port <> "...\n"
+  putStrLn $ "\nListening in " <> tshow backend <> " mode, on port " <> tshow port <> "...\n"
   run port $ app env

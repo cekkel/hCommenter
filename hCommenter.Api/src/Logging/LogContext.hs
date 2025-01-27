@@ -1,6 +1,5 @@
 module Logging.LogContext (LogField (..), logFieldToObjectPair) where
 
-import ClassyPrelude
 import Data.Aeson.Types (Pair, (.=))
 
 data LogField

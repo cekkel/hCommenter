@@ -1,6 +1,5 @@
 module Mapping.Comments (storageToViewComment) where
 
-import ClassyPrelude
 import Database.Persist.Sql (fromSqlKey)
 import Database.StorageTypes
 import Mapping.ExternalTypes

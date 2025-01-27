@@ -1,6 +1,5 @@
 module Database.Mockserver where
 
-import ClassyPrelude
 import Data.Map qualified as M
 import Database.Persist (Filter)
 import Database.Persist.Sql

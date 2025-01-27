@@ -2,7 +2,7 @@
 
 module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
 
-import ClassyPrelude hiding (Handler)
+import Prelude hiding (Handler)
 import Control.Monad.Trans.Except (except)
 import Data.Aeson qualified as JSON
 import Data.Bifoldable (bitraverse_)

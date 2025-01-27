@@ -1,6 +1,5 @@
 module Server.Health (healthServer, HealthAPI) where
 
-import ClassyPrelude
 import Effectful qualified as E
 import Effectful.Error.Static (Error)
 import Logging.LogEffect (Log, logInfo)

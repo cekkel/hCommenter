@@ -1,6 +1,6 @@
 module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
-import ClassyPrelude hiding (Handler, log, sortBy)
+import Prelude hiding (Handler, log, sortBy)
 import Database.Interface qualified as DB
 import Database.Persist.Sql (PersistEntity (Key), fromSqlKey)
 import Database.StorageTypes

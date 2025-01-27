@@ -4,7 +4,7 @@
 
 module Logging.LogEffect where
 
-import ClassyPrelude hiding (log, singleton)
+import Prelude hiding (log, singleton)
 import Control.Monad.Logger
   ( Loc
   , LogLevel (..)

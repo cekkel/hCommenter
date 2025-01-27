@@ -1,0 +1,89 @@
+spec-version: 0.38.0
+name: hCommenter-Api
+version: 0.1.0
+synopsis: Backend for a generic commenting system.
+description: N/A
+author: Charles Taylor <taylorc822@gmail.com>
+maintainer: Charles Taylor <taylorc822@gmail.com>
+github: cekkel/hCommenter
+category: Web
+license: MIT
+extra-doc-files:
+  - README.md
+
+ghc-options: 
+  -Wall 
+  -fno-warn-orphans
+  -fno-warn-unused-imports
+  -fplugin=Effectful.Plugin
+
+language: GHC2024
+
+default-extensions: 
+  - OverloadedStrings
+  - TypeFamilies
+  - NoMonomorphismRestriction
+  - AllowAmbiguousTypes
+  - DuplicateRecordFields
+  - OverloadedLabels
+
+dependencies:
+  - name: base
+    version: "^>= 4.20"
+    mixin:
+      - hiding (Prelude)
+  - name: classy-prelude
+    mixin:
+      - (ClassyPrelude as Prelude)
+  - extra
+  - servant-server
+  - servant-swagger
+  - swagger2
+  - wai
+  - http-types
+  - optics
+  - bytestring
+  - aeson
+  - aeson-pretty
+  - containers
+  - transformers
+  - effectful
+  - effectful-core
+  - effectful-th
+  - effectful-plugin
+  - monad-logger
+  - katip
+  - aeson
+  - persistent
+  - persistent-sqlite
+  - resource-pool
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Server
+
+executable:
+  main: Main.hs
+  source-dirs: app
+  dependencies:
+    - hCommenter-Api
+    - commander-cli
+    - warp
+
+tests:
+  spec:
+    cpp-options: -DTEST
+    main: Main.hs
+    source-dirs:
+      - e2e
+      - src
+    dependencies:
+      - hspec
+      - QuickCheck
+      - temporary
+      - mockery
+      - interpolate
+      - HUnit
+    build-tools: hspec-discover
+

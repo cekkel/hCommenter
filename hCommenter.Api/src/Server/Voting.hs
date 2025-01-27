@@ -1,6 +1,5 @@
 module Server.Voting (VotingAPI, votingServer) where
 
-import ClassyPrelude
 import Database.Interface (CommentStorage, editComment)
 import Database.Persist.Sql (fromSqlKey)
 import Database.StorageTypes (Comment, Key)

@@ -2,7 +2,6 @@
 
 module Server.ServerTypes (ErrorResponse (..), CustomError (..), InputError (..), Backend (..), Env (Env), backend, appName, envName, scribeName, scribe) where
 
-import ClassyPrelude
 import Data.Aeson (FromJSON, ToJSON)
 import Database.StorageTypes (StorageError)
 import Katip (Scribe)

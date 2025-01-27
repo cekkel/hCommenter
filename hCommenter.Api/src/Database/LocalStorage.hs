@@ -2,7 +2,6 @@
 
 module Database.LocalStorage where
 
-import ClassyPrelude
 -- import Data.Map qualified as M
 -- import Database.Interface (CommentStorage (..))
 import Database.Persist.Sql (Entity (Entity), fromSqlKey, toSqlKey)

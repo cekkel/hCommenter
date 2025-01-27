@@ -1,6 +1,5 @@
 module Middleware.Requests where
 
-import ClassyPrelude
 import Effectful (runEff)
 import Katip (logStr)
 import Logging.LogContext (LogField (CorrelationID))

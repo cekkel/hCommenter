@@ -8,7 +8,7 @@
 
 module Database.StorageTypes where
 
-import ClassyPrelude hiding (Handler, singleton, sortBy)
+import Prelude hiding (Handler, singleton, sortBy)
 import Data.Aeson
   ( Object
   , ToJSON (toJSON)

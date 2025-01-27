@@ -3,7 +3,7 @@
 
 module Database.SqlPool (SqlPool, withConn, runSqlPool) where
 
-import ClassyPrelude hiding (Reader, ask)
+import Prelude hiding (Reader, ask)
 import Control.Monad.Logger (LoggingT (runLoggingT))
 import Data.Pool (Pool, withResource)
 import Database.Persist.Sql (SqlBackend, runMigration)

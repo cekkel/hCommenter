@@ -1,6 +1,5 @@
 module Middleware.Headers (Enriched, enrichApiWithHeaders, correlationIDHeaderName) where
 
-import ClassyPrelude
 import Effectful (Eff)
 import Effectful qualified as E
 import Logging.LogContext (LogField (CorrelationID))

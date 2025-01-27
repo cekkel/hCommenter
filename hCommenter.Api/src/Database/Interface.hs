@@ -12,7 +12,6 @@ module Database.Interface
   )
 where
 
-import ClassyPrelude
 import Database.Persist.Sql (Key)
 import Database.StorageTypes
   ( Comment

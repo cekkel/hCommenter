@@ -2,7 +2,6 @@
 
 module Database.SqlStorage (runCommentStorageSQL) where
 
-import ClassyPrelude hiding (Reader)
 import Database.Interface (CommentStorage (..))
 import Database.Persist
   ( Entity (Entity)
