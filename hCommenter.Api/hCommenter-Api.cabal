@@ -86,31 +86,10 @@ library
 executable hCommenter-Api
     main-is: Main.hs
     build-depends:
-        aeson,
-        aeson-pretty,
         base ==4.20.*,
-        bytestring,
         classy-prelude,
         commander-cli,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        extra,
         hCommenter-Api,
-        http-types,
-        katip,
-        monad-logger,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        transformers,
-        wai,
         warp
     mixins:
         base hiding (Prelude),
@@ -124,35 +103,14 @@ executable hCommenter-Api
         AllowAmbiguousTypes
         DuplicateRecordFields
         OverloadedLabels
-    ghc-options: -Wall -fno-warn-orphans -fno-warn-unused-imports -fplugin=Effectful.Plugin
+    ghc-options: -Wall -fno-warn-orphans -fno-warn-unused-imports
     default-language: GHC2024
 
 test-suite spec
     type: exitcode-stdio-1.0
     main-is: Main.hs
-    other-modules:
-        Database.Interface
-        Database.LocalStorage
-        Database.Mockserver
-        Database.SqlPool
-        Database.SqlStorage
-        Database.StorageTypes
-        Logging.LogContext
-        Logging.LogEffect
-        Mapping.Comments
-        Mapping.ExternalTypes
-        Mapping.Typeclass
-        Middleware.Headers
-        Middleware.Requests
-        Server
-        Server.Comment
-        Server.Health
-        Server.ServerTypes
-        Server.Swagger
-        Server.Voting
     hs-source-dirs:
-        e2e
-        src
+        test
     default-extensions:
         OverloadedStrings
         TypeFamilies
@@ -160,40 +118,23 @@ test-suite spec
         AllowAmbiguousTypes
         DuplicateRecordFields
         OverloadedLabels
-    ghc-options: -Wall -fno-warn-orphans -fno-warn-unused-imports -fplugin=Effectful.Plugin
+    ghc-options: -Wall -fno-warn-orphans -fno-warn-unused-imports
     cpp-options: -DTEST
     build-tool-depends:
         hspec-discover:hspec-discover
     build-depends:
         HUnit,
-        aeson,
-        aeson-pretty,
         base ==4.20.*,
-        bytestring,
         classy-prelude,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        extra,
+        hCommenter-Api,
         hedgehog,
         hspec,
-        http-types,
+        hspec-hedgehog,
+        hspec-wai,
         interpolate,
-        katip,
         mockery,
-        monad-logger,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        temporary,
-        transformers,
-        wai
+        servant-client,
+        temporary
     mixins:
         base hiding (Prelude),
         classy-prelude (ClassyPrelude as Prelude)

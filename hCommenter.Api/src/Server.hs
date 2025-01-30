@@ -1,8 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe) where
+module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe, fullAPI, functionalAPI, serverAPI) where
 
-import Prelude hiding (Handler)
 import Control.Monad.Trans.Except (except)
 import Data.Aeson qualified as JSON
 import Data.Bifoldable (bitraverse_)
@@ -52,6 +51,7 @@ import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
+import Prelude hiding (Handler)
 
 type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
 
@@ -91,15 +91,15 @@ effToHandler env m = do
         . commentHandler
       $ m
   Handler $ except $ handleServerResponse result
-  where
-    commentHandler = case env ^. backend of
-      LocalFile -> error "Mode not supported"
-      sqlBackend -> runCommentStorageSQL sqlBackend
+ where
+  commentHandler = case env ^. backend of
+    LocalFile -> error "Mode not supported"
+    sqlBackend -> runCommentStorageSQL sqlBackend
 
-runAndLiftError ::
-  (e -> CustomError) ->
-  Eff (Error e : es) (Either (CallStack, CustomError) a) ->
-  Eff es (Either (CallStack, CustomError) a)
+runAndLiftError
+  :: (e -> CustomError)
+  -> Eff (Error e : es) (Either (CallStack, CustomError) a)
+  -> Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
 logExplicitErrors :: (Show e, Log E.:> es) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
@@ -107,9 +107,9 @@ logExplicitErrors currEff = do
   value <- currEff
   bitraverse_ handleLeft pure value
   pure value
-  where
-    handleLeft (callStack, err) = do
-      logError $ "Custom error '" <> showLS err <> "' with callstack: " <> showLS (prettyCallStack callStack)
+ where
+  handleLeft (callStack, err) = do
+    logError $ "Custom error '" <> showLS err <> "' with callstack: " <> showLS (prettyCallStack callStack)
 
 handleServerResponse :: Either (CallStack, CustomError) a -> Either ServerError a
 handleServerResponse (Right val) = Right val
@@ -120,9 +120,9 @@ handleServerResponse (Left (_, err)) = case err of
     ConvoNotFound -> "Can't find the conversation"
   InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
     BadArgument txt -> "Bad argument: " <> txt
-  where
-    servantErrorWithText sErr msg =
-      sErr
-        { errBody = JSON.encode $ ErrorResponse msg (errHTTPCode sErr)
-        , errHeaders = [(fromString "Content-Type", "application/json;charset=utf-8")]
-        }
+ where
+  servantErrorWithText sErr msg =
+    sErr
+      { errBody = JSON.encode $ ErrorResponse msg (errHTTPCode sErr)
+      , errHeaders = [(fromString "Content-Type", "application/json;charset=utf-8")]
+      }

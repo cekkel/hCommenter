@@ -20,6 +20,12 @@ check-hpack:
 build: run-hpack
 	cabal build
 
+test: run-hpack
+	cabal test
+
+run: run-hpack
+	cabal run
+
 build-no-deps: check-hpack
 	cabal build --only-dependencies -j
 

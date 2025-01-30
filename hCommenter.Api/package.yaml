@@ -11,15 +11,13 @@ license: MIT
 extra-doc-files:
   - README.md
 
-ghc-options: 
-  -Wall 
+ghc-options: -Wall
   -fno-warn-orphans
   -fno-warn-unused-imports
-  -fplugin=Effectful.Plugin
 
 language: GHC2024
 
-default-extensions: 
+default-extensions:
   - OverloadedStrings
   - TypeFamilies
   - NoMonomorphismRestriction
@@ -35,33 +33,35 @@ dependencies:
   - name: classy-prelude
     mixin:
       - (ClassyPrelude as Prelude)
-  - extra
-  - servant-server
-  - servant-swagger
-  - swagger2
-  - wai
-  - http-types
-  - optics
-  - bytestring
-  - aeson
-  - aeson-pretty
-  - containers
-  - transformers
-  - effectful
-  - effectful-core
-  - effectful-th
-  - effectful-plugin
-  - monad-logger
-  - katip
-  - aeson
-  - persistent
-  - persistent-sqlite
-  - resource-pool
 
 library:
   source-dirs: src
   exposed-modules:
     - Server
+  ghc-options: -fplugin=Effectful.Plugin
+  dependencies:
+    - extra
+    - servant-server
+    - servant-swagger
+    - swagger2
+    - wai
+    - http-types
+    - optics
+    - bytestring
+    - aeson
+    - aeson-pretty
+    - containers
+    - transformers
+    - effectful
+    - effectful-core
+    - effectful-th
+    - effectful-plugin
+    - monad-logger
+    - katip
+    - aeson
+    - persistent
+    - persistent-sqlite
+    - resource-pool
 
 executable:
   main: Main.hs
@@ -76,14 +76,16 @@ tests:
     cpp-options: -DTEST
     main: Main.hs
     source-dirs:
-      - e2e
-      - src
+      - test
     dependencies:
       - hspec
       - hedgehog
+      - hspec-hedgehog
       - temporary
       - mockery
       - interpolate
       - HUnit
+      - hspec-wai
+      - servant-client
+      - hCommenter-Api
     build-tools: hspec-discover
-
