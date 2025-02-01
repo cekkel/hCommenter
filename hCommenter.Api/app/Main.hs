@@ -5,8 +5,9 @@ module Main where
 
 import Network.Wai.Handler.Warp (run)
 import Options.Commander (command_, optDef, raw, toplevel)
-import Server (Backend (..), Env (Env), app, getConsoleScribe, initDevSqliteDB)
 import Text.Read (readMaybe)
+
+import Server (Backend (..), Env (Env), app, getConsoleScribe, initDevSqliteDB, mkEnv)
 
 main :: IO ()
 main = command_
@@ -24,10 +25,7 @@ main = command_
 
 messageConsoleAndRun :: Int -> Backend -> IO ()
 messageConsoleAndRun port backend = do
-  scribe <- getConsoleScribe
-
-  let
-    env = Env backend "hCommenter.Api" "Dev" "Console" scribe
+  env <- mkEnv
 
   case backend of
     SQLite -> initDevSqliteDB backend env

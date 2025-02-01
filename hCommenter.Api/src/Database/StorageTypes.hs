@@ -8,7 +8,6 @@
 
 module Database.StorageTypes where
 
-import Prelude hiding (Handler, singleton, sortBy)
 import Data.Aeson
   ( Object
   , ToJSON (toJSON)
@@ -42,7 +41,9 @@ import Katip
   , Verbosity
   )
 import Optics
-import Servant (FromHttpApiData (parseQueryParam))
+import Servant (FromHttpApiData (parseQueryParam), ToHttpApiData)
+import Web.HttpApiData
+import Prelude hiding (Handler, singleton, sortBy)
 
 data StorageError
   = CommentNotFound
@@ -50,7 +51,7 @@ data StorageError
   | ConvoNotFound
   deriving (Eq, Show)
 
-{- | Create Comment obj with persistent to support storage with SQLite & other SQL databases
+{-| Create Comment obj with persistent to support storage with SQLite & other SQL databases
   and include lens definitions.
 -}
 share
@@ -101,7 +102,7 @@ data NewComment = NewComment
   , author :: Text
   , convoUrl :: Text
   }
-  deriving (Show, Read, Eq, Generic)
+  deriving (Eq, Generic, Read, Show)
 
 makeFieldLabelsNoPrefix ''NewComment
 deriveJSON defaultOptions ''NewComment
@@ -136,7 +137,7 @@ instance FromHttpApiData NewComment where
 instance ToObject Comment
 
 data SortBy = Old | New | Popular | Controversial
-  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 deriveJSON defaultOptions ''SortBy
 
@@ -148,6 +149,9 @@ instance LogItem SortBy where
   payloadKeys :: Verbosity -> SortBy -> PayloadSelection
   payloadKeys _ _ = AllKeys
 
+instance ToHttpApiData SortBy where
+  toQueryParam = tshow
+
 instance ToParamSchema (BackendKey SqlBackend)
 
 instance ToParamSchema (Key Comment)
@@ -158,14 +162,14 @@ instance FromHttpApiData SortBy where
   parseQueryParam :: Text -> Either Text SortBy
   parseQueryParam = maybe (Left "Invalid sorting method") Right . readMay
 
-mkComment ::
-  -- | Username
-  Text ->
-  -- | Conversation url
-  Text ->
-  -- | Message
-  Text ->
-  IO Comment
+mkComment
+  :: Text
+  -- ^ Username
+  -> Text
+  -- ^ Conversation url
+  -> Text
+  -- ^ Message
+  -> IO Comment
 mkComment username convoUrl msg = do
   currTime <- getCurrentTime
   pure $ Comment currTime msg 0 0 Nothing username convoUrl
@@ -177,6 +181,6 @@ data PureStorage = PureStorage
   , commentStore :: Map (Key Comment) Comment
   , nextID :: CommentId
   }
-  deriving (Show, Generic)
+  deriving (Generic, Show)
 
 makeFieldLabelsNoPrefix ''PureStorage

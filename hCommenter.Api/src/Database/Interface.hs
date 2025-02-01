@@ -13,13 +13,14 @@ module Database.Interface
 where
 
 import Database.Persist.Sql (Key)
+import Effectful (Dispatch (Dynamic), DispatchOf, Effect)
+import Effectful.TH (makeEffect)
+
 import Database.StorageTypes
   ( Comment
   , NewComment
   , SortBy (..)
   )
-import Effectful (Dispatch (Dynamic), DispatchOf, Effect)
-import Effectful.TH (makeEffect)
 import Mapping.ExternalTypes
 
 type ConvoUrl = Text

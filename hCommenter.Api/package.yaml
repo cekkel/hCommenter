@@ -38,6 +38,7 @@ library:
   source-dirs: src
   exposed-modules:
     - Server
+    - Utils.ArbitraryInstances
   ghc-options: -fplugin=Effectful.Plugin
   dependencies:
     - extra
@@ -62,6 +63,8 @@ library:
     - persistent
     - persistent-sqlite
     - resource-pool
+    - http-api-data
+    - QuickCheck
 
 executable:
   main: Main.hs
@@ -81,11 +84,13 @@ tests:
       - hspec
       - hedgehog
       - hspec-hedgehog
+      - servant-client
+      - QuickCheck
+      - servant-quickcheck
       - temporary
       - mockery
       - interpolate
       - HUnit
       - hspec-wai
-      - servant-client
       - hCommenter-Api
     build-tools: hspec-discover

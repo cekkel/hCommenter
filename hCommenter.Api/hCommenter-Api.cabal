@@ -25,6 +25,7 @@ source-repository head
 library
     exposed-modules:
         Server
+        Utils.ArbitraryInstances
     other-modules:
         Database.Interface
         Database.LocalStorage
@@ -45,6 +46,7 @@ library
         Server.Swagger
         Server.Voting
     build-depends:
+        QuickCheck,
         aeson,
         aeson-pretty,
         base ==4.20.*,
@@ -56,6 +58,7 @@ library
         effectful-plugin,
         effectful-th,
         extra,
+        http-api-data,
         http-types,
         katip,
         monad-logger,
@@ -124,6 +127,7 @@ test-suite spec
         hspec-discover:hspec-discover
     build-depends:
         HUnit,
+        QuickCheck,
         base ==4.20.*,
         classy-prelude,
         hCommenter-Api,
@@ -134,6 +138,7 @@ test-suite spec
         interpolate,
         mockery,
         servant-client,
+        servant-quickcheck,
         temporary
     mixins:
         base hiding (Prelude),

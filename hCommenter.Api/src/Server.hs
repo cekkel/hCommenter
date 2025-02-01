@@ -1,21 +1,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe, fullAPI, functionalAPI, serverAPI) where
+module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe, fullAPI, functionalAPI, serverAPI, mkEnv) where
 
 import Control.Monad.Trans.Except (except)
-import Data.Aeson qualified as JSON
 import Data.Bifoldable (bitraverse_)
 import Data.Either.Extra (mapLeft)
 import Data.Swagger (Swagger)
-import Database.Interface (CommentStorage)
-import Database.Mockserver
-  ( initDevSqliteDB
-  )
-import Database.SqlPool (SqlPool)
-import Database.SqlStorage (runCommentStorageSQL)
-import Database.StorageTypes
 import Effectful (Eff, IOE, runEff)
-import Effectful qualified as E
 import Effectful.Error.Static
   ( CallStack
   , Error
@@ -23,15 +14,6 @@ import Effectful.Error.Static
   , runError
   )
 import Katip (showLS)
-import Logging.LogEffect
-  ( Log
-  , getConsoleScribe
-  , logError
-  , logExceptions
-  , runLog
-  )
-import Middleware.Headers (Enriched, enrichApiWithHeaders)
-import Middleware.Requests (addRequestLogging)
 import Optics
 import Servant
   ( Application
@@ -46,12 +28,32 @@ import Servant
   , type (:<|>) (..)
   )
 import Servant.Swagger (HasSwagger (toSwagger))
+import Prelude hiding (Handler)
+
+import Data.Aeson qualified as JSON
+import Effectful qualified as E
+
+import Database.Interface (CommentStorage)
+import Database.Mockserver
+  ( initDevSqliteDB
+  )
+import Database.SqlPool (SqlPool)
+import Database.SqlStorage (runCommentStorageSQL)
+import Database.StorageTypes
+import Logging.LogEffect
+  ( Log
+  , getConsoleScribe
+  , logError
+  , logExceptions
+  , runLog
+  )
+import Middleware.Headers (Enriched, enrichApiWithHeaders)
+import Middleware.Requests (addRequestLogging)
 import Server.Comment (CommentsAPI, commentServer)
 import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
-import Prelude hiding (Handler)
 
 type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
 
@@ -102,7 +104,7 @@ runAndLiftError
   -> Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
-logExplicitErrors :: (Show e, Log E.:> es) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
+logExplicitErrors :: (Log E.:> es, Show e) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
 logExplicitErrors currEff = do
   value <- currEff
   bitraverse_ handleLeft pure value
@@ -126,3 +128,8 @@ handleServerResponse (Left (_, err)) = case err of
       { errBody = JSON.encode $ ErrorResponse msg (errHTTPCode sErr)
       , errHeaders = [(fromString "Content-Type", "application/json;charset=utf-8")]
       }
+
+mkEnv :: IO Env
+mkEnv = do
+  scribe <- getConsoleScribe
+  pure $ Env SQLite "hCommenter.Api" "Dev" "Console" scribe
