@@ -4,46 +4,50 @@ module Main (main) where
 
 import Control.Concurrent (threadDelay)
 import Hedgehog
-import Servant.QuickCheck (not500, onlyJsonObjects, serverSatisfies, withServantServer, (<%>))
+import Hedgehog.Internal.Property (PropertyT (PropertyT))
+import Network.Wai (Application)
 import Test.Hspec
 import Test.Hspec.Hedgehog (hedgehog)
-import Test.QuickCheck (Arbitrary (..), oneof, stdArgs)
+import Test.Hspec.Wai
+import Test.Hspec.Wai.Internal (runWithState, withApplication)
 
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 
+import ApiProperties
+import HspecWaiHedgehog (waiProperty)
 import Server
 import Utils.ArbitraryInstances
 
 main :: IO ()
-main = hspec spec
+main = do
+  hspec spec
 
 spec :: Spec
 spec = do
+  apiPropertySpec
   exampleHedghehogSpec
-  servantQuickcheckSpec
 
-servantQuickcheckSpec :: Spec
-servantQuickcheckSpec = around withEnvData $ describe "API" $ do
-  it "demonstrates best practices" $ \env -> do
-    withServantServer fullAPI (pure $ serverAPI env) $ \baseUrl ->
-      serverSatisfies
-        fullAPI
-        baseUrl
-        stdArgs
-        ( not500
-            <%> onlyJsonObjects
-            <%> mempty
-        )
+apiPropertySpec :: Spec
+apiPropertySpec = describe "API" $ do
+  it "demonstrates best practices" $
+    hedgehog $
+      ApiProperties.alwaysCacheControlOnGetRequests
 
 exampleHedghehogSpec :: Spec
 exampleHedghehogSpec = describe "Example tests" $ do
   it "hedgehog example" $ hedgehog $ do
     x :: Int <- forAll $ Gen.integral (Range.linear 0 1000)
     y :: Int <- forAll $ Gen.integral (Range.linear 0 5000)
-    liftIO $ threadDelay (100 * x + y)
+    liftIO $ threadDelay (10 * x + y)
 
-withEnvData :: (Env -> IO ()) -> IO ()
-withEnvData action = do
-  env <- mkEnv
-  action env
+-- waiHedgehogTesting :: Property
+-- waiHedgehogTesting = Group "API Properties" [
+--     property $
+--   ]
+--   sequential $ it "should always have Cache Control for get requests" $ \ctx -> hedgehog $ do
+--     x :: Int <- forAll $ Gen.integral (Range.linear 0 5)
+--     liftIO $ withApplication (snd ctx) $ do
+--       get "/health" `shouldRespondWith` 200 {matchHeaders = ["Cache-Control" <:> if x == 3 then fromString (show x) else "no-cache"]}
+
+-- liftIO $ threadDelay (100 * x + y)

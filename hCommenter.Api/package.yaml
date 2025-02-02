@@ -84,13 +84,16 @@ tests:
       - hspec
       - hedgehog
       - hspec-hedgehog
-      - servant-client
-      - QuickCheck
-      - servant-quickcheck
+      - hedgehog-servant
       - temporary
       - mockery
       - interpolate
-      - HUnit
       - hspec-wai
       - hCommenter-Api
+      - wai
+      - wai-extra
+      - http-types
+      - http-client
+      - servant-client
+      - bytestring
     build-tools: hspec-discover

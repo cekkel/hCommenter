@@ -1,2 +1,5 @@
 packages: ./*.cabal
 tests: True
+
+-- Old package, has old deps. I'm lazy since this is just a package for testing.
+allow-newer: hedgehog-servant:all

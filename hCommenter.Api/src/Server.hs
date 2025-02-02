@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe, fullAPI, functionalAPI, serverAPI, mkEnv) where
+module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe, serverAPI, mkEnv, API, FunctionalAPI, HealthAPI, CommentsAPI, VotingAPI) where
 
 import Control.Monad.Trans.Except (except)
 import Data.Bifoldable (bitraverse_)
@@ -43,12 +43,13 @@ import Database.StorageTypes
 import Logging.LogEffect
   ( Log
   , getConsoleScribe
+  , getFileScribe
   , logError
   , logExceptions
   , runLog
   )
+import Middleware.Combined (addCustomMiddleware)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
-import Middleware.Requests (addRequestLogging)
 import Server.Comment (CommentsAPI, commentServer)
 import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
@@ -75,7 +76,7 @@ fullAPI = Proxy
 
 app :: Env -> Application
 app env =
-  addRequestLogging env $
+  addCustomMiddleware env $
     serve fullAPI $
       serverAPI env
 

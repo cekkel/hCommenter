@@ -38,6 +38,7 @@ library
         Mapping.Comments
         Mapping.ExternalTypes
         Mapping.Typeclass
+        Middleware.Combined
         Middleware.Headers
         Middleware.Requests
         Server.Comment
@@ -112,6 +113,9 @@ executable hCommenter-Api
 test-suite spec
     type: exitcode-stdio-1.0
     main-is: Main.hs
+    other-modules:
+        ApiProperties
+        HspecWaiHedgehog
     hs-source-dirs:
         test
     default-extensions:
@@ -126,20 +130,23 @@ test-suite spec
     build-tool-depends:
         hspec-discover:hspec-discover
     build-depends:
-        HUnit,
-        QuickCheck,
         base ==4.20.*,
+        bytestring,
         classy-prelude,
         hCommenter-Api,
         hedgehog,
+        hedgehog-servant,
         hspec,
         hspec-hedgehog,
         hspec-wai,
+        http-client,
+        http-types,
         interpolate,
         mockery,
         servant-client,
-        servant-quickcheck,
-        temporary
+        temporary,
+        wai,
+        wai-extra
     mixins:
         base hiding (Prelude),
         classy-prelude (ClassyPrelude as Prelude)

@@ -4,7 +4,6 @@
 
 module Logging.LogEffect where
 
-import Prelude hiding (log, singleton)
 import Control.Monad.Logger
   ( Loc
   , LogLevel (..)
@@ -31,8 +30,10 @@ import Effectful.Dispatch.Static
   , unsafeEff_
   )
 import Katip
-import Logging.LogContext (LogField, logFieldToObjectPair)
 import Optics
+import Prelude hiding (log, singleton)
+
+import Logging.LogContext (LogField, logFieldToObjectPair)
 import Server.ServerTypes
   ( Env
   , appName
@@ -56,11 +57,11 @@ type instance DispatchOf Log = Static WithSideEffects
 newtype instance StaticRep Log = Log LogConfig
 
 -- | TODO: Verify performance.
-runLog ::
-  (IOE :> es) =>
-  Env ->
-  Eff (Log : es) a ->
-  Eff es a
+runLog
+  :: (IOE :> es)
+  => Env
+  -> Eff (Log : es) a
+  -> Eff es a
 runLog env logEff = do
   let
     component' = Namespace [env ^. appName]
@@ -74,7 +75,7 @@ runLog env logEff = do
       LogConfig
         { _logNamespace = mempty
         , _logContext = mempty
-        , _logEnv = envWithScribe
+        , _logEnv = initialEnv
         }
 
 initLogEnvWithScribe :: Env -> IO LogEnv
@@ -108,16 +109,16 @@ logError = log ErrorS
 
 logExceptions :: (IOE :> es, Log :> es) => Eff es a -> Eff es a
 logExceptions action = action `catchAny` \e -> logErr e >> throwIO e
-  where
-    logErr e = logFM ErrorS ("An exception has occurred: " <> showLS e)
+ where
+  logErr e = logFM ErrorS ("An exception has occurred: " <> showLS e)
 
 addLogNamespace :: (Log :> es) => Namespace -> Eff es a -> Eff es a
 addLogNamespace ns = localKatipNamespace' (<> ns)
 
 addLogContext :: forall es a. (Log :> es) => [LogField] -> Eff es a -> Eff es a
 addLogContext fields = localKatipContext' (<> liftPayload context)
-  where
-    context = object $ logFieldToObjectPair <$> fields
+ where
+  context = object $ logFieldToObjectPair <$> fields
 
 instance LogItem Object where
   payloadKeys _ _ = AllKeys
@@ -141,28 +142,28 @@ askForLoggerIO = do
   env <- getLogEnv'
   pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
 
-{- | This is useful for when there is a need to work with a library that uses the
+{-| This is useful for when there is a need to work with a library that uses the
   'LoggingT' transformer from the monad-logger library.
 -}
-askForMonadLoggerIO :: (ToLogStr a, Log :> es) => Eff es (Loc -> LogSource -> LogLevel -> a -> IO ())
+askForMonadLoggerIO :: (Log :> es, ToLogStr a) => Eff es (Loc -> LogSource -> LogLevel -> a -> IO ())
 askForMonadLoggerIO = do
   logIO <- askForLoggerIO
   pure (\_loc _src lvl msg -> logIO (mapLvl lvl) (mapMsg msg))
-  where
-    mapLvl = \case
-      LevelInfo -> InfoS
-      LevelWarn -> WarningS
-      LevelDebug -> DebugS
-      LevelError -> ErrorS
-      LevelOther _ -> WarningS
+ where
+  mapLvl = \case
+    LevelInfo -> InfoS
+    LevelWarn -> WarningS
+    LevelDebug -> DebugS
+    LevelError -> ErrorS
+    LevelOther _ -> WarningS
 
-    mapMsg = logStr . fromLogStr . toLogStr
+  mapMsg = logStr . fromLogStr . toLogStr
 
 instance (IOE :> es, Log :> es) => Katip (Eff es) where
   getLogEnv = getLogEnv'
   localLogEnv = localLogEnv'
 
-instance (Log :> es, Katip (Eff es)) => KatipContext (Eff es) where
+instance (Katip (Eff es), Log :> es) => KatipContext (Eff es) where
   getKatipContext = getKatipContext'
   localKatipContext = localKatipContext'
   getKatipNamespace = getKatipNamespace'
