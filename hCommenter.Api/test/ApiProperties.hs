@@ -7,9 +7,16 @@ import Data.Function ((&))
 import Data.Maybe (fromJust)
 import Hedgehog
 import Hedgehog.Servant
-import Network.HTTP.Types (hCacheControl, ok200)
-import Network.Wai (Application, Request, mapRequestHeaders)
-import Network.Wai.Test (SRequest (SRequest), SResponse (simpleHeaders, simpleStatus), defaultRequest, setPath, srequest, withSession)
+import Network.HTTP.Types (Status (statusCode), hCacheControl, methodGet, methodPost, ok200)
+import Network.Wai (Application, Request (requestMethod), mapRequestHeaders)
+import Network.Wai.Test
+  ( SRequest (SRequest, simpleRequest)
+  , SResponse (simpleHeaders, simpleStatus)
+  , defaultRequest
+  , request
+  , setPath
+  , withSession
+  )
 import Servant.Client
 import Test.Hspec.Hedgehog (hedgehog)
 
@@ -17,36 +24,45 @@ import Data.ByteString.Lazy.Internal qualified as Lazy
 import Hedgehog.Gen qualified as Gen
 import Network.HTTP.Client qualified as Client
 
-import Server (HealthAPI, app, mkEnv)
+import Server (CommentsAPI, HealthAPI, VotingAPI, app, mkEnv)
+import Utils.Generators (genCommentKey, genKey, genNewComment, genSortBy, genText)
 
-alwaysCacheControlOnGetRequests :: PropertyT IO ()
-alwaysCacheControlOnGetRequests = do
-  request <- forAll $ genReq "localhost:8080/health"
+getTestResponse :: PropertyT IO SResponse
+getTestResponse = do
+  req <-
+    forAll $
+      Gen.choice
+        [ genReq (Proxy @CommentsAPI)
+        , genReq (Proxy @HealthAPI)
+        , genReq (Proxy @VotingAPI)
+        ]
 
-  response <- testRequest request (Just "")
+  -- requestMethod req === methodPost
+
+  testRequest req
+
+alwaysCacheControlOnGetRequests :: SResponse -> PropertyT IO ()
+alwaysCacheControlOnGetRequests response = do
   diff (hCacheControl, "no-cache") elem (simpleHeaders response)
 
--- simpleStatus response === ok200
+neverRespondWithInternalError :: SResponse -> PropertyT IO ()
+neverRespondWithInternalError response = do
+  diff (statusCode (simpleStatus response)) (<) 400
 
-testRequest :: Request -> Maybe Lazy.ByteString -> PropertyT IO SResponse
-testRequest req body = do
+testRequest :: Request -> PropertyT IO SResponse
+testRequest req = do
   myApp <- liftIO api
   liftIO $ withSession myApp $ do
-    srequest (SRequest req (fromMaybe "" body))
+    request req
 
 api :: IO Application
 api = do
   env <- mkEnv
   pure $ app env
 
-genReq :: String -> Gen Request
-genReq url =
-  genRequest (Proxy @HealthAPI) (GNil)
-    <&> \makeReq ->
-      toWaiRequest $
-        makeReq $
-          fromJust $
-            parseBaseUrl url
+genReq apiProxy =
+  genRequest apiProxy (genCommentKey :*: genSortBy :*: genText :*: genNewComment :*: GNil)
+    <&> \makeReq -> toWaiRequest $ makeReq $ fromJust $ parseBaseUrl ""
 
 toWaiRequest :: Client.Request -> Request
 toWaiRequest creq =

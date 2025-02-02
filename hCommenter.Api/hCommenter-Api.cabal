@@ -25,7 +25,7 @@ source-repository head
 library
     exposed-modules:
         Server
-        Utils.ArbitraryInstances
+        Utils.Generators
     other-modules:
         Database.Interface
         Database.LocalStorage
@@ -47,7 +47,6 @@ library
         Server.Swagger
         Server.Voting
     build-depends:
-        QuickCheck,
         aeson,
         aeson-pretty,
         base ==4.20.*,
@@ -59,6 +58,7 @@ library
         effectful-plugin,
         effectful-th,
         extra,
+        hedgehog,
         http-api-data,
         http-types,
         katip,

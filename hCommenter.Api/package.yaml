@@ -38,7 +38,7 @@ library:
   source-dirs: src
   exposed-modules:
     - Server
-    - Utils.ArbitraryInstances
+    - Utils.Generators
   ghc-options: -fplugin=Effectful.Plugin
   dependencies:
     - extra
@@ -64,7 +64,7 @@ library:
     - persistent-sqlite
     - resource-pool
     - http-api-data
-    - QuickCheck
+    - hedgehog
 
 executable:
   main: Main.hs

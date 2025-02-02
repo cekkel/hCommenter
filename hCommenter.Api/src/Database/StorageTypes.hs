@@ -137,7 +137,7 @@ instance FromHttpApiData NewComment where
 instance ToObject Comment
 
 data SortBy = Old | New | Popular | Controversial
-  deriving (Eq, Generic, Ord, Read, Show)
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
 
 deriveJSON defaultOptions ''SortBy
 

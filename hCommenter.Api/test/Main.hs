@@ -7,7 +7,7 @@ import Hedgehog
 import Hedgehog.Internal.Property (PropertyT (PropertyT))
 import Network.Wai (Application)
 import Test.Hspec
-import Test.Hspec.Hedgehog (hedgehog)
+import Test.Hspec.Hedgehog (hedgehog, modifyMaxSuccess)
 import Test.Hspec.Wai
 import Test.Hspec.Wai.Internal (runWithState, withApplication)
 
@@ -15,9 +15,7 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 
 import ApiProperties
-import HspecWaiHedgehog (waiProperty)
 import Server
-import Utils.ArbitraryInstances
 
 main :: IO ()
 main = do
@@ -30,9 +28,13 @@ spec = do
 
 apiPropertySpec :: Spec
 apiPropertySpec = describe "API" $ do
-  it "demonstrates best practices" $
-    hedgehog $
-      ApiProperties.alwaysCacheControlOnGetRequests
+  modifyMaxSuccess (const 200) $
+    it "demonstrates best practices" $
+      hedgehog $ do
+        response <- ApiProperties.getTestResponse
+
+        alwaysCacheControlOnGetRequests response
+        neverRespondWithInternalError response
 
 exampleHedghehogSpec :: Spec
 exampleHedghehogSpec = describe "Example tests" $ do

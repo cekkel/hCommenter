@@ -8,7 +8,7 @@ all: build
 # Target to run hpack (generate .cabal file if it doesn't exist or if it needs updating)
 run-hpack:
 	@if [ ! -f "$(CABAL_FILE)" ] || [ "$(CABAL_FILE)" -ot "package.yaml" ]; then \
-		$(HPACK); \
+		$(HPACK) -f; \
 	fi
 
 check-hpack:
@@ -21,7 +21,10 @@ build: run-hpack
 	cabal build
 
 test: run-hpack
-	cabal test
+	cabal test \
+		--test-show-details=direct
+# --test-option=--match="" \
+# --test-option=--seed=""
 
 run: run-hpack
 	cabal run
