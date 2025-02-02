@@ -96,4 +96,5 @@ tests:
       - http-client
       - servant-client
       - bytestring
+      - servant
     build-tools: hspec-discover
