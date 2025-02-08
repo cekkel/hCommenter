@@ -7,9 +7,7 @@ all: build
 
 # Target to run hpack (generate .cabal file if it doesn't exist or if it needs updating)
 run-hpack:
-	@if [ ! -f "$(CABAL_FILE)" ] || [ "$(CABAL_FILE)" -ot "package.yaml" ]; then \
-		$(HPACK) -f; \
-	fi
+	$(HPACK) -f
 
 check-hpack:
 	@if [ ! -f "$(CABAL_FILE)" ] || [ "$(CABAL_FILE)" -ot "package.yaml" ]; then \

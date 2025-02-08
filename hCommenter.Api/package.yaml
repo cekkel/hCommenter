@@ -33,6 +33,31 @@ dependencies:
   - name: classy-prelude
     mixin:
       - (ClassyPrelude as Prelude)
+  - extra
+  - servant-server
+  - servant-swagger
+  - swagger2
+  - wai
+  - http-types
+  - optics
+  - bytestring
+  - aeson
+  - aeson-pretty
+  - containers
+  - transformers
+  - effectful
+  - effectful-core
+  - effectful-th
+  - effectful-plugin
+  - monad-logger
+  - katip
+  - aeson
+  - persistent
+  - persistent-sqlite
+  - resource-pool
+  - http-api-data
+  - hedgehog
+  - warp
 
 library:
   source-dirs: src
@@ -40,31 +65,6 @@ library:
     - Server
     - Utils.Generators
   ghc-options: -fplugin=Effectful.Plugin
-  dependencies:
-    - extra
-    - servant-server
-    - servant-swagger
-    - swagger2
-    - wai
-    - http-types
-    - optics
-    - bytestring
-    - aeson
-    - aeson-pretty
-    - containers
-    - transformers
-    - effectful
-    - effectful-core
-    - effectful-th
-    - effectful-plugin
-    - monad-logger
-    - katip
-    - aeson
-    - persistent
-    - persistent-sqlite
-    - resource-pool
-    - http-api-data
-    - hedgehog
 
 executable:
   main: Main.hs
@@ -72,7 +72,6 @@ executable:
   dependencies:
     - hCommenter-Api
     - commander-cli
-    - warp
 
 tests:
   spec:
@@ -82,7 +81,6 @@ tests:
       - test
     dependencies:
       - hspec
-      - hedgehog
       - hspec-hedgehog
       - hedgehog-servant
       - temporary
@@ -90,11 +88,9 @@ tests:
       - interpolate
       - hspec-wai
       - hCommenter-Api
-      - wai
       - wai-extra
       - http-types
       - http-client
       - servant-client
-      - bytestring
       - servant
     build-tools: hspec-discover

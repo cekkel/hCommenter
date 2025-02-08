@@ -71,7 +71,8 @@ library
         servant-swagger,
         swagger2,
         transformers,
-        wai
+        wai,
+        warp
     mixins:
         base hiding (Prelude),
         classy-prelude (ClassyPrelude as Prelude)
@@ -90,10 +91,33 @@ library
 executable hCommenter-Api
     main-is: Main.hs
     build-depends:
+        aeson,
+        aeson-pretty,
         base ==4.20.*,
+        bytestring,
         classy-prelude,
         commander-cli,
+        containers,
+        effectful,
+        effectful-core,
+        effectful-plugin,
+        effectful-th,
+        extra,
         hCommenter-Api,
+        hedgehog,
+        http-api-data,
+        http-types,
+        katip,
+        monad-logger,
+        optics,
+        persistent,
+        persistent-sqlite,
+        resource-pool,
+        servant-server,
+        servant-swagger,
+        swagger2,
+        transformers,
+        wai,
         warp
     mixins:
         base hiding (Prelude),
@@ -114,8 +138,8 @@ test-suite spec
     type: exitcode-stdio-1.0
     main-is: Main.hs
     other-modules:
-        ApiProperties
-        HspecWaiHedgehog
+        ApiRules.HttpClient
+        ApiRules.Wai
     hs-source-dirs:
         test
     default-extensions:
@@ -130,24 +154,44 @@ test-suite spec
     build-tool-depends:
         hspec-discover:hspec-discover
     build-depends:
+        aeson,
+        aeson-pretty,
         base ==4.20.*,
         bytestring,
         classy-prelude,
+        containers,
+        effectful,
+        effectful-core,
+        effectful-plugin,
+        effectful-th,
+        extra,
         hCommenter-Api,
         hedgehog,
         hedgehog-servant,
         hspec,
         hspec-hedgehog,
         hspec-wai,
+        http-api-data,
         http-client,
         http-types,
         interpolate,
+        katip,
         mockery,
+        monad-logger,
+        optics,
+        persistent,
+        persistent-sqlite,
+        resource-pool,
         servant,
         servant-client,
+        servant-server,
+        servant-swagger,
+        swagger2,
         temporary,
+        transformers,
         wai,
-        wai-extra
+        wai-extra,
+        warp
     mixins:
         base hiding (Prelude),
         classy-prelude (ClassyPrelude as Prelude)

@@ -7,7 +7,7 @@ import Network.Wai.Handler.Warp (run)
 import Options.Commander (command_, optDef, raw, toplevel)
 import Text.Read (readMaybe)
 
-import Server (Backend (..), Env (Env), app, getConsoleScribe, initDevSqliteDB, mkEnv)
+import Server (Backend (..), messageConsoleAndRun)
 
 main :: IO ()
 main = command_
@@ -22,15 +22,3 @@ main = command_
           "sqlite" -> messageConsoleAndRun port SQLite
           "prod" -> messageConsoleAndRun port ToBeDeterminedProd
           other -> putStrLn $ "\nInvalid Mode: " <> pack other
-
-messageConsoleAndRun :: Int -> Backend -> IO ()
-messageConsoleAndRun port backend = do
-  env <- mkEnv
-
-  case backend of
-    SQLite -> initDevSqliteDB backend env
-    LocalFile -> pure ()
-    ToBeDeterminedProd -> pure ()
-
-  putStrLn $ "\nListening in " <> tshow backend <> " mode, on port " <> tshow port <> "...\n"
-  run port $ app env

@@ -1,6 +1,21 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server (initDevSqliteDB, app, Backend (..), Env (Env), getConsoleScribe, serverAPI, mkEnv, API, FunctionalAPI, HealthAPI, CommentsAPI, VotingAPI) where
+module Server
+  ( initDevSqliteDB
+  , app
+  , Backend (..)
+  , Env (Env)
+  , getConsoleScribe
+  , serverAPI
+  , mkEnv
+  , API
+  , FunctionalAPI
+  , HealthAPI
+  , CommentsAPI
+  , VotingAPI
+  , messageConsoleAndRun
+  )
+where
 
 import Control.Monad.Trans.Except (except)
 import Data.Bifoldable (bitraverse_)
@@ -14,6 +29,7 @@ import Effectful.Error.Static
   , runError
   )
 import Katip (showLS)
+import Network.Wai.Handler.Warp (run)
 import Optics
 import Servant
   ( Application
@@ -134,3 +150,15 @@ mkEnv :: IO Env
 mkEnv = do
   scribe <- getConsoleScribe
   pure $ Env SQLite "hCommenter.Api" "Dev" "Console" scribe
+
+messageConsoleAndRun :: Int -> Backend -> IO ()
+messageConsoleAndRun port requestedBackend = do
+  env <- mkEnv
+
+  case requestedBackend of
+    SQLite -> initDevSqliteDB requestedBackend env
+    LocalFile -> pure ()
+    ToBeDeterminedProd -> pure ()
+
+  putStrLn $ "\nListening in " <> tshow requestedBackend <> " mode, on port " <> tshow port <> "...\n"
+  run port $ app env

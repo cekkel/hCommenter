@@ -1,7 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
-module ApiProperties where
+module ApiRules.Wai where
 
 import Data.Data (Proxy (Proxy))
 import Data.Function ((&))
@@ -9,7 +8,7 @@ import Data.Maybe (fromJust)
 import Hedgehog
 import Hedgehog.Servant
 import Network.HTTP.Types (Status (statusCode), hCacheControl, methodGet, methodPost, ok200)
-import Network.Wai (Application, Request (requestHeaders, requestMethod), mapRequestHeaders)
+import Network.Wai (Application, Request (..), mapRequestHeaders)
 import Network.Wai.Test
   ( SRequest (SRequest, simpleRequest)
   , SResponse (simpleHeaders, simpleStatus)
@@ -21,14 +20,45 @@ import Network.Wai.Test
 import Servant.API
 import Servant.API.Verbs
 import Servant.Client
-import Test.Hspec.Hedgehog (hedgehog)
+import Test.Hspec
+import Test.Hspec.Hedgehog (hedgehog, modifyMaxSuccess)
 
 import Data.ByteString.Lazy.Internal qualified as Lazy
 import Hedgehog.Gen qualified as Gen
 import Network.HTTP.Client qualified as Client
 
-import Server (FunctionalAPI, app, mkEnv)
+import Server
 import Utils.Generators (genCommentKey, genKey, genNewComment, genSortBy, genText)
+
+runWaiRuleTests :: IO ()
+runWaiRuleTests = hspec apiPropertySpec
+
+apiPropertySpec :: Spec
+apiPropertySpec = before provideRequestHandler $ describe "API best practices" $ do
+  x100 $ do
+    it "is applied to Health API" $
+      requireApiBestPracticesFor (Proxy @HealthAPI)
+
+    it "is applied to Voting API" $
+      requireApiBestPracticesFor (Proxy @VotingAPI)
+
+    x50 $ -- only do 50 since this one is slower
+      it "is applied to Comments API" $
+        requireApiBestPracticesFor (Proxy @CommentsAPI)
+
+    it "is applied to the full API as a whole" $
+      -- Yes this is (mostly) a duplicate of previous tests, it's just in case a new
+      -- set of endpoints get added but not added here to the tests.
+      -- It should also include the swagger endpoint.
+      requireApiBestPracticesFor (Proxy @API)
+ where
+  x100 = modifyMaxSuccess (const 100)
+  x50 = modifyMaxSuccess (const 50)
+
+provideRequestHandler :: IO (Request -> IO SResponse)
+provideRequestHandler = do
+  myApp <- app <$> mkEnv
+  pure $ liftIO . withSession myApp . request
 
 requireApiBestPracticesFor apiProxy makeReq = hedgehog $ do
   req <- forAll $ genReq apiProxy
