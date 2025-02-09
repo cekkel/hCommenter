@@ -1,34 +1,42 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { CommentList } from './components/CommentList'
+import { Comment } from './types/comment'
 
 function App() {
-  const [count, setCount] = useState(0)
+  // Mock data - will be replaced with backend data later
+  const [comments] = useState<Comment[]>([
+    {
+      id: '1',
+      content: 'This is a test comment',
+      author: 'John Doe',
+      timestamp: new Date('2023-09-02T10:00:00'),
+      replies: [
+        {
+          id: '2',
+          content: 'This is a reply to the test comment',
+          author: 'Jane Smith',
+          timestamp: new Date('2023-09-02T10:30:00')
+        }
+      ]
+    },
+    {
+      id: '3',
+      content: 'Another top-level comment',
+      author: 'Bob Wilson',
+      timestamp: new Date('2023-09-02T11:00:00')
+    }
+  ])
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="app">
+      <header className="app-header">
+        <h1>Comment System</h1>
+      </header>
+      <main className="app-content">
+        <CommentList comments={comments} />
+      </main>
+    </div>
   )
 }
 
