@@ -77,7 +77,7 @@ jobs:
       # - name: Run tests
       #   run: cabal test all
 
-  deploy-dev:
+  deploy-test:
     needs: build
     runs-on: ubuntu-latest
     environment: dev
@@ -103,6 +103,9 @@ jobs:
           containerAppEnvironment: ${{ env.APP_ENVIRONMENT }}
           targetPort: ${{ env.TARGET_PORT }}
           location: ${{ env.LOCATION }}
+          environmentVariables: >
+            APP_ENVIRONMENT=Test
+            SENTRY_DSN=secretref:${{ secrets.SENTRY_DSN }}
 
   #  deploy-production:
   #    steps:

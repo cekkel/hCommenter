@@ -51,6 +51,8 @@ dependencies:
   - effectful-plugin
   - monad-logger
   - katip
+  - katip-raven
+  - raven-haskell
   - aeson
   - persistent
   - persistent-sqlite
@@ -58,6 +60,9 @@ dependencies:
   - http-api-data
   - hedgehog
   - warp
+  - string-conv
+  - unordered-containers
+  - text
 
 library:
   source-dirs: src

@@ -63,19 +63,14 @@ runLog
   -> Eff (Log : es) a
   -> Eff es a
 runLog env logEff = do
-  let
-    component' = Namespace [env ^. appName]
-    environment' = Environment $ env ^. envName
-
-  initialEnv <- liftIO $ initLogEnv component' environment'
-  envWithScribe <- liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv
+  envWithScribe <- liftIO $ initLogEnvWithScribe env
 
   flip evalStaticRep logEff $
     Log
       LogConfig
         { _logNamespace = mempty
         , _logContext = mempty
-        , _logEnv = initialEnv
+        , _logEnv = envWithScribe
         }
 
 initLogEnvWithScribe :: Env -> IO LogEnv
@@ -85,7 +80,12 @@ initLogEnvWithScribe env = do
     environment' = Environment $ env ^. envName
 
   initialEnv <- liftIO $ initLogEnv component' environment'
-  liftIO $ registerScribe (env ^. scribeName) (env ^. scribe) defaultScribeSettings initialEnv
+  liftIO $
+    registerScribe
+      (env ^. scribeName)
+      (env ^. scribe)
+      defaultScribeSettings
+      initialEnv
 
 getConsoleScribe :: IO Scribe
 getConsoleScribe = mkHandleScribe (ColorLog True) stdout (const (pure True)) V0
@@ -110,7 +110,7 @@ logError = log ErrorS
 logExceptions :: (IOE :> es, Log :> es) => Eff es a -> Eff es a
 logExceptions action = action `catchAny` \e -> logErr e >> throwIO e
  where
-  logErr e = logFM ErrorS ("An exception has occurred: " <> showLS e)
+  logErr e = logError ("An exception has occurred: " <> showLS e)
 
 addLogNamespace :: (Log :> es) => Namespace -> Eff es a -> Eff es a
 addLogNamespace ns = localKatipNamespace' (<> ns)

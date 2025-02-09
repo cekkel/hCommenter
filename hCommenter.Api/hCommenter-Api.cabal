@@ -35,6 +35,7 @@ library
         Database.StorageTypes
         Logging.LogContext
         Logging.LogEffect
+        Logging.Raven
         Mapping.Comments
         Mapping.ExternalTypes
         Mapping.Typeclass
@@ -46,6 +47,7 @@ library
         Server.ServerTypes
         Server.Swagger
         Server.Voting
+        Utils.Environment
     build-depends:
         aeson,
         aeson-pretty,
@@ -62,15 +64,20 @@ library
         http-api-data,
         http-types,
         katip,
+        katip-raven,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
+        raven-haskell,
         resource-pool,
         servant-server,
         servant-swagger,
+        string-conv,
         swagger2,
+        text,
         transformers,
+        unordered-containers,
         wai,
         warp
     mixins:
@@ -108,15 +115,20 @@ executable hCommenter-Api
         http-api-data,
         http-types,
         katip,
+        katip-raven,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
+        raven-haskell,
         resource-pool,
         servant-server,
         servant-swagger,
+        string-conv,
         swagger2,
+        text,
         transformers,
+        unordered-containers,
         wai,
         warp
     mixins:
@@ -176,19 +188,24 @@ test-suite spec
         http-types,
         interpolate,
         katip,
+        katip-raven,
         mockery,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
+        raven-haskell,
         resource-pool,
         servant,
         servant-client,
         servant-server,
         servant-swagger,
+        string-conv,
         swagger2,
         temporary,
+        text,
         transformers,
+        unordered-containers,
         wai,
         wai-extra,
         warp

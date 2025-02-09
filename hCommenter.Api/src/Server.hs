@@ -28,7 +28,7 @@ import Effectful.Error.Static
   , prettyCallStack
   , runError
   )
-import Katip (showLS)
+import Katip (Verbosity (V3), showLS)
 import Network.Wai.Handler.Warp (run)
 import Optics
 import Servant
@@ -44,6 +44,8 @@ import Servant
   , type (:<|>) (..)
   )
 import Servant.Swagger (HasSwagger (toSwagger))
+import System.Log.Raven (initRaven, stderrFallback)
+import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import Prelude hiding (Handler)
 
 import Data.Aeson qualified as JSON
@@ -58,12 +60,14 @@ import Database.SqlStorage (runCommentStorageSQL)
 import Database.StorageTypes
 import Logging.LogEffect
   ( Log
+  , addLogContext
   , getConsoleScribe
   , getFileScribe
   , logError
   , logExceptions
   , runLog
   )
+import Logging.Raven (mkRavenScribe)
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
 import Server.Comment (CommentsAPI, commentServer)
@@ -71,6 +75,7 @@ import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
+import Utils.Environment (getAppEnv, getSentryDSN)
 
 type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
 
@@ -121,7 +126,10 @@ runAndLiftError
   -> Eff es (Either (CallStack, CustomError) a)
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
-logExplicitErrors :: (Log E.:> es, Show e) => Eff es (Either (CallStack, e) a) -> Eff es (Either (CallStack, e) a)
+logExplicitErrors
+  :: (Log E.:> es, Show e)
+  => Eff es (Either (CallStack, e) a)
+  -> Eff es (Either (CallStack, e) a)
 logExplicitErrors currEff = do
   value <- currEff
   bitraverse_ handleLeft pure value
@@ -148,8 +156,14 @@ handleServerResponse (Left (_, err)) = case err of
 
 mkEnv :: IO Env
 mkEnv = do
-  scribe <- getConsoleScribe
-  pure $ Env SQLite "hCommenter.Api" "Dev" "Console" scribe
+  -- scribe <- getConsoleScribe
+  appEnv <- getAppEnv
+  sentryDSN <- getSentryDSN
+  sentryService <- initRaven sentryDSN id sendRecord stderrFallback
+
+  ravenScribe <- mkRavenScribe sentryService (const $ pure True) V3
+
+  pure $ Env SQLite "hCommenter.Api" appEnv "Raven" ravenScribe
 
 messageConsoleAndRun :: Int -> Backend -> IO ()
 messageConsoleAndRun port requestedBackend = do
