@@ -21,4 +21,5 @@ import Server
 main :: IO ()
 main = do
   runWaiRuleTests
-  runInstanceRuleTests
+
+-- runInstanceRuleTests

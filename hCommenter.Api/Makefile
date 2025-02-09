@@ -1,5 +1,6 @@
 PROJECT_NAME := hCommenter-Api
 CABAL_FILE := hCommenter-Api.cabal
+HPACK_FILE := package.yaml
 HPACK := hpack
 
 # Default target to build the project
@@ -10,24 +11,29 @@ run-hpack:
 	$(HPACK) -f
 
 check-hpack:
-	@if [ ! -f "$(CABAL_FILE)" ] || [ "$(CABAL_FILE)" -ot "package.yaml" ]; then \
+	@if [ ! -f "$(CABAL_FILE)" ] || [ "$(CABAL_FILE)" -ot "$(HPACK_FILE)" ]; then \
 		@echo "Cabal file is out of date, hpack needs to be run."; \
 		@false; \
 	fi
 
+run-test:
+	cabal test \
+		--test-show-details=direct
+
 build: run-hpack
 	cabal build
 
-test: run-hpack
-	cabal test \
-		--test-show-details=direct
+test: run-hpack run-test
+
+test-ci: check-hpack run-test
+
 # --test-option=--match="" \
 # --test-option=--seed=""
 
 run: run-hpack
 	cabal run
 
-build-no-deps: check-hpack
+build-only-deps: check-hpack
 	cabal build --only-dependencies -j
 
 build-static: check-hpack

@@ -19,11 +19,15 @@ WORKDIR /opt/hCommenter
 # First install dependencies only, to improve caching
 COPY ./Makefile .
 COPY ./package.yaml .
-COPY ./hCommenter-Api.cabal /opt/hCommenter/hCommenter-Api.cabal
-RUN cabal update && make build-no-deps
+COPY ./cabal.project .
+COPY ./hCommenter-Api.cabal .
+RUN cabal update && make build-only-deps
 
-# Now build the app
-COPY . /opt/hCommenter
+# Build and run tests
+COPY . ./
+RUN make test-ci
+
+# Now build the app executable
 RUN make build-static && \
     cp "$(cabal list-bin hCommenter-Api)" .
 
