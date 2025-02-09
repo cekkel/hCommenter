@@ -1,32 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import { CommentList } from './components/CommentList'
-import { Comment } from './types/comment'
+import { ViewComment } from './api/models/view-comment'
+import { DefaultApi } from './api/api/default-api'
+import { apiConfig, apiAxios } from './api/config'
 
 function App() {
-  // Mock data - will be replaced with backend data later
-  const [comments] = useState<Comment[]>([
-    {
-      id: '1',
-      content: 'This is a test comment',
-      author: 'John Doe',
-      timestamp: new Date('2023-09-02T10:00:00'),
-      replies: [
-        {
-          id: '2',
-          content: 'This is a reply to the test comment',
-          author: 'Jane Smith',
-          timestamp: new Date('2023-09-02T10:30:00')
-        }
-      ]
-    },
-    {
-      id: '3',
-      content: 'Another top-level comment',
-      author: 'Bob Wilson',
-      timestamp: new Date('2023-09-02T11:00:00')
+  const [comments, setComments] = useState<ViewComment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const api = new DefaultApi(apiConfig, undefined, apiAxios)
+  const conversationUrl = 'test-conversation' // This would typically come from the current page URL
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await api.commentsConversationConvoUrlGet(conversationUrl)
+        setComments(response.data)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load comments. Please try again later.'
+        setError(errorMessage)
+        console.error('Error fetching comments:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-  ])
+
+    fetchComments()
+  }, [conversationUrl])
 
   return (
     <div className="app">
@@ -34,7 +38,15 @@ function App() {
         <h1>Comment System</h1>
       </header>
       <main className="app-content">
-        <CommentList comments={comments} />
+        {loading ? (
+          <div className="loading">Loading comments...</div>
+        ) : error ? (
+          <div className="error">{error}</div>
+        ) : comments.length === 0 ? (
+          <div className="no-comments">No comments yet. Be the first to comment!</div>
+        ) : (
+          <CommentList comments={comments} />
+        )}
       </main>
     </div>
   )

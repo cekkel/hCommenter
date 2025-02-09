@@ -1,8 +1,8 @@
-import { Comment as CommentType } from '../types/comment';
+import { ViewComment } from '../api/models/view-comment';
 import { Comment } from './Comment';
 
 interface CommentListProps {
-    comments: CommentType[];
+    comments: ViewComment[];
 }
 
 export const CommentList: React.FC<CommentListProps> = ({ comments }) => {
