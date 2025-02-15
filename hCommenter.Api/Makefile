@@ -39,4 +39,7 @@ build-only-deps: check-hpack
 build-static: check-hpack
 	cabal build --enable-executable-static
 
+build-docker-base:
+	docker build --file base.Dockerfile . --tag hcommenter:base
+
 .PHONY: all run-hpack build build-no-deps build-static

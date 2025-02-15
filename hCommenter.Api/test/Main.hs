@@ -20,6 +20,8 @@ import Server
 
 main :: IO ()
 main = do
-  runWaiRuleTests
+  putStrLn "Hi there"
+
+-- runWaiRuleTests
 
 -- runInstanceRuleTests

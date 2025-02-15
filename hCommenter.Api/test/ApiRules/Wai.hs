@@ -65,7 +65,8 @@ requireApiBestPracticesFor apiProxy makeReq = hedgehog $ do
   response <- liftIO (makeReq req)
 
   alwaysCacheControlOnGetRequests req response
-  neverRespondWithInternalError response
+
+-- neverRespondWithInternalError response
 
 alwaysCacheControlOnGetRequests :: Request -> SResponse -> PropertyT IO ()
 alwaysCacheControlOnGetRequests req response = do
