@@ -16,7 +16,7 @@ on:
     inputs:
       rebuild_api_base:
         type: boolean
-        description: If true, rebuild the base image for the API. Takes a long time.
+        description: Rebuild the base image for the API. Takes a long time.
       tags:
         description: "Workflow run reason tags"
   push:
@@ -76,7 +76,7 @@ jobs:
         if: ${{ github.event.inputs.rebuild_api_base }}
         with:
           context: hCommenter.Api/
-          file: "{context}/base.Dockerfile"
+          file: hCommenter.Api/base.Dockerfile
           push: true
           tags: ${{ steps.construct_tags.outputs.base_image_tag }}
           cache-from: type=gha
@@ -87,7 +87,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: hCommenter.Api/
-          file: "{context}/build.Dockerfile"
+          file: hCommenter.Api/build.Dockerfile
           build-args: BASE_IMAGE=${{ steps.construct_tags.outputs.base_image_tag }}
           push: true
           tags: ${{ steps.construct_tags.outputs.full_image_tag }}
