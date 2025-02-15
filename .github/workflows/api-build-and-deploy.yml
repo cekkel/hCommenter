@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Build
     outputs:
-      image_tag: ${{ steps.construct_full_api_tag.outputs.image_tag }}
+      image_tag: ${{ steps.construct_tags.outputs.full_image_tag }}
     steps:
       - name: Checkout branch to deploy
         uses: actions/checkout@v3
@@ -53,15 +53,12 @@ jobs:
         run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
 
       # Then store the tag names as a whole for easy re-use.
-      - name: Construct api base image tag
-        id: construct_base_api_tag
+      - name: Construct api image tag names
+        id: construct_tags
         shell: bash
-        run: echo "image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}-api:base" >> $GITHUB_OUTPUT
-
-      - name: Construct api full image tag
-        id: construct_full_api_tag
-        shell: bash
-        run: echo "image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}-api:${BRANCH_NAME}" >> $GITHUB_OUTPUT
+        run: |
+          echo "base_image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}-api:base" >> $GITHUB_OUTPUT; \
+          echo "full_image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}-api:${BRANCH_NAME}" >> $GITHUB_OUTPUT;
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -79,9 +76,9 @@ jobs:
         if: ${{ github.event.inputs.rebuild_api_base }}
         with:
           context: hCommenter.Api/
-          file: base.Dockerfile
+          file: "{context}/base.Dockerfile"
           push: true
-          tags: ${{ steps.construct_base_api_tag.outputs.image_tag }}
+          tags: ${{ steps.construct_tags.outputs.base_image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -90,10 +87,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: hCommenter.Api/
-          file: build.Dockerfile
-          build-args: BASE_IMAGE=${{ steps.construct_base_api_tag.outputs.image_tag }}
+          file: "{context}/build.Dockerfile"
+          build-args: BASE_IMAGE=${{ steps.construct_tags.outputs.base_image_tag }}
           push: true
-          tags: ${{ steps.construct_full_api_tag.outputs.image_tag }}
+          tags: ${{ steps.construct_tags.outputs.full_image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
