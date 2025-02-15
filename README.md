@@ -2,15 +2,16 @@
 
 ## Introduction
 
+This is a commenting solution which can be easily added to any web page.
+
 ## Dependencies
 
-### API
+- docker (with docker daemon running)
+- docker compose plugin
+- make
 
-- `Haskell`
-- `Servant` for creating the REST server.
-- `Aeson` for dealing with JSON.
+## Get started locally
 
-### SPA
-
-- `ReactJS` for the SPA UI, all client-side.
-- `swagger-typescript-api` for generating API requests.
+1. Run `make docker-base` to create the base image for the API (to speed up build).
+2. Run `docker compose --profile dev up --build` to build & start the API & SPA containers.
+3. Access the app at `http://localhost:5173`.
