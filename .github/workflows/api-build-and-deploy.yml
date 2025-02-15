@@ -14,6 +14,9 @@ env:
 on:
   workflow_dispatch:
     inputs:
+      rebuild_api_base:
+        type: boolean
+        description: If true, rebuild the base image for the API. Takes a long time.
       tags:
         description: "Workflow run reason tags"
   push:
@@ -33,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Build
     outputs:
-      image_tag: ${{ steps.construct_tag.outputs.image_tag }}
+      image_tag: ${{ steps.construct_full_api_tag.outputs.image_tag }}
     steps:
       - name: Checkout branch to deploy
         uses: actions/checkout@v3
@@ -49,9 +52,14 @@ jobs:
         shell: bash
         run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
 
-      # Then store the tag name as a whole for easy re-use.
-      - name: Construct docker image tag
-        id: construct_tag
+      # Then store the tag names as a whole for easy re-use.
+      - name: Construct api base image tag
+        id: construct_base_api_tag
+        shell: bash
+        run: echo "image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME} >> $GITHUB_OUTPUT
+
+      - name: Construct api full image tag
+        id: construct_full_api_tag
         shell: bash
         run: echo "image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}:${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
@@ -65,17 +73,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      # This conditionally creates a 'base' image for the API, since installing haskell deps can take >10 mins.
+      - name: "Build and push: API base"
         uses: docker/build-push-action@v6
+        if: ${{ github.event.inputs.rebuild_api_base }}
         with:
           context: hCommenter.Api/
+          file: base.Dockerfile
           push: true
-          tags: ${{ steps.construct_tag.outputs.image_tag }}
+          tags: ${{ steps.construct_base_api_tag.outputs.image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # - name: Run tests
-      #   run: cabal test all
+      # Now actually create the API image.
+      - name: "Build, test and push: API full image"
+        uses: docker/build-push-action@v6
+        with:
+          context: hCommenter.Api/
+          file: build.Dockerfile
+          build-args: BASE_IMAGE=${{ steps.construct_base_api_tag.outputs.image_tag }}
+          push: true
+          tags: ${{ steps.construct_full_api_tag.outputs.image_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy-test:
     needs: build
