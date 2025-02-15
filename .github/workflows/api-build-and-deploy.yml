@@ -122,7 +122,7 @@ jobs:
           location: ${{ env.LOCATION }}
           environmentVariables: >
             APP_ENVIRONMENT=Test
-            SENTRY_DSN=secretref:${{ secrets.SENTRY_DSN }}
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
 
   #  deploy-production:
   #    steps:
