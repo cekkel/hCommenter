@@ -5,23 +5,23 @@ interface CommentProps {
 }
 
 export const Comment: React.FC<CommentProps> = ({ comment }) => {
-    const formatDate = (timestamp: string | undefined) => {
-        if (!timestamp) return '';
-        return new Date(timestamp).toLocaleString();
-    };
-
     return (
         <div className="comment">
             <div className="comment-header">
-                <span className="comment-author">{comment.author}</span>
-                <span className="comment-timestamp">
-                    {formatDate(comment.timestamp)}
-                </span>
+                <div className="comment-header-left">
+                    <span className="comment-author">{comment.authorName}</span>
+                    <span className="comment-timestamp">
+                        {new Date(comment.created).toLocaleString()}
+                    </span>
+                </div>
+                <div className="comment-header-right">
+                    <span className="comment-score">Score: {comment.score}</span>
+                </div>
             </div>
-            <div className="comment-content">{comment.content}</div>
-            {comment.replies && comment.replies.length > 0 && (
+            <div className="comment-content">{comment.message}</div>
+            {comment.replies && comment.replies.info.length > 0 && (
                 <div className="comment-replies">
-                    {comment.replies.map((reply) => (
+                    {comment.replies.info.map((reply) => (
                         <Comment key={reply.id} comment={reply} />
                     ))}
                 </div>

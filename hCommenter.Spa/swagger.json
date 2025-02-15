@@ -1,444 +1,105 @@
 {
-    "swagger": "2.0",
-    "info": {
-        "description": "An API for creating and retrieving conversation comments.",
-        "license": {
-            "name": "MIT"
-        },
-        "title": "hCommenter.API",
-        "version": "1.0"
+  "swagger": "2.0",
+  "info": {
+    "description": "An API for creating and retrieving conversation comments.",
+    "license": {
+      "name": "MIT"
     },
-    "paths": {
-        "/health": {
-            "get": {
-                "description": "Returns 200 if service is online",
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/comments/conversation/{convoUrl}": {
-            "get": {
-                "description": "Get all comments for a particular conversation (page)",
-                "parameters": [
-                    {
-                        "enum": [
-                            "Old",
-                            "New",
-                            "Popular",
-                            "Controversial"
-                        ],
-                        "in": "query",
-                        "name": "sortby",
-                        "required": false,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "convoUrl",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "produces": [
-                    "application/json;charset=utf-8"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "items": {
-                                "$ref": "#/definitions/ViewComment"
-                            },
-                            "type": "array"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid `convoUrl` or `sortby`"
-                    }
-                }
-            }
-        },
-        "/comments/user/{username}": {
-            "get": {
-                "description": "Get all comments for a particular user",
-                "parameters": [
-                    {
-                        "enum": [
-                            "Old",
-                            "New",
-                            "Popular",
-                            "Controversial"
-                        ],
-                        "in": "query",
-                        "name": "sortby",
-                        "required": false,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "username",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "produces": [
-                    "application/json;charset=utf-8"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "items": {
-                                "$ref": "#/definitions/ViewComment"
-                            },
-                            "type": "array"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid `username` or `sortby`"
-                    }
-                }
-            }
-        },
-        "/comments/{id}/replies": {
-            "get": {
-                "description": "Get all replies for a particular comment",
-                "parameters": [
-                    {
-                        "enum": [
-                            "Old",
-                            "New",
-                            "Popular",
-                            "Controversial"
-                        ],
-                        "in": "query",
-                        "name": "sortby",
-                        "required": false,
-                        "type": "string"
-                    },
-                    {
-                        "format": "int64",
-                        "in": "path",
-                        "maximum": 9223372036854775807,
-                        "minimum": -9223372036854775808,
-                        "name": "id",
-                        "required": true,
-                        "type": "integer"
-                    }
-                ],
-                "produces": [
-                    "application/json;charset=utf-8"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "items": {
-                                "$ref": "#/definitions/ViewComment"
-                            },
-                            "type": "array"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid `id` or `sortby`"
-                    }
-                }
-            }
-        },
-        "/comments/new": {
-            "post": {
-                "consumes": [
-                    "application/json;charset=utf-8"
-                ],
-                "description": "Create a new comment and get new ID",
-                "parameters": [
-                    {
-                        "enum": [
-                            "Old",
-                            "New",
-                            "Popular",
-                            "Controversial"
-                        ],
-                        "in": "query",
-                        "name": "sortby",
-                        "required": false,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/NewComment"
-                        }
-                    }
-                ],
-                "produces": [
-                    "application/json;charset=utf-8"
-                ],
-                "responses": {
-                    "201": {
-                        "description": "",
-                        "schema": {
-                            "format": "int64",
-                            "maximum": 9223372036854775807,
-                            "minimum": -9223372036854775808,
-                            "type": "integer"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid `body` or `sortby`"
-                    }
-                }
-            }
-        },
-        "/comments/edit/{id}": {
-            "post": {
-                "consumes": [
-                    "application/json;charset=utf-8"
-                ],
-                "description": "Edit an existing comment",
-                "parameters": [
-                    {
-                        "enum": [
-                            "Old",
-                            "New",
-                            "Popular",
-                            "Controversial"
-                        ],
-                        "in": "query",
-                        "name": "sortby",
-                        "required": false,
-                        "type": "string"
-                    },
-                    {
-                        "format": "int64",
-                        "in": "path",
-                        "maximum": 9223372036854775807,
-                        "minimum": -9223372036854775808,
-                        "name": "id",
-                        "required": true,
-                        "type": "integer"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "produces": [
-                    "application/json;charset=utf-8"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/ViewComment"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid `body` or `id` or `sortby`"
-                    }
-                }
-            }
-        },
-        "/comments/delete/{id}": {
-            "post": {
-                "description": "Delete a comment",
-                "parameters": [
-                    {
-                        "enum": [
-                            "Old",
-                            "New",
-                            "Popular",
-                            "Controversial"
-                        ],
-                        "in": "query",
-                        "name": "sortby",
-                        "required": false,
-                        "type": "string"
-                    },
-                    {
-                        "format": "int64",
-                        "in": "path",
-                        "maximum": 9223372036854775807,
-                        "minimum": -9223372036854775808,
-                        "name": "id",
-                        "required": true,
-                        "type": "integer"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    },
-                    "400": {
-                        "description": "Invalid `id` or `sortby`"
-                    }
-                }
-            }
-        },
-        "/comments/{id}/upvote": {
-            "post": {
-                "description": "Upvote a comment",
-                "parameters": [
-                    {
-                        "format": "int64",
-                        "in": "path",
-                        "maximum": 9223372036854775807,
-                        "minimum": -9223372036854775808,
-                        "name": "id",
-                        "required": true,
-                        "type": "integer"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    },
-                    "400": {
-                        "description": "Invalid `id`"
-                    }
-                }
-            }
-        },
-        "/comments/{id}/downvote": {
-            "post": {
-                "description": "Downvote a comment",
-                "parameters": [
-                    {
-                        "format": "int64",
-                        "in": "path",
-                        "maximum": 9223372036854775807,
-                        "minimum": -9223372036854775808,
-                        "name": "id",
-                        "required": true,
-                        "type": "integer"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    },
-                    "400": {
-                        "description": "Invalid `id`"
-                    }
-                }
-            }
-        }
-    },
-    "definitions": {
-        "ViewComment": {
-            "required": [
-                "id",
-                "created",
-                "message",
-                "score",
-                "authorName",
-                "conversationUrl"
-            ],
-            "properties": {
-                "id": {
-                    "format": "int64",
-                    "maximum": 9223372036854775807,
-                    "minimum": -9223372036854775808,
-                    "type": "integer"
-                },
-                "created": {
-                    "$ref": "#/definitions/UTCTime"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "score": {
-                    "maximum": 9223372036854775807,
-                    "minimum": -9223372036854775808,
-                    "type": "integer"
-                },
-                "replies": {
-                    "$ref": "#/definitions/Paginated"
-                },
-                "authorName": {
-                    "type": "string"
-                },
-                "conversationUrl": {
-                    "type": "string"
-                }
-            },
-            "type": "object"
-        },
-        "UTCTime": {
-            "example": "2016-07-22T00:00:00Z",
-            "format": "yyyy-mm-ddThh:MM:ssZ",
+    "title": "hCommenter.API",
+    "version": "1.0"
+  },
+  "paths": {
+    "/comments/conversation/{convoUrl}": {
+      "get": {
+        "description": "Get all comments for a particular conversation (page)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "convoUrl",
+            "required": true,
             "type": "string"
-        },
-        "Paginated": {
-            "required": [
-                "info",
-                "pagination"
-            ],
-            "properties": {
-                "info": {
-                    "items": {
-                        "$ref": "#/definitions/ViewComment"
-                    },
-                    "type": "array"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/PaginationData"
-                }
-            },
-            "type": "object"
-        },
-        "PaginationData": {
-            "required": [
-                "totalReplies",
-                "cursor"
-            ],
-            "properties": {
-                "totalReplies": {
-                    "maximum": 9223372036854775807,
-                    "minimum": -9223372036854775808,
-                    "type": "integer"
-                },
-                "cursor": {
-                    "maximum": 9223372036854775807,
-                    "minimum": -9223372036854775808,
-                    "type": "integer"
-                }
-            },
-            "type": "object"
-        },
-        "NewComment": {
-            "required": [
-                "message",
-                "author",
-                "convoUrl"
-            ],
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "parent": {
-                    "format": "int64",
-                    "maximum": 9223372036854775807,
-                    "minimum": -9223372036854775808,
-                    "type": "integer"
-                },
-                "author": {
-                    "type": "string"
-                },
-                "convoUrl": {
-                    "type": "string"
-                }
-            },
-            "type": "object"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Paginated"
+            }
+          }
         }
+      }
     }
+  },
+  "definitions": {
+    "ViewComment": {
+      "type": "object",
+      "required": [
+        "id",
+        "created",
+        "message",
+        "score",
+        "authorName",
+        "conversationUrl"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "message": {
+          "type": "string"
+        },
+        "score": {
+          "type": "integer"
+        },
+        "authorName": {
+          "type": "string"
+        },
+        "conversationUrl": {
+          "type": "string"
+        },
+        "replies": {
+          "$ref": "#/definitions/Paginated"
+        }
+      }
+    },
+    "Paginated": {
+      "type": "object",
+      "required": [
+        "info",
+        "pagination"
+      ],
+      "properties": {
+        "info": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ViewComment"
+          }
+        },
+        "pagination": {
+          "$ref": "#/definitions/PaginationData"
+        }
+      }
+    },
+    "PaginationData": {
+      "type": "object",
+      "required": [
+        "totalReplies",
+        "cursor"
+      ],
+      "properties": {
+        "totalReplies": {
+          "type": "integer"
+        },
+        "cursor": {
+          "type": "integer"
+        }
+      }
+    }
+  }
 }

@@ -8,7 +8,6 @@ configuration.ts
 git_push.sh
 index.ts
 models/index.ts
-models/new-comment.ts
 models/paginated.ts
 models/pagination-data.ts
 models/view-comment.ts
