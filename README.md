@@ -18,4 +18,4 @@ This is a commenting solution which can be easily added to any web page.
 
 # Database Schema
 
-![Database Schema Diagram]("./docs/DatabaseSchema.drawio.png")
+![Database Schema Diagram](./docs/DatabaseSchema.drawio.svg)
