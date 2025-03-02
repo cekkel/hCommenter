@@ -51,9 +51,8 @@ dependencies:
   - effectful-plugin
   - monad-logger
   - katip
-  - katip-raven
-  - raven-haskell
   - aeson
+  - req
   - persistent
   - persistent-sqlite
   - resource-pool

@@ -4,7 +4,7 @@ import Network.Wai (Application, Request (requestMethod))
 
 import Middleware.Headers (addGlobalHeadersToResponse)
 import Middleware.Requests (getCorrelationId, logRequest, logResponse)
-import Server.ServerTypes (Env)
+import Utils.Environment (Env)
 
 addCustomMiddleware :: Env -> Application -> Application
 addCustomMiddleware env baseApp req responseF = do

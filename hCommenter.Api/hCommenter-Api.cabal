@@ -33,9 +33,10 @@ library
         Database.SqlPool
         Database.SqlStorage
         Database.StorageTypes
+        Logging.Grafana
         Logging.LogContext
         Logging.LogEffect
-        Logging.Raven
+        Logging.Newrelic
         Mapping.Comments
         Mapping.ExternalTypes
         Mapping.Typeclass
@@ -64,12 +65,11 @@ library
         http-api-data,
         http-types,
         katip,
-        katip-raven,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
-        raven-haskell,
+        req,
         resource-pool,
         servant-server,
         servant-swagger,
@@ -115,12 +115,11 @@ executable hCommenter-Api
         http-api-data,
         http-types,
         katip,
-        katip-raven,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
-        raven-haskell,
+        req,
         resource-pool,
         servant-server,
         servant-swagger,
@@ -188,13 +187,12 @@ test-suite spec
         http-types,
         interpolate,
         katip,
-        katip-raven,
         mockery,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
-        raven-haskell,
+        req,
         resource-pool,
         servant,
         servant-client,

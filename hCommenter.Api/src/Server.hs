@@ -4,10 +4,8 @@ module Server
   ( initDevSqliteDB
   , app
   , Backend (..)
-  , Env (Env)
-  , getConsoleScribe
   , serverAPI
-  , mkEnv
+  , readEnv
   , API
   , FunctionalAPI
   , HealthAPI
@@ -44,8 +42,6 @@ import Servant
   , type (:<|>) (..)
   )
 import Servant.Swagger (HasSwagger (toSwagger))
-import System.Log.Raven (initRaven, stderrFallback)
-import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import Prelude hiding (Handler)
 
 import Data.Aeson qualified as JSON
@@ -61,21 +57,19 @@ import Database.StorageTypes
 import Logging.LogEffect
   ( Log
   , addLogContext
-  , getConsoleScribe
   , getFileScribe
   , logError
   , logExceptions
   , runLog
   )
-import Logging.Raven (mkRavenScribe)
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
 import Server.Comment (CommentsAPI, commentServer)
 import Server.Health (HealthAPI, healthServer)
-import Server.ServerTypes (Backend (..), CustomError (..), Env (..), ErrorResponse (ErrorResponse), InputError (..), backend)
+import Server.ServerTypes (Backend (..), CustomError (..), ErrorResponse (ErrorResponse), InputError (..))
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
-import Utils.Environment (getAppEnv, getSentryDSN)
+import Utils.Environment (Env (backend), readEnv)
 
 type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
 
@@ -116,7 +110,7 @@ effToHandler env m = do
       $ m
   Handler $ except $ handleServerResponse result
  where
-  commentHandler = case env ^. backend of
+  commentHandler = case env ^. #backend of
     LocalFile -> error "Mode not supported"
     sqlBackend -> runCommentStorageSQL sqlBackend
 
@@ -154,20 +148,9 @@ handleServerResponse (Left (_, err)) = case err of
       , errHeaders = [(fromString "Content-Type", "application/json;charset=utf-8")]
       }
 
-mkEnv :: IO Env
-mkEnv = do
-  -- scribe <- getConsoleScribe
-  appEnv <- getAppEnv
-  sentryDSN <- getSentryDSN
-  sentryService <- initRaven sentryDSN id sendRecord stderrFallback
-
-  ravenScribe <- mkRavenScribe sentryService (const $ pure True) V3
-
-  pure $ Env SQLite "hCommenter.Api" appEnv "Raven" ravenScribe
-
 messageConsoleAndRun :: Int -> Backend -> IO ()
 messageConsoleAndRun port requestedBackend = do
-  env <- mkEnv
+  env <- readEnv
 
   case requestedBackend of
     SQLite -> initDevSqliteDB requestedBackend env

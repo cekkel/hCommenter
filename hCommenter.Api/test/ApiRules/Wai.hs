@@ -57,7 +57,7 @@ apiPropertySpec = before provideRequestHandler $ describe "API best practices" $
 
 provideRequestHandler :: IO (Request -> IO SResponse)
 provideRequestHandler = do
-  myApp <- app <$> mkEnv
+  myApp <- app <$> readEnv
   pure $ liftIO . withSession myApp . request
 
 requireApiBestPracticesFor apiProxy makeReq = hedgehog $ do

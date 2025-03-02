@@ -1,18 +1,21 @@
 module Database.Mockserver where
 
-import Data.Map qualified as M
 import Database.Persist (Filter)
 import Database.Persist.Sql
   ( PersistQueryWrite (deleteWhere)
   , PersistStoreWrite (insertMany_)
   , toSqlKey
   )
+import Effectful (runEff)
+import Optics
+
+import Data.Map qualified as M
+
 import Database.SqlPool (runSqlPool, withConn)
 import Database.StorageTypes
-import Effectful (runEff)
 import Logging.LogEffect (runLog)
-import Optics
-import Server.ServerTypes (Backend, Env)
+import Server.ServerTypes (Backend)
+import Utils.Environment (Env)
 
 mkMockComments :: IO PureStorage
 mkMockComments = do

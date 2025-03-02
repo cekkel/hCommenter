@@ -13,7 +13,7 @@ import Servant (Application)
 import Logging.LogContext (LogField (CorrelationID))
 import Logging.LogEffect (addLogContext, logInfo, runLog)
 import Middleware.Headers (correlationIDHeaderName)
-import Server.ServerTypes (Env)
+import Utils.Environment (Env)
 
 getCorrelationId :: Request -> Text
 getCorrelationId req = fromMaybe "No CorrelationID" maybeCorrelationId

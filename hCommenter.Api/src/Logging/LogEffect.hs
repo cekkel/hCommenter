@@ -34,13 +34,7 @@ import Optics
 import Prelude hiding (log, singleton)
 
 import Logging.LogContext (LogField, logFieldToObjectPair)
-import Server.ServerTypes
-  ( Env
-  , appName
-  , envName
-  , scribe
-  , scribeName
-  )
+import Utils.Environment
 
 data LogConfig = LogConfig
   { _logNamespace :: !Namespace
@@ -76,19 +70,16 @@ runLog env logEff = do
 initLogEnvWithScribe :: Env -> IO LogEnv
 initLogEnvWithScribe env = do
   let
-    component' = Namespace [env ^. appName]
-    environment' = Environment $ env ^. envName
+    component' = Namespace [env ^. #appName]
+    environment' = Environment $ env ^. #envName
 
   initialEnv <- liftIO $ initLogEnv component' environment'
   liftIO $
     registerScribe
-      (env ^. scribeName)
-      (env ^. scribe)
+      (env ^. #scribeName)
+      (env ^. #scribe)
       defaultScribeSettings
       initialEnv
-
-getConsoleScribe :: IO Scribe
-getConsoleScribe = mkHandleScribe (ColorLog True) stdout (const (pure True)) V0
 
 getFileScribe :: IO Scribe
 getFileScribe = mkFileScribe "logs.txt" (const $ pure True) V0

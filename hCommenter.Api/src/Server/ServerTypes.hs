@@ -1,27 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Server.ServerTypes (ErrorResponse (..), CustomError (..), InputError (..), Backend (..), Env (Env), backend, appName, envName, scribeName, scribe) where
+module Server.ServerTypes (ErrorResponse (..), CustomError (..), InputError (..), Backend (..)) where
 
 import Data.Aeson (FromJSON, ToJSON)
-import Database.StorageTypes (StorageError)
 import Katip (Scribe)
 import Optics
+
+import Database.StorageTypes (StorageError)
 
 data Backend
   = LocalFile
   | SQLite
   | ToBeDeterminedProd
   deriving (Show)
-
-data Env = Env
-  { _backend :: !Backend
-  , _appName :: !Text
-  , _envName :: !Text
-  , _scribeName :: !Text
-  , _scribe :: !Scribe
-  }
-
-makeLenses ''Env
 
 data CustomError
   = StorageError !StorageError
