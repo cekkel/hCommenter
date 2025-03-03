@@ -46,6 +46,7 @@ import Prelude hiding (Handler)
 
 import Data.Aeson qualified as JSON
 import Effectful qualified as E
+import Effectful.Reader.Static qualified as ES
 
 import Database.Interface (CommentStorage)
 import Database.Mockserver
@@ -69,38 +70,47 @@ import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), ErrorResponse (ErrorResponse), InputError (..))
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
+import Utils.AppContext (AppContext (env), mkAppContext)
 import Utils.Environment (Env (backend), readEnv)
+
+app :: Env -> Application
+app env =
+  addCustomMiddleware env $ \ctx ->
+    serve enrichedAPI $
+      serverAPI ctx
 
 type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
 
-type API = SwaggerAPI :<|> Enriched FunctionalAPI
+type API = SwaggerAPI :<|> FunctionalAPI
 
-swaggerServer :: Eff es Swagger
-swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
-
-serverAPI :: Env -> Server API
-serverAPI env = do
-  hoistServer fullAPI (effToHandler env) $
-    swaggerServer :<|> enrichApiWithHeaders functionalAPI (healthServer :<|> commentServer :<|> votingServer)
-
-functionalAPI :: Proxy FunctionalAPI
-functionalAPI = Proxy
+enrichedAPI :: Proxy (Enriched API)
+enrichedAPI = Proxy
 
 fullAPI :: Proxy API
 fullAPI = Proxy
 
-app :: Env -> Application
-app env =
-  addCustomMiddleware env $
-    serve fullAPI $
-      serverAPI env
+functionalAPI :: Proxy FunctionalAPI
+functionalAPI = Proxy
 
-effToHandler :: Env -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, IOE] a -> Handler a
-effToHandler env m = do
+swaggerServer :: Eff es Swagger
+swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
+
+serverAPI :: AppContext -> Server (Enriched API)
+serverAPI ctx = do
+  hoistServer enrichedAPI (effToHandler ctx) $
+    enrichApiWithHeaders fullAPI $
+      swaggerServer :<|> (healthServer :<|> commentServer :<|> votingServer)
+
+effToHandler
+  :: AppContext
+  -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, ES.Reader AppContext, IOE] a
+  -> Handler a
+effToHandler ctx m = do
   result <-
     liftIO
       $ runEff
-        . runLog env
+        . ES.runReader ctx
+        . runLog (ctx ^. #env)
         . logExceptions
         . logExplicitErrors
         . runAndLiftError StorageError
@@ -110,7 +120,7 @@ effToHandler env m = do
       $ m
   Handler $ except $ handleServerResponse result
  where
-  commentHandler = case env ^. #backend of
+  commentHandler = case ctx ^. #env % #backend of
     LocalFile -> error "Mode not supported"
     sqlBackend -> runCommentStorageSQL sqlBackend
 

@@ -8,6 +8,7 @@ data LogField
   | CommentId (Maybe Int64)
   | ParentId (Maybe Int64)
   | Username Text
+  | Note Text
   deriving (Show)
 
 logFieldToObjectPair :: LogField -> Pair
@@ -17,3 +18,4 @@ logFieldToObjectPair = \case
   CommentId txt -> "CommentId" .= txt
   ParentId txt -> "ParentId" .= txt
   Username txt -> "Username" .= txt
+  Note txt -> "Note" .= txt

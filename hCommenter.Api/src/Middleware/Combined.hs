@@ -1,22 +1,31 @@
 module Middleware.Combined (addCustomMiddleware) where
 
-import Network.Wai (Application, Request (requestMethod))
+import Network.Wai (Application, Request (requestMethod), Response, ResponseReceived)
 
 import Middleware.Headers (addGlobalHeadersToResponse)
 import Middleware.Requests (getCorrelationId, logRequest, logResponse)
+import Utils.AppContext (AppContext, mkAppContext)
 import Utils.Environment (Env)
 
-addCustomMiddleware :: Env -> Application -> Application
-addCustomMiddleware env baseApp req responseF = do
+addCustomMiddleware :: Env -> (AppContext -> Application) -> Application
+addCustomMiddleware env baseAppClosure req responseF = do
   let
-    correlationId = getCorrelationId req
     method = requestMethod req
 
-  logRequest env correlationId req
+  (updatedReq, correlationId) <- getCorrelationId req
+
+  let
+    appContext = mkAppContext env correlationId
+    baseApp = baseAppClosure appContext
+
+  -- Middleware to log incoming request
+  logRequest env correlationId updatedReq
+
   liftIO $
     baseApp
-      req
+      updatedReq
       ( (pure . addGlobalHeadersToResponse method)
+          -- Middleware to log outgoing request
           >=> logResponse env correlationId
           >=> responseF
       )

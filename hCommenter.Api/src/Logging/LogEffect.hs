@@ -8,6 +8,7 @@ import Control.Monad.Logger
   ( Loc
   , LogLevel (..)
   , LogSource
+  , MonadLogger (monadLoggerLog)
   , ToLogStr (toLogStr)
   , fromLogStr
   , toLogStr
@@ -22,7 +23,8 @@ import Effectful
   , (:>)
   )
 import Effectful.Dispatch.Static
-  ( SideEffects (WithSideEffects)
+  ( HasCallStack
+  , SideEffects (WithSideEffects)
   , StaticRep
   , evalStaticRep
   , getStaticRep
@@ -87,7 +89,7 @@ getFileScribe = mkFileScribe "logs.txt" (const $ pure True) V0
 log :: (Log :> es) => Severity -> LogStr -> Eff es ()
 log level msg = do
   f <- askForLoggerIO
-  unsafeEff_ $ f level msg
+  unsafeEff_ $ f Nothing level msg
 
 logInfo :: (Log :> es) => LogStr -> Eff es ()
 logInfo = log InfoS
@@ -125,13 +127,15 @@ instance LogItem Value where
 --   ns <- getKatipNamespace'
 --   env <- getLogEnv'
 --   pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
+--
 
-askForLoggerIO :: (Log :> es) => Eff es (Severity -> LogStr -> IO ())
+askForLoggerIO :: (HasCallStack, Log :> es) => Eff es (Maybe Loc -> Severity -> LogStr -> IO ())
 askForLoggerIO = do
   ctx <- getKatipContext'
   ns <- getKatipNamespace'
   env <- getLogEnv'
-  pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
+  -- Not using location-based logging for now, as katip's support wrapper funcs with it is limited.
+  pure (\maybe_loc sev msg -> runKatipT env $ logF ctx ns sev msg)
 
 {-| This is useful for when there is a need to work with a library that uses the
   'LoggingT' transformer from the monad-logger library.
@@ -139,7 +143,7 @@ askForLoggerIO = do
 askForMonadLoggerIO :: (Log :> es, ToLogStr a) => Eff es (Loc -> LogSource -> LogLevel -> a -> IO ())
 askForMonadLoggerIO = do
   logIO <- askForLoggerIO
-  pure (\_loc _src lvl msg -> logIO (mapLvl lvl) (mapMsg msg))
+  pure (\_loc _src lvl msg -> logIO (Just _loc) (mapLvl lvl) (mapMsg msg))
  where
   mapLvl = \case
     LevelInfo -> InfoS
@@ -159,6 +163,9 @@ instance (Katip (Eff es), Log :> es) => KatipContext (Eff es) where
   localKatipContext = localKatipContext'
   getKatipNamespace = getKatipNamespace'
   localKatipNamespace = localKatipNamespace'
+
+-- instance (KatipContext m) => MonadLogger m where
+--  monadLoggerLog = defaultMonadLoggerLog katipContextLogItem
 
 getKatipContext' :: (Log :> es) => Eff es LogContexts
 getKatipContext' = view logContext <$> getConfig
@@ -185,3 +192,47 @@ getConfig = do
 
 localConfig :: (Log :> es) => (LogConfig -> LogConfig) -> Eff es a -> Eff es a
 localConfig f = localStaticRep $ \(Log config) -> Log (f config)
+
+-- | The type of 'monadLoggerLog'.
+type MonadLoggerLog m = forall msg. (ToLogStr msg) => Loc -> LogSource -> LogLevel -> msg -> m ()
+
+{-| Default implementation for 'monadLoggerLog'.
+
+
+The first argument is a handler for generated log messages. In general,
+you can simply use 'katipLogItem' or 'katipContextLogItem', depending on
+the level of functionality your monad provides.
+-}
+
+-- defaultMonadLoggerLog
+--  :: (LogItem a, MonadIO m)
+--  => a
+--  -- ^ Handler for generated log messages
+--  -> MonadLoggerLog m
+-- defaultMonadLoggerLog logItem' loc src level msg = case mapLogLevel level of
+--  Right level' -> logItem' src' loc' level' msg'
+--  Left level' -> logLevelOther logItem' src' loc' level' msg'
+-- where
+--  src'
+--    | Text.null src = Nothing -- Short-circuit common case
+--    | otherwise = Just $ Namespace $ Text.splitOn dot src
+--  -- Don't pass loc if it's defaultLoc (i.e. not really passed to monadLoggerLog)
+--  -- Common case is to have a location (when using the TH splices)
+--  loc' = if loc /= defaultLoc then Just loc else Nothing
+--  msg' = logStr $ fromLogStr $ toLogStr msg
+--  mapLogLevel :: LogLevel -> Either Text Severity
+--  mapLogLevel l = case l of
+--    LevelDebug -> Right DebugS
+--    LevelInfo -> Right InfoS
+--    LevelWarn -> Right WarningS
+--    LevelError -> Right ErrorS
+--    LevelOther lvl -> Left lvl
+--  dot = Text.singleton '.'
+-- {-# INLINE defaultMonadLoggerLog #-}
+--
+---- | Handler for 'defaultMonadLoggerLog' which logs messages in a 'KatipContext' environment using 'logItemM'.
+-- katipContextLogItem :: (KatipContext m, LogItem a) => Maybe a
+-- katipContextLogItem n = case n of
+--  Nothing -> logItemM
+--  Just n' -> \l s m -> katipAddNamespace n' $ logItemM l s m
+-- {-# INLINE katipContextLogItem #-}

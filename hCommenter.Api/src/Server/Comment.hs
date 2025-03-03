@@ -35,6 +35,7 @@ import Logging.LogEffect
   ( Log
   , addLogContext
   , addLogNamespace
+  , logError
   , logInfo
   )
 import Mapping.ExternalTypes (ViewComment)
@@ -111,6 +112,9 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
 
         comments <- DB.getCommentsForUser username sortBy
 
+        when (null comments) $ do
+          logError "No comments found for this user with id: "
+
         logInfo $ showLS (length comments) <> " user comments retrieved successfully."
         pure comments
 
@@ -122,6 +126,9 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
         logInfo $ "Getting all replies for comment with ID: " <> showLS cID
 
         replies <- DB.getReplies cID sortBy
+
+        when (null replies) $ do
+          logError "No replies found for this comment with id: "
 
         logInfo $ showLS (length replies) <> " replies retrieved successfully."
         pure replies

@@ -10,6 +10,7 @@ import Effectful.Error.Static (Error, throwError)
 import Optics
 
 import Database.Persist qualified as P
+import Effectful.Reader.Static qualified as ES
 
 import Database.Interface (CommentStorage (..))
 import Database.SqlPool (SqlPool, runSqlPool, withConn)
@@ -23,9 +24,11 @@ import Database.StorageTypes
 import Logging.LogEffect (Log)
 import Mapping.Typeclass (MapsFrom (mapFrom))
 import Server.ServerTypes (Backend)
+import Utils.AppContext (AppContext)
 
 runCommentStorageSQL
-  :: ( Error StorageError :> es
+  :: ( ES.Reader AppContext :> es
+     , Error StorageError :> es
      , IOE :> es
      , Log :> es
      )

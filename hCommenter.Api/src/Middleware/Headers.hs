@@ -1,6 +1,7 @@
 module Middleware.Headers (Enriched, enrichApiWithHeaders, correlationIDHeaderName, addGlobalHeadersToResponse) where
 
 import Data.Kind (Type)
+import Data.UUID.V4 (nextRandom)
 import Effectful (Eff)
 import Network.HTTP.Types (hCacheControl)
 import Network.Wai (Response, mapResponseHeaders)
@@ -25,11 +26,14 @@ enrichApiWithHeaders
 enrichApiWithHeaders api server mCorrelationId =
   hoistServer
     api
-    -- Not sure why, but ghc needs help here to work out the 'es' type.
-    (addLogContext @es [CorrelationID correlationId])
+    addCorrelationId
     server
  where
-  correlationId = fromMaybe "No CorrelationID" mCorrelationId
+  -- Note that the correlationID should ALWAYS be present, as it gets added in Middleware.Requests
+  correlationId = fromMaybe "MISSING" mCorrelationId
+
+  addCorrelationId :: Eff es a -> Eff es a
+  addCorrelationId eff = addLogContext [CorrelationID correlationId] eff
 
 addGlobalHeadersToResponse :: ByteString -> Response -> Response
 addGlobalHeadersToResponse = \case

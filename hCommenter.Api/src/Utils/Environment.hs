@@ -3,7 +3,7 @@
 
 module Utils.Environment (Keys (..), Env (..), readEnv) where
 
-import Katip (ColorStrategy (ColorLog), Scribe, Verbosity (V0), mkHandleScribe)
+import Katip (ColorStrategy (ColorIfTerminal, ColorLog), Scribe, Severity (DebugS, InfoS), Verbosity (V0), mkHandleScribe, permitItem)
 import Optics (makeFieldLabelsNoPrefix, makeLenses)
 import System.Environment (getEnv)
 
@@ -33,7 +33,7 @@ data Env = Env
 makeFieldLabelsNoPrefix ''Env
 
 getConsoleScribe :: IO Scribe
-getConsoleScribe = mkHandleScribe (ColorLog True) stdout (const (pure True)) V0
+getConsoleScribe = mkHandleScribe (ColorIfTerminal) stdout (permitItem DebugS) V0
 
 readEnv :: IO Env
 readEnv = do

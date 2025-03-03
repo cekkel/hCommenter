@@ -36,7 +36,6 @@ library
         Logging.Grafana
         Logging.LogContext
         Logging.LogEffect
-        Logging.Newrelic
         Mapping.Comments
         Mapping.ExternalTypes
         Mapping.Typeclass
@@ -48,6 +47,7 @@ library
         Server.ServerTypes
         Server.Swagger
         Server.Voting
+        Utils.AppContext
         Utils.Environment
     build-depends:
         aeson,
@@ -78,6 +78,7 @@ library
         text,
         transformers,
         unordered-containers,
+        uuid,
         wai,
         warp
     mixins:
@@ -128,6 +129,7 @@ executable hCommenter-Api
         text,
         transformers,
         unordered-containers,
+        uuid,
         wai,
         warp
     mixins:
@@ -204,6 +206,7 @@ test-suite spec
         text,
         transformers,
         unordered-containers,
+        uuid,
         wai,
         wai-extra,
         warp
