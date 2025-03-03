@@ -1,9 +1,12 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
 import Database.Persist.Sql (PersistEntity (Key), fromSqlKey)
 import Effectful.Error.Static (Error)
 import Katip (showLS)
 import Optics
+import PyF (fmt)
 import Servant
   ( Capture
   , Description
@@ -95,11 +98,11 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
       $ do
         sortBy <- mSortBy
 
-        logInfo $ "Getting all comments for conversation, sorted by " <> showLS sortBy
+        logInfo [fmt|Getting all comments for conversation, sorted by '{show sortBy}'|]
 
         comments <- DB.getCommentsForConvo convoUrl sortBy
 
-        logInfo $ showLS (length comments) <> " conversation comments retrieved successfully."
+        logInfo [fmt|{length comments} conversation comments retrieved successfully.|]
         pure comments
 
   getUserComments username =
@@ -108,14 +111,14 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
       $ do
         sortBy <- mSortBy
 
-        logInfo $ "Getting all comments for conversation, sorted by " <> showLS sortBy
+        logInfo [fmt|Getting all comments for conversation, sorted by {show sortBy}|]
 
         comments <- DB.getCommentsForUser username sortBy
 
         when (null comments) $ do
-          logError "No comments found for this user with id: "
+          logError [fmt|No comments found for this user with username: {username}|]
 
-        logInfo $ showLS (length comments) <> " user comments retrieved successfully."
+        logInfo [fmt|{length comments} user comments retrieved successfully.|]
         pure comments
 
   getReplies cID =
@@ -123,14 +126,14 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
       do
         sortBy <- mSortBy
 
-        logInfo $ "Getting all replies for comment with ID: " <> showLS cID
+        logInfo [fmt|Getting all replies for comment with ID: {show cID}|]
 
         replies <- DB.getReplies cID sortBy
 
         when (null replies) $ do
-          logError "No replies found for this comment with id: "
+          logError [fmt|No replies found for this comment with id: {show cID}|]
 
-        logInfo $ showLS (length replies) <> " replies retrieved successfully."
+        logInfo [fmt|{length replies} replies retrieved successfully.|]
         pure replies
 
   insertComment comment =
@@ -144,13 +147,13 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
 
         cID <- DB.insertComment comment
 
-        logInfo $ "New comment created with ID: " <> showLS cID
+        logInfo $ [fmt|New comment created with ID: {show cID}|]
         pure $ fromSqlKey cID
 
   editComment cID commentText =
     addLogNamespace "EditComment" $
       do
-        logInfo $ "Editing comment with ID: " <> showLS cID
+        logInfo [fmt|Editing comment with ID: {showLS cID}|]
 
         updatedComment <- DB.editComment cID (#message .~ commentText)
 

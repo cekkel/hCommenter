@@ -50,6 +50,7 @@ library
         Utils.AppContext
         Utils.Environment
     build-depends:
+        PyF,
         aeson,
         aeson-pretty,
         base ==4.20.*,
@@ -99,6 +100,7 @@ library
 executable hCommenter-Api
     main-is: Main.hs
     build-depends:
+        PyF,
         aeson,
         aeson-pretty,
         base ==4.20.*,
@@ -167,6 +169,7 @@ test-suite spec
     build-tool-depends:
         hspec-discover:hspec-discover
     build-depends:
+        PyF,
         aeson,
         aeson-pretty,
         base ==4.20.*,

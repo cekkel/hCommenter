@@ -33,6 +33,7 @@ import Effectful.Dispatch.Static
   )
 import Katip
 import Optics
+import PyF (PyFCategory (PyFString), PyFClassify)
 import Prelude hiding (log, singleton)
 
 import Logging.LogContext (LogField, logFieldToObjectPair)
@@ -85,6 +86,8 @@ initLogEnvWithScribe env = do
 
 getFileScribe :: IO Scribe
 getFileScribe = mkFileScribe "logs.txt" (const $ pure True) V0
+
+type instance PyFClassify LogStr = 'PyFString
 
 log :: (Log :> es) => Severity -> LogStr -> Eff es ()
 log level msg = do
