@@ -3,6 +3,8 @@
 
 module Utils.Environment (LoggingConf (..), Env (..), readEnv) where
 
+import Control.Exception (throw)
+import Data.Maybe (fromJust)
 import Katip (ColorStrategy (ColorIfTerminal, ColorLog), Scribe, Severity (DebugS, InfoS), Verbosity (V0), mkHandleScribe, permitItem)
 import Optics (makeFieldLabelsNoPrefix, makeLenses)
 import System.Environment (getEnv)
@@ -32,6 +34,7 @@ readLoggingConf = do
 
 data Env = Env
   { backend :: !Backend
+  , port :: !Int
   , appName :: !Text
   , envName :: !Text
   , logging :: !LoggingConf
@@ -44,23 +47,33 @@ makeFieldLabelsNoPrefix ''Env
 getConsoleScribe :: IO Scribe
 getConsoleScribe = mkHandleScribe (ColorIfTerminal) stdout (permitItem DebugS) V0
 
+{-| Read in all environment variables to be used throughout the execution of the application.
+Includes defaults where appropriate, and anything else that should be initialised once.
+-}
 readEnv :: IO Env
 readEnv = do
   scribe <- getConsoleScribe
-  appEnv <- pack <$> getEnv "APP_ENVIRONMENT"
+  appName <- pack <$> getEnv "APP__NAME"
+  envName <- pack <$> getEnv "APP__ENVIRONMENT"
+  port <- readMay <$> getEnv "APP__PORT"
+  backend <- readMay <$> getEnv "APP__BACKEND"
+
+  -- TODO: Replace these with 'warn' logs
+  when (isNothing backend) $
+    error "Backend provided in 'APP__BACKEND' is missing or invalid"
+
+  when (isNothing port) $
+    error "Port provided in 'APP__PORT' is missing or invalid"
 
   loggingConf <- readLoggingConf
-  -- sentryDSN <- getEnv "SENTRY_DSN"
-  -- sentryService <- initRaven sentryDSN id sendRecord stderrFallback
-
-  -- ravenScribe <- mkRavenScribe sentryService (const $ pure True) V3
 
   pure $
     Env
-      { backend = SQLite
-      , appName = "hCommenter.Api"
-      , envName = appEnv
+      { backend = fromMaybe SQLite backend
+      , port = fromMaybe 8080 port
+      , appName
+      , envName
       , logging = loggingConf
       , scribeName = "Grafana"
-      , scribe = scribe
+      , scribe
       }

@@ -19,6 +19,7 @@ import Network.HTTP.Client
   )
 import Network.HTTP.Types (Status (statusCode), hCacheControl, methodGet)
 import Servant.Client (parseBaseUrl)
+import System.Environment (setEnv)
 import Test.Hspec
 import Test.Hspec (describe)
 import Test.Hspec.Hedgehog (hedgehog)
@@ -31,7 +32,9 @@ testPort = 3001
 
 runInstanceRuleTests :: IO ()
 runInstanceRuleTests = do
-  _ <- forkIO $ messageConsoleAndRun testPort SQLite
+  setEnv "API__PORT" (show testPort)
+
+  _ <- forkIO $ messageConsoleAndRun
 
   hspec specs
 

@@ -106,7 +106,6 @@ executable hCommenter-Api
         base ==4.20.*,
         bytestring,
         classy-prelude,
-        commander-cli,
         containers,
         effectful,
         effectful-core,

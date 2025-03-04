@@ -18,7 +18,7 @@ where
 import Control.Monad.Trans.Except (except)
 import Data.Bifoldable (bitraverse_)
 import Data.Either.Extra (mapLeft)
-import Data.Swagger (Swagger)
+import Data.Swagger (HasPort (port), Swagger)
 import Effectful (Eff, IOE, runEff)
 import Effectful.Error.Static
   ( CallStack
@@ -158,14 +158,14 @@ handleServerResponse (Left (_, err)) = case err of
       , errHeaders = [(fromString "Content-Type", "application/json;charset=utf-8")]
       }
 
-messageConsoleAndRun :: Int -> Backend -> IO ()
-messageConsoleAndRun port requestedBackend = do
+messageConsoleAndRun :: IO ()
+messageConsoleAndRun = do
   env <- readEnv
 
-  case requestedBackend of
-    SQLite -> initDevSqliteDB requestedBackend env
+  case env ^. #backend of
+    SQLite -> initDevSqliteDB env
     LocalFile -> pure ()
     ToBeDeterminedProd -> pure ()
 
-  putStrLn $ "\nListening in " <> tshow requestedBackend <> " mode, on port " <> tshow port <> "...\n"
-  run port $ app env
+  putStrLn $ "\nListening in " <> tshow (env ^. #backend) <> " mode, on port " <> tshow (env ^. #port) <> "...\n"
+  run (env ^. #port) $ app env

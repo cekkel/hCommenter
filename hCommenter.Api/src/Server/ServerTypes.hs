@@ -12,7 +12,7 @@ data Backend
   = LocalFile
   | SQLite
   | ToBeDeterminedProd
-  deriving (Show)
+  deriving (Read, Show)
 
 data CustomError
   = StorageError !StorageError

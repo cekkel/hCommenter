@@ -77,7 +77,6 @@ executable:
   source-dirs: app
   dependencies:
     - hCommenter-Api
-    - commander-cli
 
 tests:
   spec:

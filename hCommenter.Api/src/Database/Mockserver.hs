@@ -15,7 +15,7 @@ import Effectful.Reader.Static qualified as ES
 import Database.SqlPool (runSqlPool, withConn)
 import Database.StorageTypes
 import Logging.LogEffect (runLog)
-import Server.ServerTypes (Backend)
+import Server.ServerTypes (Backend (SQLite))
 import Utils.AppContext (mkAppContext)
 import Utils.Environment (Env, readEnv)
 
@@ -45,13 +45,13 @@ mkMockComments = do
       )
       (toSqlKey 4)
 
-initDevSqliteDB :: Backend -> Env -> IO ()
-initDevSqliteDB backend env = do
+initDevSqliteDB :: Env -> IO ()
+initDevSqliteDB env = do
   mockComments <- mkMockComments
   let
     ctx = mkAppContext env "DevInitialisation"
 
-  runEff $ runLog env . ES.runReader ctx . runSqlPool backend $ withConn $ do
+  runEff $ runLog env . ES.runReader ctx . runSqlPool SQLite $ withConn $ do
     -- Manually delete all data in database before refreshing with mock data.
     deleteWhere ([] :: [Filter Comment]) -- Comments must go first due to FK constraint
     deleteWhere ([] :: [Filter Conversation])
