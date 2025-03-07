@@ -49,6 +49,7 @@ data StorageError
   = CommentNotFound
   | UserNotFound
   | ConvoNotFound
+  | UnhandledStorageError Text
   deriving (Eq, Show)
 
 {-| Create Comment obj with persistent to support storage with SQLite & other SQL databases

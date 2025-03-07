@@ -3,9 +3,9 @@
 module Database.SqlStorage (runCommentStorageSQL) where
 
 import Database.Persist ((=.), (==.))
-import Database.Persist.Sqlite (PersistStoreRead (get))
+import Database.Persist.Sqlite (PersistStoreRead (get), SqlBackend)
 import Effectful (Eff, IOE, (:>))
-import Effectful.Dispatch.Dynamic (interpret)
+import Effectful.Dispatch.Dynamic (HasCallStack, interpret)
 import Effectful.Error.Static (Error, throwError)
 import Optics
 
@@ -39,7 +39,7 @@ runCommentStorageSQL backend =
   runSqlPool backend
     . interpret
       ( \_ action ->
-          withConn $ case action of
+          withConn $ handleAny throwStorageError $ case action of
             GetCommentsForConvo convoUrlQ sortMethod -> do
               map mapFrom <$> P.selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
             GetCommentsForUser userNameQ sortMethod -> do
@@ -76,3 +76,10 @@ generateSort sortMethod = case sortMethod of
   Controversial -> [P.Desc CommentDownvotes]
   Old -> [P.Asc CommentDateCreated]
   New -> [P.Desc CommentDateCreated]
+
+throwStorageError
+  :: (Error StorageError :> es)
+  => SomeException
+  -> ReaderT SqlBackend (Eff es) a
+throwStorageError = \case
+  e -> lift $ throwError $ UnhandledStorageError $ tshow e

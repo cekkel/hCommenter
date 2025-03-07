@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Server
@@ -29,6 +30,7 @@ import Effectful.Error.Static
 import Katip (Verbosity (V3), showLS)
 import Network.Wai.Handler.Warp (run)
 import Optics
+import PyF (fmt)
 import Servant
   ( Application
   , Handler (Handler)
@@ -37,6 +39,7 @@ import Servant
   , ServerError (errBody, errHTTPCode, errHeaders)
   , err400
   , err404
+  , err500
   , hoistServer
   , serve
   , type (:<|>) (..)
@@ -55,6 +58,7 @@ import Database.Mockserver
 import Database.SqlPool (SqlPool)
 import Database.SqlStorage (runCommentStorageSQL)
 import Database.StorageTypes
+import Logging.LogContext (LogField (CorrelationID))
 import Logging.LogEffect
   ( Log
   , addLogContext
@@ -111,6 +115,7 @@ effToHandler ctx m = do
       $ runEff
         . ES.runReader ctx
         . runLog (ctx ^. #env)
+        . addGlobalLogContext
         . logExceptions
         . logExplicitErrors
         . runAndLiftError StorageError
@@ -131,7 +136,10 @@ runAndLiftError
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
 logExplicitErrors
-  :: (Log E.:> es, Show e)
+  :: ( ES.Reader AppContext E.:> es
+     , Log E.:> es
+     , Show e
+     )
   => Eff es (Either (CallStack, e) a)
   -> Eff es (Either (CallStack, e) a)
 logExplicitErrors currEff = do
@@ -139,16 +147,27 @@ logExplicitErrors currEff = do
   bitraverse_ handleLeft pure value
   pure value
  where
-  handleLeft (callStack, err) = do
-    logError $ "Custom error '" <> showLS err <> "' with callstack: " <> showLS (prettyCallStack callStack)
+  handleLeft (callStack, err) =
+    logError [fmt|Custom error '{showLS err}' with callstack: {prettyCallStack callStack}|]
+
+addGlobalLogContext
+  :: ( ES.Reader AppContext E.:> es
+     , Log E.:> es
+     )
+  => Eff es a
+  -> Eff es a
+addGlobalLogContext eff = do
+  corrId <- ES.asks $ view #correlationId
+  addLogContext [CorrelationID corrId] eff
 
 handleServerResponse :: Either (CallStack, CustomError) a -> Either ServerError a
 handleServerResponse (Right val) = Right val
 handleServerResponse (Left (_, err)) = case err of
-  StorageError innerErr -> Left $ servantErrorWithText err404 $ case innerErr of
-    CommentNotFound -> "Can't find the comment"
-    UserNotFound -> "Can't find the user"
-    ConvoNotFound -> "Can't find the conversation"
+  StorageError innerErr -> Left $ case innerErr of
+    CommentNotFound -> servantErrorWithText err404 "Can't find the comment"
+    UserNotFound -> servantErrorWithText err404 "Can't find the user"
+    ConvoNotFound -> servantErrorWithText err404 "Can't find the conversation"
+    UnhandledStorageError _ -> servantErrorWithText err500 "An unhandled storage exception occurred. Sorry!"
   InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
     BadArgument txt -> "Bad argument: " <> txt
  where
