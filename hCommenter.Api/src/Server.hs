@@ -19,7 +19,7 @@ where
 import Control.Monad.Trans.Except (except)
 import Data.Bifoldable (bitraverse_)
 import Data.Either.Extra (mapLeft)
-import Data.Swagger (HasPort (port), Swagger)
+import Data.Swagger (Swagger)
 import Effectful (Eff, IOE, runEff)
 import Effectful.Error.Static
   ( CallStack
@@ -27,8 +27,9 @@ import Effectful.Error.Static
   , prettyCallStack
   , runError
   )
-import Katip (Verbosity (V3), showLS)
-import Network.Wai.Handler.Warp (run)
+import Katip (showLS)
+import Network.Wai (Request)
+import Network.Wai.Handler.Warp (defaultSettings, runSettings, setOnException, setPort)
 import Optics
 import PyF (fmt)
 import Servant
@@ -62,20 +63,19 @@ import Logging.LogContext (LogField (CorrelationID))
 import Logging.LogEffect
   ( Log
   , addLogContext
-  , getFileScribe
   , logError
-  , logExceptions
   , runLog
   )
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
+import Middleware.Requests (getCorrelationId)
 import Server.Comment (CommentsAPI, commentServer)
 import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), ErrorResponse (ErrorResponse), InputError (..))
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
-import Utils.AppContext (AppContext (env), mkAppContext)
-import Utils.Environment (Env (backend), readEnv)
+import Utils.AppContext (AppContext)
+import Utils.Environment (Env, readEnv)
 
 app :: Env -> Application
 app env =
@@ -116,7 +116,6 @@ effToHandler ctx m = do
         . ES.runReader ctx
         . runLog (ctx ^. #env)
         . addGlobalLogContext
-        . logExceptions
         . logExplicitErrors
         . runAndLiftError StorageError
         . runAndLiftError InputError
@@ -169,7 +168,7 @@ handleServerResponse (Left (_, err)) = case err of
     ConvoNotFound -> servantErrorWithText err404 "Can't find the conversation"
     UnhandledStorageError _ -> servantErrorWithText err500 "An unhandled storage exception occurred. Sorry!"
   InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
-    BadArgument txt -> "Bad argument: " <> txt
+    BadArgument txt -> [fmt|Bad argument: {txt}|]
  where
   servantErrorWithText sErr msg =
     sErr
@@ -183,8 +182,22 @@ messageConsoleAndRun = do
 
   case env ^. #backend of
     SQLite -> initDevSqliteDB env
-    LocalFile -> pure ()
-    ToBeDeterminedProd -> pure ()
+    _ -> pure ()
 
-  putStrLn $ "\nListening in " <> tshow (env ^. #backend) <> " mode, on port " <> tshow (env ^. #port) <> "...\n"
-  run (env ^. #port) $ app env
+  let
+    settings =
+      defaultSettings
+        & setPort (env ^. #port)
+        & setOnException (logOnException env)
+
+  putStrLn [fmt|\nListening in {env ^. #backend} mode, on port {env ^. #port}...\n|]
+  runSettings settings $ app env
+
+logOnException :: Env -> (Maybe Request -> SomeException -> IO ())
+logOnException env mReq e = do
+  let
+    correlationId = getCorrelationId =<< mReq
+
+  runEff . runLog env $
+    addLogContext [CorrelationID $ fromMaybe "No provided Correlation-Id" correlationId] $
+      logError [fmt|Exception occurred: {showLS e}|]

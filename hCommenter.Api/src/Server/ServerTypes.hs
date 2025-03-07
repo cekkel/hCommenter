@@ -3,8 +3,7 @@
 module Server.ServerTypes (ErrorResponse (..), CustomError (..), InputError (..), Backend (..)) where
 
 import Data.Aeson (FromJSON, ToJSON)
-import Katip (Scribe)
-import Optics
+import PyF (PyFCategory (PyFString), PyFClassify)
 
 import Database.StorageTypes (StorageError)
 
@@ -13,6 +12,8 @@ data Backend
   | SQLite
   | ToBeDeterminedProd
   deriving (Read, Show)
+
+type instance PyFClassify Backend = 'PyFString
 
 data CustomError
   = StorageError !StorageError

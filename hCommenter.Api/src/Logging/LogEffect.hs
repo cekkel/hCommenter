@@ -8,7 +8,6 @@ import Control.Monad.Logger
   ( Loc
   , LogLevel (..)
   , LogSource
-  , MonadLogger (monadLoggerLog)
   , ToLogStr (toLogStr)
   , fromLogStr
   , toLogStr
@@ -60,29 +59,13 @@ runLog
   -> Eff (Log : es) a
   -> Eff es a
 runLog env logEff = do
-  envWithScribe <- liftIO $ initLogEnvWithScribe env
-
   flip evalStaticRep logEff $
     Log
       LogConfig
         { _logNamespace = mempty
         , _logContext = mempty
-        , _logEnv = envWithScribe
+        , _logEnv = env ^. #logging % #katipLogEnv
         }
-
-initLogEnvWithScribe :: Env -> IO LogEnv
-initLogEnvWithScribe env = do
-  let
-    component' = Namespace [env ^. #appName]
-    environment' = Environment $ env ^. #envName
-
-  initialEnv <- liftIO $ initLogEnv component' environment'
-  liftIO $
-    registerScribe
-      (env ^. #scribeName)
-      (env ^. #scribe)
-      defaultScribeSettings
-      initialEnv
 
 getFileScribe :: IO Scribe
 getFileScribe = mkFileScribe "logs.txt" (const $ pure True) V0
@@ -102,11 +85,6 @@ logWarn = log WarningS
 
 logError :: (Log :> es) => LogStr -> Eff es ()
 logError = log ErrorS
-
-logExceptions :: (IOE :> es, Log :> es) => Eff es a -> Eff es a
-logExceptions action = action `catchAny` \e -> logErr e >> throwIO e
- where
-  logErr e = logError ("An exception has occurred: " <> showLS e)
 
 addLogNamespace :: (Log :> es) => Namespace -> Eff es a -> Eff es a
 addLogNamespace ns = localKatipNamespace' (<> ns)

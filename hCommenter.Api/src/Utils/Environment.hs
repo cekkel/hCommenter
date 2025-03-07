@@ -3,10 +3,21 @@
 
 module Utils.Environment (LoggingConf (..), Env (..), readEnv) where
 
-import Control.Exception (throw)
-import Data.Maybe (fromJust)
-import Katip (ColorStrategy (ColorIfTerminal, ColorLog), Scribe, Severity (DebugS, InfoS), Verbosity (V0), mkHandleScribe, permitItem)
-import Optics (makeFieldLabelsNoPrefix, makeLenses)
+import Katip
+  ( ColorStrategy (ColorIfTerminal)
+  , Environment (Environment)
+  , LogEnv
+  , Namespace (Namespace)
+  , Scribe
+  , Severity (DebugS)
+  , Verbosity (V0)
+  , defaultScribeSettings
+  , initLogEnv
+  , mkHandleScribe
+  , permitItem
+  , registerScribe
+  )
+import Optics
 import System.Environment (getEnv)
 
 import Server.ServerTypes (Backend (SQLite))
@@ -15,21 +26,37 @@ data LoggingConf = LoggingConf
   { grafanaAccountNum :: !Text
   , grafanaToken :: !Text
   , grafanaUrl :: !Text
+  , scribe :: !Scribe
+  , katipLogEnv :: !LogEnv
   }
 
 makeFieldLabelsNoPrefix ''LoggingConf
 
-readLoggingConf :: IO LoggingConf
-readLoggingConf = do
+getConsoleScribe :: IO Scribe
+getConsoleScribe = mkHandleScribe ColorIfTerminal stdout (permitItem DebugS) V0
+
+readLoggingConf :: Text -> Text -> IO LoggingConf
+readLoggingConf appName envName = do
   grafanaAccountNum <- pack <$> getEnv "LOGGING__GRAFANA_ACC"
   grafanaToken <- pack <$> getEnv "LOGGING__GRAFANA_TOKEN"
   grafanaUrl <- pack <$> getEnv "LOGGING__GRAFANA_URL"
+
+  let
+    component' = Namespace [appName]
+    environment' = Environment $ envName
+    scribeName = "GrafanaScribe"
+
+  scribe <- getConsoleScribe
+  initialEnv <- initLogEnv component' environment'
+  katipLogEnv <- registerScribe scribeName scribe defaultScribeSettings initialEnv
 
   pure $
     LoggingConf
       { grafanaToken
       , grafanaAccountNum
       , grafanaUrl
+      , scribe
+      , katipLogEnv
       }
 
 data Env = Env
@@ -38,21 +65,15 @@ data Env = Env
   , appName :: !Text
   , envName :: !Text
   , logging :: !LoggingConf
-  , scribeName :: !Text
-  , scribe :: !Scribe
   }
 
 makeFieldLabelsNoPrefix ''Env
-
-getConsoleScribe :: IO Scribe
-getConsoleScribe = mkHandleScribe (ColorIfTerminal) stdout (permitItem DebugS) V0
 
 {-| Read in all environment variables to be used throughout the execution of the application.
 Includes defaults where appropriate, and anything else that should be initialised once.
 -}
 readEnv :: IO Env
 readEnv = do
-  scribe <- getConsoleScribe
   appName <- pack <$> getEnv "APP__NAME"
   envName <- pack <$> getEnv "APP__ENVIRONMENT"
   port <- readMay <$> getEnv "APP__PORT"
@@ -65,7 +86,7 @@ readEnv = do
   when (isNothing port) $
     error "Port provided in 'APP__PORT' is missing or invalid"
 
-  loggingConf <- readLoggingConf
+  loggingConf <- readLoggingConf appName envName
 
   pure $
     Env
@@ -74,6 +95,4 @@ readEnv = do
       , appName
       , envName
       , logging = loggingConf
-      , scribeName = "Grafana"
-      , scribe
       }

@@ -11,7 +11,6 @@ import Servant
   ( Capture
   , Description
   , Get
-  , GetHeaders
   , HasServer (ServerT)
   , JSON
   , NoContent (NoContent)
@@ -20,7 +19,6 @@ import Servant
   , PostNoContent
   , QueryParam
   , ReqBody
-  , addHeader
   , type (:<|>) (..)
   , type (:>)
   )

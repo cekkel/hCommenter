@@ -11,9 +11,10 @@ license: MIT
 extra-doc-files:
   - README.md
 
-ghc-options: -Wall
+ghc-options:
+  -Wall
   -fno-warn-orphans
-  -fno-warn-unused-imports
+  # -fno-warn-unused-imports
 
 language: GHC2024
 

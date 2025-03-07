@@ -85,7 +85,7 @@ library
     mixins:
         base hiding (Prelude),
         classy-prelude (ClassyPrelude as Prelude)
-    ghc-options: -Wall -fno-warn-orphans -fno-warn-unused-imports -fplugin=Effectful.Plugin
+    ghc-options: -Wall -fno-warn-orphans -fplugin=Effectful.Plugin
     hs-source-dirs:
         src
     default-language: GHC2024
@@ -145,7 +145,7 @@ executable hCommenter-Api
         AllowAmbiguousTypes
         DuplicateRecordFields
         OverloadedLabels
-    ghc-options: -Wall -fno-warn-orphans -fno-warn-unused-imports
+    ghc-options: -Wall -fno-warn-orphans
     default-language: GHC2024
 
 test-suite spec
@@ -163,7 +163,7 @@ test-suite spec
         AllowAmbiguousTypes
         DuplicateRecordFields
         OverloadedLabels
-    ghc-options: -Wall -fno-warn-orphans -fno-warn-unused-imports
+    ghc-options: -Wall -fno-warn-orphans
     cpp-options: -DTEST
     build-tool-depends:
         hspec-discover:hspec-discover

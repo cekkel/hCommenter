@@ -1,7 +1,5 @@
 module Middleware.Headers (Enriched, enrichApiWithHeaders, correlationIDHeaderName, addGlobalHeadersToResponse) where
 
-import Data.Kind (Type)
-import Data.UUID.V4 (nextRandom)
 import Effectful (Eff)
 import Network.HTTP.Types (hCacheControl)
 import Network.Wai (Response, mapResponseHeaders)
@@ -13,9 +11,9 @@ import Logging.LogContext (LogField (CorrelationID))
 import Logging.LogEffect (Log, addLogContext)
 
 correlationIDHeaderName :: (IsString a) => a
-correlationIDHeaderName = "CorrelationID"
+correlationIDHeaderName = "Correlation-Id"
 
-type Enriched api = Header "CorrelationID" Text :> api
+type Enriched api = Header "Correlation-Id" Text :> api
 
 enrichApiWithHeaders
   :: forall api es
