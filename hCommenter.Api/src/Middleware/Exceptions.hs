@@ -3,7 +3,6 @@
 module Middleware.Exceptions where
 
 import Effectful (runEff)
-import Katip (showLS)
 import Network.Wai (Request)
 import PyF (fmt)
 import Prelude hiding (Handler)
@@ -23,4 +22,4 @@ logOnException env mReq e = do
     -- Note: generated correlationId may not be here yet, since this function is executed
     -- by warp before servant gets involved.
     addLogContext [CorrelationID $ fromMaybe "No provided Correlation-Id" correlationId] $
-      logCritical [fmt|Exception occurred: {showLS e}|]
+      logCritical [fmt|Exception occurred: {tshow e}|]

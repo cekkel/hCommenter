@@ -4,7 +4,6 @@ module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
 import Database.Persist.Sql (PersistEntity (Key), fromSqlKey)
 import Effectful.Error.Static (Error)
-import Katip (showLS)
 import Optics
 import PyF (fmt)
 import Servant
@@ -32,9 +31,9 @@ import Database.StorageTypes
   , SortBy (..)
   , StorageError
   )
-import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, Username))
+import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, SortingMethod, Username))
 import Logging.LogEffect (Log)
-import Logging.Utilities (addLogContext, addLogNamespace, logError, logInfo)
+import Logging.Utilities (addLogContext, addLogNamespace, logError, logInfo, logWarn)
 import Mapping.ExternalTypes (ViewComment)
 import Server.ServerTypes (InputError)
 
@@ -83,17 +82,21 @@ commentServer
      , Log E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)
-commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|> insertComment :<|> editComment :<|> deleteComment
+commentServer mSortBy = getConvoComments :<|> getUserComments :<|> getReplies :<|> insertComment :<|> editComment :<|> deleteComment
  where
-  mSortBy = maybe (logInfo "Defaulting missing sort method to 'Popular'" >> pure Popular) pure mSort
+  logSortBy =
+    maybe
+      (logWarn "Defaulting missing sort method to 'Popular'" >> pure Popular)
+      (\a -> logInfo [fmt|Sorting by '{a}'|] >> pure a)
+      mSortBy
 
   getConvoComments convoUrl =
     addLogNamespace "GetConvoComments"
       . addLogContext [ConvoUrl convoUrl]
       $ do
-        sortBy <- mSortBy
+        sortBy <- logSortBy
 
-        logInfo [fmt|Getting all comments for conversation, sorted by '{show sortBy}'|]
+        logInfo [fmt|Getting all comments for conversation|]
 
         comments <- DB.getCommentsForConvo convoUrl sortBy
 
@@ -104,9 +107,9 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
     addLogNamespace "GetUserComments"
       . addLogContext [Username username]
       $ do
-        sortBy <- mSortBy
+        sortBy <- logSortBy
 
-        logInfo [fmt|Getting all comments for conversation, sorted by {show sortBy}|]
+        logInfo [fmt|Getting all comments for username|]
 
         comments <- DB.getCommentsForUser username sortBy
 
@@ -117,16 +120,17 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
         pure comments
 
   getReplies cID =
-    addLogNamespace "GetUserComments" $
-      do
-        sortBy <- mSortBy
+    addLogNamespace "GetUserComments"
+      . addLogContext [ParentId $ Just $ fromSqlKey cID]
+      $ do
+        sortBy <- logSortBy
 
-        logInfo [fmt|Getting all replies for comment with ID: {show cID}|]
+        logInfo [fmt|Getting all replies for comment with ID: {fromSqlKey cID}|]
 
         replies <- DB.getReplies cID sortBy
 
         when (null replies) $ do
-          logError [fmt|No replies found for this comment with id: {show cID}|]
+          logError [fmt|No replies found for this comment with ID: {fromSqlKey cID}|]
 
         logInfo [fmt|{length replies} replies retrieved successfully.|]
         pure replies
@@ -142,14 +146,14 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
 
         cID <- DB.insertComment comment
 
-        logInfo $ [fmt|New comment created with ID: {show cID}|]
+        logInfo $ [fmt|New comment created with ID: {fromSqlKey cID}|]
         pure $ fromSqlKey cID
 
   editComment cID commentText =
     addLogNamespace "EditComment"
       . addLogContext [CommentId $ fromSqlKey cID]
       $ do
-        logInfo [fmt|Editing comment with ID: {showLS cID}|]
+        logInfo [fmt|Editing comment with ID: {fromSqlKey cID}|]
 
         updatedComment <- DB.editComment cID (#message .~ commentText)
 
@@ -160,7 +164,7 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
     addLogNamespace "DeleteComment"
       . addLogContext [CommentId $ fromSqlKey cID]
       $ do
-        logInfo "Deleting comment"
+        logInfo [fmt|Deleting comment with ID: {fromSqlKey cID}|]
 
         DB.deleteComment cID
 

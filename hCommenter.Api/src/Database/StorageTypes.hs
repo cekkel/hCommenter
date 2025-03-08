@@ -41,6 +41,7 @@ import Katip
   , Verbosity
   )
 import Optics
+import PyF (PyFCategory (PyFString), PyFClassify)
 import Web.HttpApiData
 import Prelude hiding (Handler, singleton, sortBy)
 
@@ -138,6 +139,8 @@ instance ToObject Comment
 
 data SortBy = Old | New | Popular | Controversial
   deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
+type instance PyFClassify SortBy = 'PyFString
 
 deriveJSON defaultOptions ''SortBy
 
