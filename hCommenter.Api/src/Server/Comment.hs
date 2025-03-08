@@ -31,7 +31,7 @@ import Database.StorageTypes
   , NewComment
   , SortBy (..)
   )
-import Logging.LogContext (LogField (ConvoUrl, ParentId, Username))
+import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, Username))
 import Logging.LogEffect
   ( Log
   , addLogContext
@@ -149,8 +149,9 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
         pure $ fromSqlKey cID
 
   editComment cID commentText =
-    addLogNamespace "EditComment" $
-      do
+    addLogNamespace "EditComment"
+      . addLogContext [CommentId $ fromSqlKey cID]
+      $ do
         logInfo [fmt|Editing comment with ID: {showLS cID}|]
 
         updatedComment <- DB.editComment cID (#message .~ commentText)
@@ -159,8 +160,9 @@ commentServer mSort = getConvoComments :<|> getUserComments :<|> getReplies :<|>
         pure updatedComment
 
   deleteComment cID =
-    addLogNamespace "DeleteComment" $
-      do
+    addLogNamespace "DeleteComment"
+      . addLogContext [CommentId $ fromSqlKey cID]
+      $ do
         logInfo "Deleting comment"
 
         DB.deleteComment cID

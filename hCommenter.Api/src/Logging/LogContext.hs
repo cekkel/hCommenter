@@ -5,7 +5,7 @@ import Data.Aeson.Types (Pair, (.=))
 data LogField
   = CorrelationID Text
   | ConvoUrl Text
-  | CommentId (Maybe Int64)
+  | CommentId Int64
   | ParentId (Maybe Int64)
   | Username Text
   | Note Text
