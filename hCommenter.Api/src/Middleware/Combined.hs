@@ -1,13 +1,13 @@
 module Middleware.Combined (addCustomMiddleware) where
 
 import Network.Wai (Application, Request (requestMethod))
+import Utils.RequestContext (RequestContext, mkRequestContext)
 
 import Middleware.Headers (addGlobalHeadersToResponse)
 import Middleware.Requests (addCorrelationIdIfMissing, logRequest, logResponse)
-import Utils.AppContext (AppContext, mkAppContext)
 import Utils.Environment (Env)
 
-addCustomMiddleware :: Env -> (AppContext -> Application) -> Application
+addCustomMiddleware :: Env -> (RequestContext -> Application) -> Application
 addCustomMiddleware env baseAppClosure req responseF = do
   let
     method = requestMethod req
@@ -15,8 +15,8 @@ addCustomMiddleware env baseAppClosure req responseF = do
   (updatedReq, correlationId) <- addCorrelationIdIfMissing env req
 
   let
-    appContext = mkAppContext env correlationId
-    baseApp = baseAppClosure appContext
+    requestContext = mkRequestContext env correlationId
+    baseApp = baseAppClosure requestContext
 
   -- Middleware to log incoming request
   logRequest env correlationId updatedReq

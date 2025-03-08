@@ -55,7 +55,7 @@ import Database.Interface (CommentStorage)
 import Database.Mockserver
   ( initDevSqliteDB
   )
-import Database.SqlPool (SqlPool)
+import Database.SqlPool (SqlPool, runSqlPool)
 import Database.SqlStorage (runCommentStorageSQL)
 import Database.StorageTypes
 import Logging.LogContext (LogField (CorrelationID))
@@ -73,8 +73,8 @@ import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), ErrorResponse (ErrorResponse), InputError (..))
 import Server.Swagger (SwaggerAPI, withMetadata)
 import Server.Voting (VotingAPI, votingServer)
-import Utils.AppContext (AppContext)
 import Utils.Environment (Env, readEnv)
+import Utils.RequestContext (RequestContext)
 
 app :: Env -> Application
 app env =
@@ -98,15 +98,15 @@ functionalAPI = Proxy
 swaggerServer :: Eff es Swagger
 swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
 
-serverAPI :: AppContext -> Server (Enriched API)
+serverAPI :: RequestContext -> Server (Enriched API)
 serverAPI ctx = do
   hoistServer enrichedAPI (effToHandler ctx) $
     enrichApiWithHeaders fullAPI $
       swaggerServer :<|> (healthServer :<|> commentServer :<|> votingServer)
 
 effToHandler
-  :: AppContext
-  -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, ES.Reader AppContext, IOE] a
+  :: RequestContext
+  -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, ES.Reader RequestContext, IOE] a
   -> Handler a
 effToHandler ctx m = do
   result <-
@@ -119,13 +119,10 @@ effToHandler ctx m = do
         . runAndLiftError StorageError
         . runAndLiftError InputError
         . fmap Right
-        . commentHandler
+        . runSqlPool
+        . runCommentStorageSQL
       $ m
   Handler $ except $ handleServerResponse result
- where
-  commentHandler = case ctx ^. #env % #backend of
-    LocalFile -> error "Mode not supported"
-    sqlBackend -> runCommentStorageSQL sqlBackend
 
 runAndLiftError
   :: (e -> CustomError)
@@ -134,7 +131,7 @@ runAndLiftError
 runAndLiftError f = fmap (join . mapLeft (second f)) . runError
 
 logExplicitErrors
-  :: ( ES.Reader AppContext E.:> es
+  :: ( ES.Reader RequestContext E.:> es
      , Log E.:> es
      , Show e
      )
@@ -149,7 +146,7 @@ logExplicitErrors currEff = do
     logError [fmt|Custom error '{showLS err}' with callstack: {prettyCallStack callStack}|]
 
 addGlobalLogContext
-  :: ( ES.Reader AppContext E.:> es
+  :: ( ES.Reader RequestContext E.:> es
      , Log E.:> es
      )
   => Eff es a
@@ -178,10 +175,6 @@ handleServerResponse (Left (_, err)) = case err of
 messageConsoleAndRun :: IO ()
 messageConsoleAndRun = do
   env <- readEnv
-
-  case env ^. #backend of
-    SQLite -> initDevSqliteDB env
-    _ -> pure ()
 
   let
     settings =

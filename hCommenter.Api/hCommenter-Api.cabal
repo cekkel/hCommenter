@@ -48,8 +48,8 @@ library
         Server.ServerTypes
         Server.Swagger
         Server.Voting
-        Utils.AppContext
         Utils.Environment
+        Utils.RequestContext
     build-depends:
         PyF,
         aeson,

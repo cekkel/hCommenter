@@ -1,8 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Utils.Environment (LoggingConf (..), Env (..), readEnv) where
 
+import Control.Monad.Logger (LoggingT, MonadLoggerIO)
+import Data.Pool (Pool)
+import Database.Persist.Sqlite (SqlBackend, createSqlitePool)
 import Katip
   ( ColorStrategy (ColorIfTerminal)
   , Environment (Environment)
@@ -62,6 +66,8 @@ readLoggingConf appName envName = do
 data Env = Env
   { backend :: !Backend
   , port :: !Int
+  , pool :: LoggingT IO (Pool SqlBackend)
+  -- ^ Keep the LoggingT wrapper so that logging can be injected with context as needed.
   , appName :: !Text
   , envName :: !Text
   , logging :: !LoggingConf
@@ -70,29 +76,32 @@ data Env = Env
 makeFieldLabelsNoPrefix ''Env
 
 {-| Read in all environment variables to be used throughout the execution of the application.
-Includes defaults where appropriate, and anything else that should be initialised once.
+Includes defaults where appropriate, and anything else that should be initialised only once.
 -}
 readEnv :: IO Env
 readEnv = do
   appName <- pack <$> getEnv "APP__NAME"
   envName <- pack <$> getEnv "APP__ENVIRONMENT"
-  port <- readMay <$> getEnv "APP__PORT"
-  backend <- readMay <$> getEnv "APP__BACKEND"
+  mPort <- readMay <$> getEnv "APP__PORT"
+  mBackend <- readMay <$> getEnv "APP__BACKEND"
 
-  -- TODO: Replace these with 'warn' logs
-  when (isNothing backend) $
-    error "Backend provided in 'APP__BACKEND' is missing or invalid"
-
-  when (isNothing port) $
-    error "Port provided in 'APP__PORT' is missing or invalid"
+  let
+    backend = fromMaybe (error "Backend provided in 'APP__BACKEND' is missing or invalid") mBackend
+    port = fromMaybe (error "Port provided in 'APP__PORT' is missing or invalid") mPort
 
   loggingConf <- readLoggingConf appName envName
 
   pure $
     Env
-      { backend = fromMaybe SQLite backend
-      , port = fromMaybe 8080 port
+      { backend
+      , port
+      , pool = createCustomSqlPool backend
       , appName
       , envName
       , logging = loggingConf
       }
+
+createCustomSqlPool :: (MonadLoggerIO m, MonadUnliftIO m) => Backend -> m (Pool SqlBackend)
+createCustomSqlPool = \case
+  SQLite -> createSqlitePool "sqliteStorage.db" 2
+  _ -> error "Only the SQLite backend is supported currently."

@@ -5,8 +5,7 @@ module Middleware.Requests where
 import Data.UUID (toASCIIBytes)
 import Data.UUID.V4 (nextRandom)
 import Effectful (runEff)
-import Katip (logStr)
-import Network.HTTP.Types (Status (statusMessage))
+import Network.HTTP.Types (Status (statusMessage), status300)
 import Network.Wai
   ( Request (rawPathInfo, requestHeaders, requestMethod)
   , Response
@@ -15,8 +14,8 @@ import Network.Wai
   )
 import PyF (fmt)
 
-import Logging.LogContext (LogField (CorrelationID))
-import Logging.LogEffect (addLogContext, logInfo, logWarn, runLog)
+import Logging.LogContext (LogField (CorrelationID, StatusCode))
+import Logging.LogEffect (addLogContext, logError, logInfo, logWarn, runLog)
 import Middleware.Headers (correlationIDHeaderName)
 import Utils.Environment (Env)
 
@@ -45,18 +44,16 @@ addCorrelationIdIfMissing env req = do
 -- TODO: use more efficient logging here.
 logRequest :: Env -> Text -> Request -> IO ()
 logRequest env correlationId req = do
-  runEff . runLog env . addLogContext [CorrelationID correlationId] $ do
-    logInfo . logStr . mconcat $
-      [ requestMethod req
-      , " "
-      , rawPathInfo req
-      ]
+  runEff . runLog env . addLogContext [CorrelationID correlationId] $
+    logInfo
+      [fmt|{requestMethod req} {rawPathInfo req}|]
 
 logResponse :: Env -> Text -> Response -> IO Response
-logResponse env correlationId response =
-  runEff . runLog env . addLogContext [CorrelationID correlationId] $ do
-    logInfo . logStr . mconcat $
-      [ "Responded: "
-      , (statusMessage $ responseStatus response)
-      ]
-    pure response
+logResponse env correlationId response = do
+  runEff . runLog env . addLogContext [CorrelationID correlationId, StatusCode status] $
+    (if status < status300 then logInfo else logError)
+      [fmt|Responded: {statusMessage status}|]
+
+  pure response
+ where
+  status = responseStatus response

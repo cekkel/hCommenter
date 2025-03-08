@@ -3,9 +3,9 @@
 module Database.SqlStorage (runCommentStorageSQL) where
 
 import Database.Persist ((=.), (==.))
-import Database.Persist.Sqlite (PersistStoreRead (get), SqlBackend)
+import Database.Persist.Sqlite (SqlBackend)
 import Effectful (Eff, IOE, (:>))
-import Effectful.Dispatch.Dynamic (HasCallStack, interpret)
+import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
 import Optics
 
@@ -13,7 +13,7 @@ import Database.Persist qualified as P
 import Effectful.Reader.Static qualified as ES
 
 import Database.Interface (CommentStorage (..))
-import Database.SqlPool (SqlPool, runSqlPool, withConn)
+import Database.SqlPool (SqlPool, withConn)
 import Database.StorageTypes
   ( Comment (..)
   , EntityField (..)
@@ -23,51 +23,49 @@ import Database.StorageTypes
   )
 import Logging.LogEffect (Log)
 import Mapping.Typeclass (MapsFrom (mapFrom))
-import Server.ServerTypes (Backend)
-import Utils.AppContext (AppContext)
+import Utils.RequestContext (RequestContext)
 
 runCommentStorageSQL
-  :: ( ES.Reader AppContext :> es
+  :: ( ES.Reader RequestContext :> es
      , Error StorageError :> es
      , IOE :> es
      , Log :> es
+     , SqlPool :> es
      )
-  => Backend
-  -> Eff (CommentStorage : SqlPool : es) a
+  => Eff (CommentStorage : es) a
   -> Eff es a
-runCommentStorageSQL backend =
-  runSqlPool backend
-    . interpret
-      ( \_ action ->
-          withConn $ handleAny throwStorageError $ case action of
-            GetCommentsForConvo convoUrlQ sortMethod -> do
-              map mapFrom <$> P.selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
-            GetCommentsForUser userNameQ sortMethod -> do
-              map mapFrom <$> P.selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)
-            GetReplies cID sortMethod -> do
-              replies <- map mapFrom <$> P.selectList [CommentParent ==. Just cID] (generateSort sortMethod)
-              pure replies
-            InsertComment comment -> do
-              fullComment <- liftIO $ fromNewComment comment
+runCommentStorageSQL = do
+  interpret
+    ( \_ action ->
+        withConn $ handleAny throwStorageError $ case action of
+          GetCommentsForConvo convoUrlQ sortMethod -> do
+            map mapFrom <$> P.selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
+          GetCommentsForUser userNameQ sortMethod -> do
+            map mapFrom <$> P.selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)
+          GetReplies cID sortMethod -> do
+            replies <- map mapFrom <$> P.selectList [CommentParent ==. Just cID] (generateSort sortMethod)
+            pure replies
+          InsertComment comment -> do
+            fullComment <- liftIO $ fromNewComment comment
 
-              cID <- P.insert fullComment
-              pure cID
-            EditComment cID f -> do
-              comment <- get cID
-              case comment of
-                Nothing -> lift $ throwError CommentNotFound
-                Just val -> do
-                  let
-                    upComment = f val
-                  P.update
-                    cID
-                    [ CommentMessage =. (upComment ^. #message)
-                    , CommentUpvotes =. (upComment ^. #upvotes)
-                    , CommentDownvotes =. (upComment ^. #downvotes)
-                    ]
-                  pure $ mapFrom (P.Entity cID upComment)
-            DeleteComment cID -> P.delete cID
-      )
+            cID <- P.insert fullComment
+            pure cID
+          EditComment cID f -> do
+            comment <- P.get cID
+            case comment of
+              Nothing -> lift $ throwError CommentNotFound
+              Just val -> do
+                let
+                  upComment = f val
+                P.update
+                  cID
+                  [ CommentMessage =. (upComment ^. #message)
+                  , CommentUpvotes =. (upComment ^. #upvotes)
+                  , CommentDownvotes =. (upComment ^. #downvotes)
+                  ]
+                pure $ mapFrom (P.Entity cID upComment)
+          DeleteComment cID -> P.delete cID
+    )
 
 -- | TODO: Needs revisiting since sorts in persistent are basic.
 generateSort :: SortBy -> [P.SelectOpt Comment]
