@@ -19,7 +19,8 @@ import Prelude hiding (Reader, ask)
 
 import Effectful.Reader.Static qualified as ES
 
-import Logging.LogEffect (Log, askForMonadLoggerIO)
+import Logging.LogEffect (Log)
+import Logging.Utilities (askForMonadLoggerIO)
 import Utils.RequestContext (RequestContext)
 
 data SqlPool :: Effect where

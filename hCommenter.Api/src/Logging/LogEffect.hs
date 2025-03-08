@@ -8,11 +8,8 @@ import Control.Monad.Logger
   ( Loc
   , LogLevel (..)
   , LogSource
-  , ToLogStr (toLogStr)
-  , fromLogStr
-  , toLogStr
+  , ToLogStr
   )
-import Data.Aeson (Object, Value, object)
 import Effectful
   ( Dispatch (Static)
   , DispatchOf
@@ -22,20 +19,17 @@ import Effectful
   , (:>)
   )
 import Effectful.Dispatch.Static
-  ( HasCallStack
-  , SideEffects (WithSideEffects)
+  ( SideEffects (WithSideEffects)
   , StaticRep
   , evalStaticRep
   , getStaticRep
   , localStaticRep
-  , unsafeEff_
   )
 import Katip
 import Optics
 import PyF (PyFCategory (PyFString), PyFClassify)
 import Prelude hiding (log, singleton)
 
-import Logging.LogContext (LogField, logFieldToObjectPair)
 import Utils.Environment
 
 data LogConfig = LogConfig
@@ -72,69 +66,8 @@ getFileScribe = mkFileScribe "logs.txt" (const $ pure True) V0
 
 type instance PyFClassify LogStr = 'PyFString
 
-log :: (Log :> es) => Severity -> LogStr -> Eff es ()
-log level msg = do
-  f <- askForLoggerIO
-  unsafeEff_ $ f Nothing level msg
-
-logInfo :: (Log :> es) => LogStr -> Eff es ()
-logInfo = log InfoS
-
-logWarn :: (Log :> es) => LogStr -> Eff es ()
-logWarn = log WarningS
-
-logError :: (Log :> es) => LogStr -> Eff es ()
-logError = log ErrorS
-
-addLogNamespace :: (Log :> es) => Namespace -> Eff es a -> Eff es a
-addLogNamespace ns = localKatipNamespace' (<> ns)
-
-addLogContext :: forall es a. (Log :> es) => [LogField] -> Eff es a -> Eff es a
-addLogContext fields = localKatipContext' (<> liftPayload context)
- where
-  context = object $ logFieldToObjectPair <$> fields
-
-instance LogItem Object where
-  payloadKeys _ _ = AllKeys
-
-instance ToObject Value
-
-instance LogItem Value where
-  payloadKeys _ _ = AllKeys
-
--- logIO :: Env -> IO ()
--- logIO env = do
---   ctx <- getKatipContext'
---   ns <- getKatipNamespace'
---   env <- getLogEnv'
---   pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
---
-
-askForLoggerIO :: (HasCallStack, Log :> es) => Eff es (Maybe Loc -> Severity -> LogStr -> IO ())
-askForLoggerIO = do
-  ctx <- getKatipContext'
-  ns <- getKatipNamespace'
-  env <- getLogEnv'
-  -- Not using location-based logging for now, as katip's support wrapper funcs with it is limited.
-  pure (\maybe_loc sev msg -> runKatipT env $ logF ctx ns sev msg)
-
-{-| This is useful for when there is a need to work with a library that uses the
-  'LoggingT' transformer from the monad-logger library.
--}
-askForMonadLoggerIO :: (Log :> es, ToLogStr a) => Eff es (Loc -> LogSource -> LogLevel -> a -> IO ())
-askForMonadLoggerIO = do
-  logIO <- askForLoggerIO
-  pure (\_loc _src lvl msg -> logIO (Just _loc) (mapLvl lvl) (mapMsg msg))
- where
-  mapLvl = \case
-    LevelInfo -> InfoS
-    LevelWarn -> WarningS
-    LevelDebug -> DebugS
-    LevelError -> ErrorS
-    LevelOther _ -> WarningS
-
-  mapMsg = logStr . fromLogStr . toLogStr
-
+-- Need the IOE constraint due to an unnecessary MonadIO constraint in the katip library.
+-- See this PR: https://github.com/Soostone/katip/pull/119
 instance (IOE :> es, Log :> es) => Katip (Eff es) where
   getLogEnv = getLogEnv'
   localLogEnv = localLogEnv'

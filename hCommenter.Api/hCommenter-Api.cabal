@@ -36,6 +36,7 @@ library
         Logging.Grafana
         Logging.LogContext
         Logging.LogEffect
+        Logging.Utilities
         Mapping.Comments
         Mapping.ExternalTypes
         Mapping.Typeclass

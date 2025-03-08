@@ -9,11 +9,8 @@ import PyF (fmt)
 import Prelude hiding (Handler)
 
 import Logging.LogContext (LogField (CorrelationID))
-import Logging.LogEffect
-  ( addLogContext
-  , logError
-  , runLog
-  )
+import Logging.LogEffect (runLog)
+import Logging.Utilities (addLogContext, logError)
 import Middleware.Requests (getCorrelationId)
 import Utils.Environment (Env)
 

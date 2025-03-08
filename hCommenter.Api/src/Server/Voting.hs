@@ -17,12 +17,8 @@ import Effectful qualified as E
 import Database.Interface (CommentStorage, editComment)
 import Database.StorageTypes (Comment, Key)
 import Logging.LogContext (LogField (CommentId))
-import Logging.LogEffect
-  ( Log
-  , addLogContext
-  , addLogNamespace
-  , logInfo
-  )
+import Logging.LogEffect (Log)
+import Logging.Utilities (addLogContext, addLogNamespace, logInfo)
 
 -- | Easy to abuse, needs authentication added later
 type VotingAPI =

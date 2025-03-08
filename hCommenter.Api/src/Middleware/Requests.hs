@@ -15,7 +15,8 @@ import Network.Wai
 import PyF (fmt)
 
 import Logging.LogContext (LogField (CorrelationID, StatusCode))
-import Logging.LogEffect (addLogContext, logError, logInfo, logWarn, runLog)
+import Logging.LogEffect (runLog)
+import Logging.Utilities (addLogContext, logError, logInfo, logWarn)
 import Middleware.Headers (correlationIDHeaderName)
 import Utils.Environment (Env)
 

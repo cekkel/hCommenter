@@ -8,7 +8,8 @@ import Servant
 import Effectful qualified as E
 
 import Logging.LogContext (LogField (CorrelationID))
-import Logging.LogEffect (Log, addLogContext)
+import Logging.LogEffect (Log)
+import Logging.Utilities (addLogContext)
 
 correlationIDHeaderName :: (IsString a) => a
 correlationIDHeaderName = "Correlation-Id"

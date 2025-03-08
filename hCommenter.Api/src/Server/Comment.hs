@@ -32,13 +32,8 @@ import Database.StorageTypes
   , SortBy (..)
   )
 import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, Username))
-import Logging.LogEffect
-  ( Log
-  , addLogContext
-  , addLogNamespace
-  , logError
-  , logInfo
-  )
+import Logging.LogEffect (Log)
+import Logging.Utilities (addLogContext, addLogNamespace, logError, logInfo)
 import Mapping.ExternalTypes (ViewComment)
 import Server.ServerTypes (InputError)
 

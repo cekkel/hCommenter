@@ -11,7 +11,8 @@ import Servant
 
 import Effectful qualified as E
 
-import Logging.LogEffect (Log, logInfo)
+import Logging.LogEffect (Log)
+import Logging.Utilities (logInfo)
 import Server.ServerTypes (InputError)
 
 -- | Note that 'GetNoContent' cannot be used here, as it does not allow response headers.
