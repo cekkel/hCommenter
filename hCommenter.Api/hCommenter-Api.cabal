@@ -40,6 +40,7 @@ library
         Mapping.ExternalTypes
         Mapping.Typeclass
         Middleware.Combined
+        Middleware.Exceptions
         Middleware.Headers
         Middleware.Requests
         Server.Comment

@@ -28,7 +28,6 @@ import Effectful.Error.Static
   , runError
   )
 import Katip (showLS)
-import Network.Wai (Request)
 import Network.Wai.Handler.Warp (defaultSettings, runSettings, setOnException, setPort)
 import Optics
 import PyF (fmt)
@@ -67,8 +66,8 @@ import Logging.LogEffect
   , runLog
   )
 import Middleware.Combined (addCustomMiddleware)
+import Middleware.Exceptions (logOnException)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
-import Middleware.Requests (getCorrelationId)
 import Server.Comment (CommentsAPI, commentServer)
 import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), ErrorResponse (ErrorResponse), InputError (..))
@@ -192,12 +191,3 @@ messageConsoleAndRun = do
 
   putStrLn [fmt|\nListening in {env ^. #backend} mode, on port {env ^. #port}...\n|]
   runSettings settings $ app env
-
-logOnException :: Env -> (Maybe Request -> SomeException -> IO ())
-logOnException env mReq e = do
-  let
-    correlationId = getCorrelationId =<< mReq
-
-  runEff . runLog env $
-    addLogContext [CorrelationID $ fromMaybe "No provided Correlation-Id" correlationId] $
-      logError [fmt|Exception occurred: {showLS e}|]
