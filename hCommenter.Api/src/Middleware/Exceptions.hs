@@ -10,7 +10,7 @@ import Prelude hiding (Handler)
 
 import Logging.LogContext (LogField (CorrelationID))
 import Logging.LogEffect (runLog)
-import Logging.Utilities (addLogContext, logError)
+import Logging.Utilities (addLogContext, logCritical)
 import Middleware.Requests (getCorrelationId)
 import Utils.Environment (Env)
 
@@ -23,4 +23,4 @@ logOnException env mReq e = do
     -- Note: generated correlationId may not be here yet, since this function is executed
     -- by warp before servant gets involved.
     addLogContext [CorrelationID $ fromMaybe "No provided Correlation-Id" correlationId] $
-      logError [fmt|Exception occurred: {showLS e}|]
+      logCritical [fmt|Exception occurred: {showLS e}|]

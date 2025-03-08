@@ -58,6 +58,9 @@ logWarn = log WarningS
 logError :: (Log :> es) => LogStr -> Eff es ()
 logError = log ErrorS
 
+logCritical :: (Log :> es) => LogStr -> Eff es ()
+logCritical = log CriticalS
+
 addLogNamespace :: (Log :> es) => Namespace -> Eff es a -> Eff es a
 addLogNamespace ns = localKatipNamespace' (<> ns)
 

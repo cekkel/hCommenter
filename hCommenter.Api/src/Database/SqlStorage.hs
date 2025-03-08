@@ -1,13 +1,15 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Database.SqlStorage (runCommentStorageSQL) where
 
 import Database.Persist ((=.), (==.))
-import Database.Persist.Sqlite (SqlBackend)
+import Database.Persist.Sqlite (SqlBackend, fromSqlKey)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
 import Optics
+import PyF (fmt)
 
 import Database.Persist qualified as P
 import Effectful.Reader.Static qualified as ES
@@ -22,6 +24,7 @@ import Database.StorageTypes
   , fromNewComment
   )
 import Logging.LogEffect (Log)
+import Logging.Utilities (logError)
 import Mapping.Typeclass (MapsFrom (mapFrom))
 import Utils.RequestContext (RequestContext)
 
@@ -53,7 +56,9 @@ runCommentStorageSQL = do
           EditComment cID f -> do
             comment <- P.get cID
             case comment of
-              Nothing -> lift $ throwError CommentNotFound
+              Nothing -> lift $ do
+                logError [fmt|No comment found with ID: {fromSqlKey cID}|]
+                throwError $ CommentNotFound "Comment not found"
               Just val -> do
                 let
                   upComment = f val
@@ -76,8 +81,11 @@ generateSort sortMethod = case sortMethod of
   New -> [P.Desc CommentDateCreated]
 
 throwStorageError
-  :: (Error StorageError :> es)
+  :: ( Error StorageError :> es
+     , Log :> es
+     )
   => SomeException
   -> ReaderT SqlBackend (Eff es) a
-throwStorageError = \case
-  e -> lift $ throwError $ UnhandledStorageError $ tshow e
+throwStorageError e = lift $ do
+  logError [fmt|Unhandled storage error: {show e}|]
+  throwError $ UnhandledStorageError $ tshow e

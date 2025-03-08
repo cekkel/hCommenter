@@ -41,14 +41,13 @@ import Katip
   , Verbosity
   )
 import Optics
-import Servant (FromHttpApiData (parseQueryParam), ToHttpApiData)
 import Web.HttpApiData
 import Prelude hiding (Handler, singleton, sortBy)
 
 data StorageError
-  = CommentNotFound
-  | UserNotFound
-  | ConvoNotFound
+  = CommentNotFound Text
+  | UserNotFound Text
+  | ConvoNotFound Text
   | UnhandledStorageError Text
   deriving (Eq, Show)
 

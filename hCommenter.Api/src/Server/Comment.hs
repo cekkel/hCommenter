@@ -30,6 +30,7 @@ import Database.StorageTypes
   ( Comment
   , NewComment
   , SortBy (..)
+  , StorageError
   )
 import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, Username))
 import Logging.LogEffect (Log)
@@ -78,6 +79,7 @@ type CommentsAPI =
 commentServer
   :: ( DB.CommentStorage E.:> es
      , Error InputError E.:> es
+     , Error StorageError E.:> es
      , Log E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)

@@ -20,7 +20,7 @@ import Prelude hiding (Reader, ask)
 import Effectful.Reader.Static qualified as ES
 
 import Logging.LogEffect (Log)
-import Logging.Utilities (askForMonadLoggerIO)
+import Logging.Utilities (askForMonadLoggerIO, logInfo)
 import Utils.RequestContext (RequestContext)
 
 data SqlPool :: Effect where
@@ -38,6 +38,8 @@ runSqlPool
 runSqlPool =
   interpret $ \effEnv -> \case
     WithConn action -> do
+      logInfo "Acquiring connection from pool"
+
       wrappedPool <- ES.asks $ view (#env % #pool)
       logIO <- askForMonadLoggerIO
       pool <- liftIO $ runLoggingT wrappedPool logIO
