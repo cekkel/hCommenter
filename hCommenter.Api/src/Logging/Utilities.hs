@@ -30,6 +30,20 @@ import Logging.LogEffect
   , localKatipNamespace'
   )
 
+{- FYI
+ - These functions are due to an issue (see a note in Logging.LogEffect for details)
+ - which prevents us from using built-in katip functions. Instead, we just import
+ - these functions instead.
+ -}
+
+askForLoggerIO :: (HasCallStack, Log :> es) => Eff es (Maybe Loc -> Severity -> LogStr -> IO ())
+askForLoggerIO = do
+  ctx <- getKatipContext'
+  ns <- getKatipNamespace'
+  env <- getLogEnv'
+  -- Not using location-based logging for now, as katip's support for wrapper funcs with it is limited.
+  pure (\maybe_loc sev msg -> runKatipT env $ logF ctx ns sev msg)
+
 log :: (Log :> es) => Severity -> LogStr -> Eff es ()
 log level msg = do
   f <- askForLoggerIO
@@ -59,22 +73,6 @@ instance ToObject Value
 
 instance LogItem Value where
   payloadKeys _ _ = AllKeys
-
--- logIO :: Env -> IO ()
--- logIO env = do
---   ctx <- getKatipContext'
---   ns <- getKatipNamespace'
---   env <- getLogEnv'
---   pure (\sev msg -> runKatipT env $ logF ctx ns sev msg)
---
-
-askForLoggerIO :: (HasCallStack, Log :> es) => Eff es (Maybe Loc -> Severity -> LogStr -> IO ())
-askForLoggerIO = do
-  ctx <- getKatipContext'
-  ns <- getKatipNamespace'
-  env <- getLogEnv'
-  -- Not using location-based logging for now, as katip's support wrapper funcs with it is limited.
-  pure (\maybe_loc sev msg -> runKatipT env $ logF ctx ns sev msg)
 
 {-| This is useful for when there is a need to work with a library that uses the
   'LoggingT' transformer from the monad-logger library.
