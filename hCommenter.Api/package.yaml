@@ -25,6 +25,7 @@ default-extensions:
   - AllowAmbiguousTypes
   - DuplicateRecordFields
   - OverloadedLabels
+  - RecordWildCards
 
 dependencies:
   - name: base
@@ -35,6 +36,7 @@ dependencies:
     mixin:
       - (ClassyPrelude as Prelude)
   - extra
+  - time
   - servant-server
   - servant-swagger
   - swagger2

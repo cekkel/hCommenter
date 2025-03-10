@@ -33,6 +33,7 @@ library
         Database.SqlPool
         Database.SqlStorage
         Database.StorageTypes
+        Logging.Config
         Logging.Grafana
         Logging.LogContext
         Logging.LogEffect
@@ -79,6 +80,7 @@ library
         string-conv,
         swagger2,
         text,
+        time,
         transformers,
         unordered-containers,
         uuid,
@@ -98,6 +100,7 @@ library
         AllowAmbiguousTypes
         DuplicateRecordFields
         OverloadedLabels
+        RecordWildCards
 
 executable hCommenter-Api
     main-is: Main.hs
@@ -130,6 +133,7 @@ executable hCommenter-Api
         string-conv,
         swagger2,
         text,
+        time,
         transformers,
         unordered-containers,
         uuid,
@@ -147,6 +151,7 @@ executable hCommenter-Api
         AllowAmbiguousTypes
         DuplicateRecordFields
         OverloadedLabels
+        RecordWildCards
     ghc-options: -Wall -fno-warn-orphans
     default-language: GHC2024
 
@@ -165,6 +170,7 @@ test-suite spec
         AllowAmbiguousTypes
         DuplicateRecordFields
         OverloadedLabels
+        RecordWildCards
     ghc-options: -Wall -fno-warn-orphans
     cpp-options: -DTEST
     build-tool-depends:
@@ -208,6 +214,7 @@ test-suite spec
         swagger2,
         temporary,
         text,
+        time,
         transformers,
         unordered-containers,
         uuid,

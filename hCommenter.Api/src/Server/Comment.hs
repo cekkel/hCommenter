@@ -31,7 +31,7 @@ import Database.StorageTypes
   , SortBy (..)
   , StorageError
   )
-import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, SortingMethod, Username))
+import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, Username))
 import Logging.LogEffect (Log)
 import Logging.Utilities (addLogContext, addLogNamespace, logError, logInfo, logWarn)
 import Mapping.ExternalTypes (ViewComment)

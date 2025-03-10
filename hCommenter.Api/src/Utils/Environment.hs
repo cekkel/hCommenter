@@ -24,44 +24,8 @@ import Katip
 import Optics
 import System.Environment (getEnv)
 
+import Logging.Config (LoggingConf, readLoggingConf)
 import Server.ServerTypes (Backend (SQLite))
-
-data LoggingConf = LoggingConf
-  { grafanaAccountNum :: !Text
-  , grafanaToken :: !Text
-  , grafanaUrl :: !Text
-  , scribe :: !Scribe
-  , katipLogEnv :: !LogEnv
-  }
-
-makeFieldLabelsNoPrefix ''LoggingConf
-
-getConsoleScribe :: IO Scribe
-getConsoleScribe = mkHandleScribe ColorIfTerminal stdout (permitItem DebugS) V0
-
-readLoggingConf :: Text -> Text -> IO LoggingConf
-readLoggingConf appName envName = do
-  grafanaAccountNum <- pack <$> getEnv "LOGGING__GRAFANA_ACC"
-  grafanaToken <- pack <$> getEnv "LOGGING__GRAFANA_TOKEN"
-  grafanaUrl <- pack <$> getEnv "LOGGING__GRAFANA_URL"
-
-  let
-    component' = Namespace [appName]
-    environment' = Environment $ envName
-    scribeName = "GrafanaScribe"
-
-  scribe <- getConsoleScribe
-  initialEnv <- initLogEnv component' environment'
-  katipLogEnv <- registerScribe scribeName scribe defaultScribeSettings initialEnv
-
-  pure $
-    LoggingConf
-      { grafanaToken
-      , grafanaAccountNum
-      , grafanaUrl
-      , scribe
-      , katipLogEnv
-      }
 
 data Env = Env
   { backend :: !Backend
