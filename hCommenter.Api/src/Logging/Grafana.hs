@@ -7,7 +7,6 @@ module Logging.Grafana where
 
 import Data.Aeson
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Katip (Verbosity (V0))
 import Network.HTTP.Req
 import Optics
 import PyF (fmt)
@@ -17,6 +16,7 @@ import Data.Aeson qualified as A
 import Data.Aeson.KeyMap qualified as AK
 import Data.Text.Lazy.Builder qualified as Builder
 import Katip qualified as K
+import Katip.Core qualified as KC
 
 data GrafanaConf = GrafanaConf
   { grafanaAccountNum :: !Text
@@ -36,10 +36,10 @@ makeFieldLabelsNoPrefix ''GrafanaConf
 
 mkGrafanaScribe :: GrafanaConf -> K.PermitFunc -> K.Verbosity -> IO K.Scribe
 mkGrafanaScribe conf permitF verbosity = do
-  pure $ K.Scribe {scribePermitItem = permitF, scribeFinalizer = pure (), liPush = pushLog conf}
+  pure $ K.Scribe {scribePermitItem = permitF, scribeFinalizer = pure (), liPush = pushLog verbosity conf}
 
-pushLog :: forall a. (K.LogItem a) => GrafanaConf -> K.Item a -> IO ()
-pushLog conf item = runReq defaultHttpConfig $ do
+pushLog :: forall a. (K.LogItem a) => K.Verbosity -> GrafanaConf -> K.Item a -> IO ()
+pushLog verbosity conf item = runReq defaultHttpConfig $ do
   let
     options =
       mconcat
@@ -51,7 +51,7 @@ pushLog conf item = runReq defaultHttpConfig $ do
     req
       POST
       (https (conf ^. #grafanaUrl) /: "loki" /: "api" /: "v1" /: "push")
-      (ReqBodyJson $ encodeLoki item)
+      (ReqBodyJson $ encodeLoki verbosity item)
       ignoreResponse
       options
       `catchAny` \e -> do
@@ -66,20 +66,18 @@ pushLog conf item = runReq defaultHttpConfig $ do
 utcTimeToEpochTime :: UTCTime -> Int
 utcTimeToEpochTime = round . (* 1e9) . utcTimeToPOSIXSeconds
 
-encodeLoki :: (K.LogItem a) => K.Item a -> Value
-encodeLoki item =
+encodeLoki :: (K.LogItem a) => K.Verbosity -> K.Item a -> Value
+encodeLoki verbosity item =
   let
     msg = toStrict $ Builder.toLazyText $ K.unLogStr $ K._itemMessage item
     logTime = tshow $ utcTimeToEpochTime $ K._itemTime item
     environment = K.getEnvironment $ K._itemEnv item
     jsonMsg =
       allFieldsText $
-        foldl'
-          AK.union
-          mempty
-          [ K.payloadObject V0 $ K._itemPayload item
-          , AK.singleton "severity" $ A.String $ K.renderSeverity $ K._itemSeverity item
-          ]
+        K.payloadObject verbosity (K._itemPayload item)
+          & AK.insert "severity" (A.String $ K.renderSeverity $ K._itemSeverity item)
+          & AK.insert "namespace" (A.String $ mconcat $ KC.intercalateNs $ K._itemNamespace item)
+          & AK.insert "host" (A.String $ pack $ K._itemHost item)
   in
     toJSON $
       Loki
