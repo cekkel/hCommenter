@@ -4,9 +4,9 @@ module Database.LocalStorage where
 
 -- import Data.Map qualified as M
 -- import Database.Interface (CommentStorage (..))
-import Database.Persist.Sql (Entity (Entity), fromSqlKey, toSqlKey)
+import Database.Persist.Sql (Entity (Entity))
 -- import Database.SqlPool (SqlPool)
-import Database.StorageTypes
+
 --   ( Comment
 --   , CommentId
 --   , SortBy (..)
@@ -20,6 +20,8 @@ import Database.StorageTypes
 -- import Effectful.Error.Static (Error, throwError)
 -- import Mapping.Typeclass (MapsFrom (mapFrom))
 import Optics
+
+import Database.StorageTypes
 
 -- runCommentStorageIO ::
 --   ( Error StorageError :> es

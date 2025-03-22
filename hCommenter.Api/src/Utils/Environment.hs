@@ -2,25 +2,11 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Utils.Environment (LoggingConf (..), Env (..), readEnv) where
+module Utils.Environment (LoggingConf, Env (..), readEnv) where
 
 import Control.Monad.Logger (LoggingT, MonadLoggerIO)
 import Data.Pool (Pool)
 import Database.Persist.Sqlite (SqlBackend, createSqlitePool)
-import Katip
-  ( ColorStrategy (ColorIfTerminal)
-  , Environment (Environment)
-  , LogEnv
-  , Namespace (Namespace)
-  , Scribe
-  , Severity (DebugS)
-  , Verbosity (V0)
-  , defaultScribeSettings
-  , initLogEnv
-  , mkHandleScribe
-  , permitItem
-  , registerScribe
-  )
 import Optics
 import System.Environment (getEnv)
 

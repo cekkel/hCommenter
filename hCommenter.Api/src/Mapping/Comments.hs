@@ -1,12 +1,12 @@
 module Mapping.Comments (storageToViewComment) where
 
 import Database.Persist.Sql (fromSqlKey)
+import Optics
+
 import Database.StorageTypes
 import Mapping.ExternalTypes
-  ( Paginated (..)
-  , ViewComment (..)
+  ( ViewComment (..)
   )
-import Optics
 
 storageToViewComment :: Key Comment -> Comment -> ViewComment
 storageToViewComment commentId comment =

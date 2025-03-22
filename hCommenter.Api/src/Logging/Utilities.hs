@@ -42,7 +42,7 @@ askForLoggerIO = do
   ns <- getKatipNamespace'
   env <- getLogEnv'
   -- Not using location-based logging for now, as katip's support for wrapper funcs with it is limited.
-  pure (\maybe_loc sev msg -> runKatipT env $ logF ctx ns sev msg)
+  pure (\_maybe_loc sev msg -> runKatipT env $ logF ctx ns sev msg)
 
 log :: (Log :> es) => Severity -> LogStr -> Eff es ()
 log level msg = do
