@@ -1,7 +1,6 @@
 module Server.Voting (VotingAPI, votingServer) where
 
 import Database.Persist.Sql (fromSqlKey)
-import Optics
 import Servant
   ( Capture
   , Description
@@ -14,7 +13,7 @@ import Servant
 
 import Effectful qualified as E
 
-import Database.Interface (CommentStorage, editComment)
+import Database.Interface (CommentStorage, CommentUpdate (SendDownvote, SendUpvote), editComment)
 import Database.StorageTypes (Comment, Key)
 import Logging.LogContext (LogField (CommentId))
 import Logging.LogEffect (Log)
@@ -33,11 +32,16 @@ votingServer
      , Log E.:> es
      )
   => ServerT VotingAPI (E.Eff es)
-votingServer cID = vote "UpvoteComment" #upvotes :<|> vote "DownvoteComment" #downvotes
+votingServer cID = upvote :<|> downvote
  where
-  vote namespace voteBox =
-    addLogNamespace namespace . addLogContext [CommentId $ fromSqlKey cID] $ do
-      logInfo "Incrementing vote box"
-      _ <- editComment cID (voteBox %~ (+ 1))
-      logInfo "Vote box incremented successfully"
+  upvote =
+    addLogNamespace "Upvote" . addLogContext [CommentId $ fromSqlKey cID] $ do
+      _ <- editComment cID [SendUpvote]
+      logInfo "Comment upvoted successfully"
+      pure NoContent
+
+  downvote =
+    addLogNamespace "Downvote" . addLogContext [CommentId $ fromSqlKey cID] $ do
+      _ <- editComment cID [SendDownvote]
+      logInfo "Comment downvoted successfully"
       pure NoContent

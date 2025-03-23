@@ -13,6 +13,7 @@ import Servant
   , HasServer (ServerT)
   , JSON
   , NoContent (NoContent)
+  , PlainText
   , Post
   , PostCreated
   , PostNoContent
@@ -25,6 +26,7 @@ import Prelude hiding (Handler, log, sortBy)
 
 import Effectful qualified as E
 
+import Database.Interface (CommentUpdate (..))
 import Database.StorageTypes
   ( Comment
   , NewComment
@@ -65,7 +67,7 @@ type CommentsAPI =
            :<|> ( Description "Edit an existing comment"
                     :> "edit"
                     :> Capture "id" (Key Comment)
-                    :> ReqBody '[JSON] Text
+                    :> ReqBody '[PlainText] Text
                     :> Post '[JSON] ViewComment
                 )
            :<|> ( Description "Delete a comment"
@@ -155,7 +157,7 @@ commentServer mSortBy = getConvoComments :<|> getUserComments :<|> getReplies :<
       $ do
         logInfo [fmt|Editing comment with ID: {fromSqlKey cID}|]
 
-        updatedComment <- DB.editComment cID (#message .~ commentText)
+        updatedComment <- DB.editComment cID [SendNewContent commentText]
 
         logInfo "Comment updated successfully"
         pure updatedComment

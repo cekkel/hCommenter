@@ -3,18 +3,17 @@
 
 module Database.SqlStorage (runCommentStorageSQL) where
 
-import Database.Persist ((=.), (==.))
+import Database.Persist ((+=.), (=.), (==.))
 import Database.Persist.Sqlite (SqlBackend, fromSqlKey)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
-import Optics
 import PyF (fmt)
 
 import Database.Persist qualified as P
 import Effectful.Reader.Static qualified as ES
 
-import Database.Interface (CommentStorage (..))
+import Database.Interface (CommentStorage (..), CommentUpdate (..))
 import Database.SqlPool (SqlPool, withConn)
 import Database.StorageTypes
   ( Comment (..)
@@ -23,8 +22,9 @@ import Database.StorageTypes
   , StorageError (..)
   , fromNewComment
   )
+import Logging.LogContext (LogField (AppError))
 import Logging.LogEffect (Log)
-import Logging.Utilities (logError)
+import Logging.Utilities (addLogContext, logError)
 import Mapping.Typeclass (MapsFrom (mapFrom))
 import Utils.RequestContext (RequestContext)
 
@@ -53,26 +53,24 @@ runCommentStorageSQL = do
 
             cID <- P.insert fullComment
             pure cID
-          EditComment cID f -> do
-            comment <- P.get cID
-            case comment of
-              Nothing -> lift $ do
-                logError [fmt|No comment found with ID: {fromSqlKey cID}|]
-                throwError $ CommentNotFound "Comment not found"
-              Just val -> do
-                let
-                  upComment = f val
-                P.update
-                  cID
-                  [ CommentMessage =. (upComment ^. #message)
-                  , CommentUpvotes =. (upComment ^. #upvotes)
-                  , CommentDownvotes =. (upComment ^. #downvotes)
-                  ]
-                pure $ mapFrom (P.Entity cID upComment)
+          EditComment cID edits -> do
+            let
+              sqlEdits =
+                edits <&> \case
+                  SendNewContent newContent -> CommentMessage =. newContent
+                  SendUpvote -> CommentUpvotes +=. 1
+                  SendDownvote -> CommentDownvotes +=. 1
+
+            updatedComment <-
+              catchAny (P.updateGet cID sqlEdits) $ \e -> lift . addLogContext [AppError e] $ do
+                logError [fmt|Failed to update comment {fromSqlKey cID}|]
+                throwError $ CommentNotFound $ tshow cID
+
+            pure $ mapFrom $ P.Entity cID $ updatedComment
           DeleteComment cID -> P.delete cID
     )
 
--- | TODO: Needs revisiting since sorts in persistent are basic.
+-- PERF: Needs revisiting since sorts in persistent are basic.
 generateSort :: SortBy -> [P.SelectOpt Comment]
 generateSort sortMethod = case sortMethod of
   Popular -> [P.Desc CommentUpvotes]

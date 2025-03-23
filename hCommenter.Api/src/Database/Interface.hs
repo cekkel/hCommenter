@@ -9,6 +9,7 @@ module Database.Interface
   , editComment
   , deleteComment
   , CommentStorage (..)
+  , CommentUpdate (..)
   )
 where
 
@@ -27,12 +28,17 @@ type ConvoUrl = Text
 
 type Username = Text
 
+data CommentUpdate
+  = SendNewContent Text
+  | SendUpvote
+  | SendDownvote
+
 data CommentStorage :: Effect where
   GetCommentsForConvo :: ConvoUrl -> SortBy -> CommentStorage m [ViewComment]
   GetCommentsForUser :: Username -> SortBy -> CommentStorage m [ViewComment]
   GetReplies :: Key Comment -> SortBy -> CommentStorage m [ViewComment]
   InsertComment :: NewComment -> CommentStorage m (Key Comment)
-  EditComment :: Key Comment -> (Comment -> Comment) -> CommentStorage m ViewComment
+  EditComment :: Key Comment -> [CommentUpdate] -> CommentStorage m ViewComment
   DeleteComment :: Key Comment -> CommentStorage m ()
 
 type instance DispatchOf CommentStorage = 'Dynamic

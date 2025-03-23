@@ -11,6 +11,7 @@ data LogField
   | Username Text
   | Note Text
   | StatusCode Status
+  | AppError SomeException
   deriving (Show)
 
 logFieldToObjectPair :: LogField -> Pair
@@ -22,3 +23,4 @@ logFieldToObjectPair = \case
   Username txt -> "Username" .= txt
   Note txt -> "Note" .= txt
   StatusCode status -> "StatusCode" .= statusCode status
+  AppError e -> "AppError" .= tshow e
