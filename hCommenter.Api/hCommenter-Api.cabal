@@ -45,6 +45,7 @@ library
         Middleware.Exceptions
         Middleware.Headers
         Middleware.Requests
+        Middleware.ServantErrorFormatters
         Server.Comment
         Server.Health
         Server.ServerTypes
@@ -75,6 +76,7 @@ library
         persistent-sqlite,
         req,
         resource-pool,
+        servant,
         servant-server,
         servant-swagger,
         string-conv,
@@ -128,6 +130,7 @@ executable hCommenter-Api
         persistent-sqlite,
         req,
         resource-pool,
+        servant,
         servant-server,
         servant-swagger,
         string-conv,

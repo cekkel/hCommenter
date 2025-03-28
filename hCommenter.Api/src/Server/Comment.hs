@@ -2,7 +2,7 @@
 
 module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
-import Database.Persist.Sql (PersistEntity (Key), fromSqlKey)
+import Database.Persist.Sql (PersistEntity (Key), fromSqlKey, toSqlKey)
 import Effectful.Error.Static (Error)
 import Optics
 import PyF (fmt)
@@ -66,7 +66,7 @@ type CommentsAPI =
                 )
            :<|> ( Description "Edit an existing comment"
                     :> "edit"
-                    :> Capture "id" (Key Comment)
+                    :> Capture "id" Int64
                     :> ReqBody '[PlainText] Text
                     :> Post '[JSON] ViewComment
                 )
@@ -153,11 +153,11 @@ commentServer mSortBy = getConvoComments :<|> getUserComments :<|> getReplies :<
 
   editComment cID commentText =
     addLogNamespace "EditComment"
-      . addLogContext [CommentId $ fromSqlKey cID]
+      . addLogContext [CommentId cID]
       $ do
-        logInfo [fmt|Editing comment with ID: {fromSqlKey cID}|]
+        logInfo [fmt|Editing comment with ID: {cID}|]
 
-        updatedComment <- DB.editComment cID [SendNewContent commentText]
+        updatedComment <- DB.editComment (toSqlKey cID) [SendNewContent commentText]
 
         logInfo "Comment updated successfully"
         pure updatedComment

@@ -37,6 +37,7 @@ dependencies:
       - (ClassyPrelude as Prelude)
   - extra
   - time
+  - servant
   - servant-server
   - servant-swagger
   - swagger2

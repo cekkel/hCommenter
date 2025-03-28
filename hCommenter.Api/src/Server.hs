@@ -26,6 +26,7 @@ import Optics
 import PyF (fmt)
 import Servant
   ( Application
+  , Context (EmptyContext, (:.))
   , Handler (Handler)
   , Proxy (..)
   , Server
@@ -34,7 +35,7 @@ import Servant
   , err404
   , err500
   , hoistServer
-  , serve
+  , serveWithContext
   , type (:<|>) (..)
   )
 import Servant.Swagger (HasSwagger (toSwagger))
@@ -55,6 +56,7 @@ import Logging.Utilities (addLogContext)
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Exceptions (logOnException)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
+import Middleware.ServantErrorFormatters (customFormatters)
 import Server.Comment (CommentsAPI, commentServer)
 import Server.Health (HealthAPI, healthServer)
 import Server.ServerTypes (Backend (..), CustomError (..), ErrorResponse (ErrorResponse), InputError (..))
@@ -66,7 +68,7 @@ import Utils.RequestContext (RequestContext)
 app :: Env -> Application
 app env =
   addCustomMiddleware env $ \ctx ->
-    serve enrichedAPI $
+    serveWithContext enrichedAPI (customFormatters :. EmptyContext) $
       serverAPI ctx
 
 type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
