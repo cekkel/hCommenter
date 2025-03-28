@@ -46,7 +46,7 @@ type instance DispatchOf Log = Static WithSideEffects
 
 newtype instance StaticRep Log = Log LogConfig
 
--- | TODO: Verify performance.
+-- | PERF: Verify performance.
 runLog
   :: (IOE :> es)
   => Env

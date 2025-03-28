@@ -24,7 +24,7 @@ import Database.StorageTypes
   )
 import Logging.LogContext (LogField (AppError))
 import Logging.LogEffect (Log)
-import Logging.Utilities (addLogContext, logError)
+import Logging.Utilities (addLogContext, logDebug, logError)
 import Mapping.Typeclass (MapsFrom (mapFrom))
 import Utils.RequestContext (RequestContext)
 
@@ -46,13 +46,11 @@ runCommentStorageSQL = do
           GetCommentsForUser userNameQ sortMethod -> do
             map mapFrom <$> P.selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)
           GetReplies cID sortMethod -> do
-            replies <- map mapFrom <$> P.selectList [CommentParent ==. Just cID] (generateSort sortMethod)
-            pure replies
+            map mapFrom <$> P.selectList [CommentParent ==. Just cID] (generateSort sortMethod)
           InsertComment comment -> do
             fullComment <- liftIO $ fromNewComment comment
 
-            cID <- P.insert fullComment
-            pure cID
+            P.insert fullComment
           EditComment cID edits -> do
             let
               sqlEdits =
@@ -61,12 +59,17 @@ runCommentStorageSQL = do
                   SendUpvote -> CommentUpvotes +=. 1
                   SendDownvote -> CommentDownvotes +=. 1
 
+            lift $ logDebug [fmt|Performing edits: {tshow edits}|]
+
+            -- PERF: Is this ok? updateGet still seems to perform two queries.
             updatedComment <-
               catchAny (P.updateGet cID sqlEdits) $ \e -> lift . addLogContext [AppError e] $ do
                 logError [fmt|Failed to update comment {fromSqlKey cID}|]
                 throwError $ CommentNotFound $ tshow cID
 
-            pure $ mapFrom $ P.Entity cID $ updatedComment
+            lift $ logDebug [fmt|Updated comment to: {tshow updatedComment}|]
+
+            pure $ mapFrom $ P.Entity cID updatedComment
           DeleteComment cID -> P.delete cID
     )
 

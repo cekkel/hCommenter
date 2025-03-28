@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Server.ServerTypes (ErrorResponse (..), CustomError (..), InputError (..), Backend (..)) where
 
 import Data.Aeson (FromJSON, ToJSON)

@@ -42,7 +42,7 @@ addCorrelationIdIfMissing env req = do
 
       pure (mapRequestHeaders ((correlationIDHeaderName, toASCIIBytes uuid) :) req, tshow uuid)
 
--- TODO: use more efficient logging here.
+-- PERF: use more efficient logging here.
 logRequest :: Env -> Text -> Request -> IO ()
 logRequest env correlationId req = do
   runEff . runLog env . addLogContext [CorrelationID correlationId] $

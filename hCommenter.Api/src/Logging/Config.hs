@@ -42,7 +42,7 @@ readLoggingConf appName envName = do
 
   let
     component' = Namespace [appName]
-    environment' = Environment $ envName
+    environment' = Environment envName
     scribeName = "GrafanaScribe"
 
   grafanaConf <- readGrafanaConf

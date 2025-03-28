@@ -99,4 +99,4 @@ sortedComments sortMethod = sortBy $ \(Entity _ c1) (Entity _ c2) -> case sortMe
   Popular -> compare (c1 ^. #upvotes) (c2 ^. #upvotes)
   Controversial -> compare (c1 ^. #downvotes) (c2 ^. #downvotes)
   Old -> compare (c1 ^. #dateCreated) (c2 ^. #dateCreated)
-  New -> flip compare (c1 ^. #dateCreated) (c2 ^. #dateCreated)
+  New -> compare (c2 ^. #dateCreated) (c1 ^. #dateCreated)

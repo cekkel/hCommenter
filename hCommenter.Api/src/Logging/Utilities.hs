@@ -34,6 +34,7 @@ import Logging.LogEffect
  - These functions are due to an issue (see a note in Logging.LogEffect for details)
  - which prevents us from using built-in katip functions. Instead, we just import
  - these functions instead.
+ - TODO: Remove these functions once the issue is resolved.
  -}
 
 askForLoggerIO :: (HasCallStack, Log :> es) => Eff es (Maybe Loc -> Severity -> LogStr -> IO ())
@@ -48,6 +49,9 @@ log :: (Log :> es) => Severity -> LogStr -> Eff es ()
 log level msg = do
   f <- askForLoggerIO
   unsafeEff_ $ f Nothing level msg
+
+logDebug :: (Log :> es) => LogStr -> Eff es ()
+logDebug = log DebugS
 
 logInfo :: (Log :> es) => LogStr -> Eff es ()
 logInfo = log InfoS

@@ -97,10 +97,10 @@ encodeLoki verbosity item =
             ]
         }
 
-data Loki = Loki
+newtype Loki = Loki
   { streams :: [Stream]
   }
-  deriving (Generic, Show, ToJSON)
+  deriving newtype (Generic, Show, ToJSON)
 
 data Stream = Stream
   { stream :: StreamInfo

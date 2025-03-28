@@ -32,6 +32,7 @@ data CommentUpdate
   = SendNewContent Text
   | SendUpvote
   | SendDownvote
+  deriving stock (Generic, Show)
 
 data CommentStorage :: Effect where
   GetCommentsForConvo :: ConvoUrl -> SortBy -> CommentStorage m [ViewComment]

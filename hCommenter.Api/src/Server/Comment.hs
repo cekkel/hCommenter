@@ -148,14 +148,14 @@ commentServer mSortBy = getConvoComments :<|> getUserComments :<|> getReplies :<
 
         cID <- DB.insertComment comment
 
-        logInfo $ [fmt|New comment created with ID: {fromSqlKey cID}|]
+        logInfo [fmt|New comment created with ID: {fromSqlKey cID}|]
         pure $ fromSqlKey cID
 
   editComment cID commentText =
     addLogNamespace "EditComment"
       . addLogContext [CommentId cID]
       $ do
-        logInfo [fmt|Editing comment with ID: {cID}|]
+        logInfo [fmt|Editing comment with ID: {cID} and text: {commentText}|]
 
         updatedComment <- DB.editComment (toSqlKey cID) [SendNewContent commentText]
 
