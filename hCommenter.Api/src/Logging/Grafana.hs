@@ -8,7 +8,7 @@ module Logging.Grafana where
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Network.HTTP.Client (Manager, newManager)
+import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types (statusIsSuccessful)
 import Optics
@@ -16,6 +16,7 @@ import PyF (fmt)
 import Servant (Header, JSON, NoContent (..), Post, Proxy (Proxy), ReqBody, (:>))
 import Servant.Client
   ( BaseUrl (..)
+  , ClientEnv
   , ClientError
   , ClientM
   , ResponseF (responseStatusCode)
@@ -33,21 +34,32 @@ import Katip qualified as K
 import Katip.Core qualified as KC
 
 data GrafanaConf = GrafanaConf
-  { grafanaAccountNum :: !Text
-  , grafanaToken :: !Text
-  , grafanaUrl :: !Text
-  , httpManager :: !Manager
-  , debugLogs :: !Bool
+  { httpClientEnv :: !ClientEnv
+  , authToken :: !Text
+  , enableDebugLogs :: !Bool
   }
 
 readGrafanaConf :: IO GrafanaConf
 readGrafanaConf = do
-  grafanaAccountNum <- pack <$> getEnv "LOGGING__GRAFANA_ACC"
-  grafanaToken <- pack <$> getEnv "LOGGING__GRAFANA_TOKEN"
-  grafanaUrl <- pack <$> getEnv "LOGGING__GRAFANA_URL"
-  debugLogs <- (== "true") . toLower <$> getEnv "LOGGING__ENABLE_LOG_DEBUGGING_IN_CONSOLE"
-
+  grafanaAccountNum <- getEnv "LOGGING__GRAFANA_ACC"
+  grafanaToken <- getEnv "LOGGING__GRAFANA_TOKEN"
+  grafanaUrl <- getEnv "LOGGING__GRAFANA_URL"
+  enableDebugLogs' <- getEnv "LOGGING__ENABLE_LOG_DEBUGGING_IN_CONSOLE"
   httpManager <- newManager tlsManagerSettings
+
+  let
+    enableDebugLogs = (== "true") . toLower $ enableDebugLogs'
+    authToken = [fmt|Bearer {grafanaAccountNum}:{grafanaToken}|]
+    httpClientEnv =
+      mkClientEnv
+        httpManager
+        ( BaseUrl
+            { baseUrlScheme = Https
+            , baseUrlHost = grafanaUrl
+            , baseUrlPath = ""
+            , baseUrlPort = 443
+            }
+        )
 
   pure $ GrafanaConf {..}
 
@@ -78,25 +90,14 @@ sendLog = client api
 pushLog :: forall a. (K.LogItem a) => K.Verbosity -> GrafanaConf -> K.Item a -> IO ()
 pushLog verbosity conf item = do
   let
-    clientEnv =
-      mkClientEnv
-        (conf ^. #httpManager)
-        ( BaseUrl
-            { baseUrlScheme = Https
-            , baseUrlHost = unpack $ conf ^. #grafanaUrl
-            , baseUrlPath = ""
-            , baseUrlPort = 443
-            }
-        )
-
-  let
-    token = Just [fmt|Bearer {conf ^. #grafanaAccountNum}:{conf ^. #grafanaToken}|]
+    clientEnv = conf ^. #httpClientEnv
+    token = Just $ conf ^. #authToken
     contentType = Just "application/json"
     payload = encodeLoki verbosity item
 
   response <- runClientM (sendLog token contentType payload) clientEnv
 
-  when (conf ^. #debugLogs) $ do
+  when (conf ^. #enableDebugLogs) $ do
     putStrLn [fmt|Pushed log to Grafana: {encodePretty payload}|]
     putStrLn [fmt|Got response from Grafana: {tshow response}|]
 
