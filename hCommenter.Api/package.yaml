@@ -1,3 +1,4 @@
+---
 spec-version: 0.38.0
 name: hCommenter-Api
 version: 0.1.0
@@ -26,6 +27,7 @@ default-extensions:
   - DuplicateRecordFields
   - OverloadedLabels
   - RecordWildCards
+  - MultiWayIf
 
 dependencies:
   - name: base
@@ -40,6 +42,9 @@ dependencies:
   - servant
   - servant-server
   - servant-swagger
+  - servant-client
+  - http-client
+  - http-client-tls
   - swagger2
   - wai
   - http-types
@@ -56,14 +61,12 @@ dependencies:
   - monad-logger
   - katip
   - aeson
-  - req
   - persistent
   - persistent-sqlite
   - resource-pool
   - http-api-data
   - hedgehog
   - warp
-  - string-conv
   - PyF
   - unordered-containers
   - text
@@ -99,7 +102,4 @@ tests:
       - hCommenter-Api
       - wai-extra
       - http-types
-      - http-client
-      - servant-client
-      - servant
     build-tools: hspec-discover

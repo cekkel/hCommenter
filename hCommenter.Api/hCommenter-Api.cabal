@@ -68,18 +68,19 @@ library
         extra,
         hedgehog,
         http-api-data,
+        http-client,
+        http-client-tls,
         http-types,
         katip,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
-        req,
         resource-pool,
         servant,
+        servant-client,
         servant-server,
         servant-swagger,
-        string-conv,
         swagger2,
         text,
         time,
@@ -103,6 +104,7 @@ library
         DuplicateRecordFields
         OverloadedLabels
         RecordWildCards
+        MultiWayIf
 
 executable hCommenter-Api
     main-is: Main.hs
@@ -122,18 +124,19 @@ executable hCommenter-Api
         hCommenter-Api,
         hedgehog,
         http-api-data,
+        http-client,
+        http-client-tls,
         http-types,
         katip,
         monad-logger,
         optics,
         persistent,
         persistent-sqlite,
-        req,
         resource-pool,
         servant,
+        servant-client,
         servant-server,
         servant-swagger,
-        string-conv,
         swagger2,
         text,
         time,
@@ -155,6 +158,7 @@ executable hCommenter-Api
         DuplicateRecordFields
         OverloadedLabels
         RecordWildCards
+        MultiWayIf
     ghc-options: -Wall -fno-warn-orphans
     default-language: GHC2024
 
@@ -174,6 +178,7 @@ test-suite spec
         DuplicateRecordFields
         OverloadedLabels
         RecordWildCards
+        MultiWayIf
     ghc-options: -Wall -fno-warn-orphans
     cpp-options: -DTEST
     build-tool-depends:
@@ -199,6 +204,7 @@ test-suite spec
         hspec-wai,
         http-api-data,
         http-client,
+        http-client-tls,
         http-types,
         interpolate,
         katip,
@@ -207,13 +213,11 @@ test-suite spec
         optics,
         persistent,
         persistent-sqlite,
-        req,
         resource-pool,
         servant,
         servant-client,
         servant-server,
         servant-swagger,
-        string-conv,
         swagger2,
         temporary,
         text,
