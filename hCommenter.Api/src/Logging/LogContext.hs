@@ -1,7 +1,7 @@
 module Logging.LogContext (LogField (..), logFieldToObjectPair) where
 
 import Data.Aeson.Types (Pair, (.=))
-import Network.HTTP.Types (Status (statusCode))
+import Network.HTTP.Types (Method, Status (statusCode))
 
 data LogField
   = CorrelationID Text
@@ -10,6 +10,8 @@ data LogField
   | ParentId (Maybe Int64)
   | Username Text
   | Note Text
+  | RequestMethod Method
+  | RequestPath Text
   | StatusCode Status
   | AppError SomeException
   deriving (Show)
@@ -22,5 +24,7 @@ logFieldToObjectPair = \case
   ParentId txt -> "ParentId" .= txt
   Username txt -> "Username" .= txt
   Note txt -> "Note" .= txt
-  StatusCode status -> "StatusCode" .= statusCode status
+  RequestMethod method -> "Method" .= decodeUtf8 method
+  RequestPath path -> "Path" .= path
+  StatusCode status -> "StatusCode" .= tshow (statusCode status)
   AppError e -> "AppError" .= tshow e

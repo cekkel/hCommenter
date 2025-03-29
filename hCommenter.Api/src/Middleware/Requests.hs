@@ -5,7 +5,7 @@ module Middleware.Requests where
 import Data.UUID (toASCIIBytes)
 import Data.UUID.V4 (nextRandom)
 import Effectful (runEff)
-import Network.HTTP.Types (Status (statusMessage), status300)
+import Network.HTTP.Types (Status (statusMessage), statusIsSuccessful)
 import Network.Wai
   ( Request (rawPathInfo, requestHeaders, requestMethod)
   , Response
@@ -14,7 +14,7 @@ import Network.Wai
   )
 import PyF (fmt)
 
-import Logging.LogContext (LogField (CorrelationID, StatusCode))
+import Logging.LogContext (LogField (CorrelationID, RequestMethod, RequestPath, StatusCode))
 import Logging.LogEffect (runLog)
 import Logging.Utilities (addLogContext, logError, logInfo, logWarn)
 import Middleware.Headers (correlationIDHeaderName)
@@ -45,15 +45,29 @@ addCorrelationIdIfMissing env req = do
 -- PERF: use more efficient logging here.
 logRequest :: Env -> Text -> Request -> IO ()
 logRequest env correlationId req = do
-  runEff . runLog env . addLogContext [CorrelationID correlationId] $
-    logInfo
-      [fmt|{requestMethod req} {rawPathInfo req}|]
+  runEff
+    . runLog env
+    . addLogContext
+      [ CorrelationID correlationId
+      , RequestMethod method
+      , RequestPath path
+      ]
+    $ logInfo
+      [fmt|STARTING REQUEST: {method} {path}|]
+ where
+  method = requestMethod req
+  path = decodeUtf8 $ rawPathInfo req
 
 logResponse :: Env -> Text -> Response -> IO Response
 logResponse env correlationId response = do
-  runEff . runLog env . addLogContext [CorrelationID correlationId, StatusCode status] $
-    (if status < status300 then logInfo else logError)
-      [fmt|Responded: {statusMessage status}|]
+  runEff
+    . runLog env
+    . addLogContext
+      [ CorrelationID correlationId
+      , StatusCode status
+      ]
+    $ (if statusIsSuccessful status then logInfo else logError)
+      [fmt|REQUEST COMPLETE: Responded with {statusMessage status}|]
 
   pure response
  where

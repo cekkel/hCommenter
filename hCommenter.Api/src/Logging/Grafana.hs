@@ -78,13 +78,13 @@ type GrafanaAPI =
     :> "push"
     :> Header "Authorization" Text
     :> Header "Content-Type" Text
-    :> ReqBody '[JSON] Value
+    :> ReqBody '[JSON] Loki
     :> Post '[JSON] NoContent
 
 api :: Proxy GrafanaAPI
 api = Proxy
 
-sendLog :: Maybe Text -> Maybe Text -> Value -> ClientM NoContent
+sendLog :: Maybe Text -> Maybe Text -> Loki -> ClientM NoContent
 sendLog = client api
 
 pushLog :: forall a. (K.LogItem a) => K.Verbosity -> GrafanaConf -> K.Item a -> IO ()
@@ -93,7 +93,8 @@ pushLog verbosity conf item = do
     clientEnv = conf ^. #httpClientEnv
     token = Just $ conf ^. #authToken
     contentType = Just "application/json"
-    payload = encodeLoki verbosity item
+
+  payload <- encodeLoki verbosity item
 
   response <- runClientM (sendLog token contentType payload) clientEnv
 
@@ -110,12 +111,12 @@ pushLog verbosity conf item = do
 utcTimeToEpochTime :: UTCTime -> Int
 utcTimeToEpochTime = round . (* 1e9) . utcTimeToPOSIXSeconds
 
-encodeLoki :: (K.LogItem a) => K.Verbosity -> K.Item a -> Value
+encodeLoki :: (K.LogItem a) => K.Verbosity -> K.Item a -> IO Loki
 encodeLoki verbosity item =
   let
     msg = toStrict $ Builder.toLazyText $ K.unLogStr $ K._itemMessage item
-    -- FIXME: This is currently the same time for all logs in a request. Need to verify if correct.
-    logTime = tshow $ utcTimeToEpochTime $ K._itemTime item
+    -- NOTE: Would use this, but katip doesn't capture unique times very well
+    -- logTime = tshow $ utcTimeToEpochTime $ K._itemTime item
     environment = K.getEnvironment $ K._itemEnv item
     jsonMsg =
       allFieldsText $
@@ -124,23 +125,25 @@ encodeLoki verbosity item =
           & AK.insert "namespace" (A.String $ mconcat $ KC.intercalateNs $ K._itemNamespace item)
           & AK.insert "host" (A.String $ pack $ K._itemHost item)
   in
-    toJSON $
-      Loki
-        { streams =
-            [ Stream
-                { stream =
-                    ( StreamInfo
-                        { language = "Haskell"
-                        , source = "API"
-                        , environment
-                        , service_name = "hCommenter"
-                        }
-                    )
-                , values =
-                    [(logTime, msg, jsonMsg)]
-                }
-            ]
-        }
+    do
+      logTime <- tshow . utcTimeToEpochTime <$> getCurrentTime
+      pure $
+        Loki
+          { streams =
+              [ Stream
+                  { stream =
+                      ( StreamInfo
+                          { language = "Haskell"
+                          , source = "API"
+                          , environment
+                          , service_name = "hCommenter"
+                          }
+                      )
+                  , values =
+                      [(logTime, msg, jsonMsg)]
+                  }
+              ]
+          }
 
 newtype Loki = Loki
   { streams :: [Stream]
