@@ -18,13 +18,13 @@ data PaginationData = PaginationData
   { totalReplies :: Int
   , cursor :: Int -- indicates position
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 data Paginated a = Paginated
   { info :: [a]
   , pagination :: PaginationData
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 data ViewComment = ViewComment
   { id :: Int64
@@ -35,7 +35,7 @@ data ViewComment = ViewComment
   , authorName :: Text
   , conversationUrl :: Text
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 makeFieldLabelsNoPrefix ''PaginationData
 deriveJSON defaultOptions ''PaginationData

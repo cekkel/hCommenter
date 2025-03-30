@@ -1,3 +1,5 @@
+# yamllint disable rule:line-length
+---
 name: API - Build and Deploy
 
 env:
@@ -11,6 +13,7 @@ env:
   IDENTITY: hcommenter-identity
   TARGET_PORT: 8080
 
+# yamllint disable-line rule:truthy
 on:
   workflow_dispatch:
     inputs:
@@ -50,7 +53,8 @@ jobs:
       - name: Get branch name (pull request)
         if: github.event_name == 'pull_request'
         shell: bash
-        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" \
+          >> $GITHUB_ENV
 
       # Then store the tag names as a whole for easy re-use.
       - name: Construct api image tag names
@@ -70,7 +74,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # This conditionally creates a 'base' image for the API, since installing haskell deps can take >10 mins.
+      # This conditionally creates a 'base' image for the API, since installing
+      # haskell deps can take >10 mins.
       - name: "Build and push: API base"
         uses: docker/build-push-action@v6
         if: ${{ github.event.inputs.rebuild_api_base }}
@@ -81,6 +86,13 @@ jobs:
           tags: ${{ steps.construct_tags.outputs.base_image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Run API Tests
+        uses: addnab/docker-run-action@3e77f186b7a929ef010f183a9e24c0f9955ea609
+        with:
+          image: ${{ steps.construct_tags.outputs.base_image_tag }}
+          options: --env-file .env
+          run: make test-ci
 
       # Now actually create the API image.
       - name: "Build, test and push: API full image"
@@ -98,8 +110,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: dev
-    env:
-      APP_ENVIRONMENT: dev-hcommenter
     steps:
       - name: Log in to Azure
         uses: azure/login@v2
@@ -120,8 +130,16 @@ jobs:
           targetPort: ${{ env.TARGET_PORT }}
           location: ${{ env.LOCATION }}
           environmentVariables: >
-            APP_ENVIRONMENT=Test
-            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            APP__NAME=hCommenter-Api
+            APP__ENVIRONMENT=Test
+            APP__PORT=80
+            APP__BACKEND=SQLite
+            LOGGING__SEVERITY=Debug
+            LOGGING__VERBOSITY=V0
+            LOGGING__GRAFANA_URL=logs-prod-026.grafana.net
+            LOGGING__GRAFANA_ACC=1094195
+            LOGGING__GRAFANA_TOKEN=${{ secrets.GRAFANA_TOKEN }}
+            LOGGING__ENABLE_LOG_DEBUGGING_IN_CONSOLE=false
 
   #  deploy-production:
   #    steps:

@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM haskell:9.10.1-slim-bullseye AS base
+ARG BASE_IMAGE=haskell:9.10.1-slim-bullseye
+
+FROM $BASE_IMAGE AS base
 WORKDIR /opt/hCommenter
 
 # The following can install ghcup to get the latest version of cabal if needed.
@@ -24,6 +26,9 @@ COPY ./cabal.project .
 COPY ./hCommenter-Api.cabal .
 RUN cabal update && make build-only-deps
 
-# Build app and run tests to speed up new compilations further.
+# Build app to speed up new compilations further.
 COPY . ./
-RUN make test-ci
+RUN cabal build
+
+# Allow use of base image for running tests
+ENTRYPOINT ["/bin/bash"]
