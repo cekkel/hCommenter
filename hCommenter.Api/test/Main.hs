@@ -10,7 +10,7 @@ main :: IO ()
 main = do
   setEnv "LOGGING__SEVERITY" "Critical" -- So that almost all logs are hidden, except critical (unexpected) failures
   setEnv "API_ENVIRONMENT" "Development" -- To ensure that logs are written to the console
-  _ <- initDevSqliteDB <$> readEnv
+  initDevSqliteDB =<< readEnv
 
   runWaiRuleTests
   runInstanceRuleTests
