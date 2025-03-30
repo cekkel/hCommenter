@@ -1,27 +1,13 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
-import Data.Data (Proxy (Proxy))
-import Hedgehog
-import Hedgehog.Internal.Property (PropertyT (PropertyT))
-import Network.Wai (Application, Request)
-import Network.Wai.Test (SResponse, Session, request, withSession)
-import Test.Hspec
-import Test.Hspec.Hedgehog (hedgehog, modifyMaxSuccess)
-
-import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
+import System.Environment (setEnv)
 
 import ApiRules.HttpClient (runInstanceRuleTests)
 import ApiRules.Wai
-import Server
 
 main :: IO ()
 main = do
-  putStrLn "Hi there"
-
--- runWaiRuleTests
-
--- runInstanceRuleTests
+  setEnv "LOGGING__SEVERITY" "Critical" -- So that almost all logs are hidden, except critical (unexpected) failures
+  setEnv "API_ENVIRONMENT" "Development" -- To ensure that logs are written to the console
+  runWaiRuleTests
+  runInstanceRuleTests

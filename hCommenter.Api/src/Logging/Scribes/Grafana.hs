@@ -3,7 +3,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Logging.Grafana where
+module Logging.Scribes.Grafana where
 
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)

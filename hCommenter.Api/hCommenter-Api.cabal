@@ -37,10 +37,11 @@ library
         Database.Mockserver
         Database.Schema
         Database.SqlPool
+        EffectInjection
         Logging.Config
-        Logging.Grafana
         Logging.LogContext
         Logging.LogEffect
+        Logging.Scribes.Grafana
         Logging.Utilities
         Mapping.Comments
         Mapping.ExternalTypes

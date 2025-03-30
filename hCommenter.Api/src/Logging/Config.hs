@@ -9,7 +9,7 @@ import Katip
   , LogEnv
   , Namespace (Namespace)
   , Scribe
-  , Severity (DebugS, InfoS)
+  , Severity (InfoS)
   , Verbosity (V3)
   , defaultScribeSettings
   , initLogEnv
@@ -22,7 +22,7 @@ import System.Environment (getEnv)
 
 import Katip qualified as K
 
-import Logging.Grafana (GrafanaConf, mkGrafanaScribe, readGrafanaConf)
+import Logging.Scribes.Grafana (GrafanaConf, mkGrafanaScribe, readGrafanaConf)
 
 data LoggingConf = LoggingConf
   { grafanaConf :: !GrafanaConf
@@ -32,8 +32,8 @@ data LoggingConf = LoggingConf
 
 makeFieldLabelsNoPrefix ''LoggingConf
 
-getConsoleScribe :: IO Scribe
-getConsoleScribe = mkHandleScribe ColorIfTerminal stdout (permitItem DebugS) V3
+getConsoleScribe :: Severity -> Verbosity -> IO Scribe
+getConsoleScribe severity = mkHandleScribe ColorIfTerminal stdout (permitItem severity)
 
 readLoggingConf :: Text -> Text -> IO LoggingConf
 readLoggingConf appName envName = do
@@ -47,7 +47,7 @@ readLoggingConf appName envName = do
 
   grafanaConf <- readGrafanaConf
   scribe <- case envName of
-    "Development" -> getConsoleScribe
+    "Development" -> getConsoleScribe severity verbosity
     _ -> mkGrafanaScribe grafanaConf (permitItem severity) verbosity
 
   initialEnv <- initLogEnv component' environment'

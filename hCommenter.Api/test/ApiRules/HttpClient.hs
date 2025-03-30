@@ -8,60 +8,60 @@ import Data.Maybe (fromJust)
 import Hedgehog
 import Hedgehog.Servant
 import Network.HTTP.Client
-  ( Manager
-  , Request (..)
+  ( Request (..)
   , Response (..)
   , defaultManagerSettings
   , newManager
   , responseClose
   , responseOpen
-  , withResponse
   )
 import Network.HTTP.Types (Status (statusCode), hCacheControl, methodGet)
 import Servant.Client (parseBaseUrl)
 import System.Environment (setEnv)
 import Test.Hspec
-import Test.Hspec (describe)
-import Test.Hspec.Hedgehog (hedgehog)
+import Test.Hspec.Hedgehog (hedgehog, modifyMaxSuccess)
 
 import Server
-import Utils.Generators (genCommentKey, genKey, genNewComment, genSortBy, genText)
+import Utils.Generators (genCommentKey, genInt64, genNewComment, genSortBy, genText)
 
 testPort :: Int
 testPort = 3001
 
 runInstanceRuleTests :: IO ()
 runInstanceRuleTests = do
-  setEnv "API__PORT" (show testPort)
+  setEnv "APP__PORT" (show testPort)
 
-  _ <- forkIO $ messageConsoleAndRun
+  _ <- forkIO messageConsoleAndRun
 
   hspec specs
 
 specs :: Spec
 specs = do
   before (newManager defaultManagerSettings) $
-    describe "API best practices with a running server" $ do
-      it "Health" $ do
-        requireApiBestPracticesFor (Proxy @HealthAPI)
-      it "Voting" $ do
-        requireApiBestPracticesFor (Proxy @VotingAPI)
-      it "Comments" $ do
-        requireApiBestPracticesFor (Proxy @CommentsAPI)
-      it "is applied to whole API" $ do
-        requireApiBestPracticesFor (Proxy @API)
+    x10 $ -- These are really slow, so we run them less often
+      describe "API best practices with a running server" $ do
+        it "Health" $ do
+          requireApiBestPracticesFor (Proxy @HealthAPI)
+        it "Voting" $ do
+          requireApiBestPracticesFor (Proxy @VotingAPI)
+        it "Comments" $ do
+          requireApiBestPracticesFor (Proxy @CommentsAPI)
+        it "is applied to whole API" $ do
+          requireApiBestPracticesFor (Proxy @API)
+ where
+  x10 = modifyMaxSuccess (const 10)
+
+genReq apiProxy =
+  genRequest apiProxy (genCommentKey :*: genSortBy :*: genText :*: genNewComment :*: genInt64 :*: GNil)
+    <&> \makeReq -> makeReq $ fromJust $ parseBaseUrl $ "localhost:" ++ show testPort
 
 requireApiBestPracticesFor apiProxy manager = hedgehog $ do
   req <- forAll $ genReq apiProxy
   response <- liftIO $ responseOpen req manager
   liftIO $ responseClose response
 
-  -- neverRespondWithInternalError response
   alwaysCacheControlOnGetRequests req response
-
-genReq apiProxy =
-  genRequest apiProxy (genCommentKey :*: genSortBy :*: genText :*: genNewComment :*: GNil)
-    <&> \makeReq -> makeReq $ fromJust $ parseBaseUrl $ "localhost:" ++ show testPort
+  neverRespondWithInternalError response
 
 ------------------------------------------
 -- RULES

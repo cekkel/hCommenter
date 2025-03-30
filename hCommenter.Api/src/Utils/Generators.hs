@@ -1,4 +1,4 @@
-module Utils.Generators (genKey, genSortBy, genNewComment, genCommentKey, genNum, genText) where
+module Utils.Generators where
 
 import Database.Persist.Sqlite (PersistEntity (Key), SqlBackend, ToBackendKey, toSqlKey)
 import Hedgehog
@@ -11,9 +11,7 @@ import Database.Schema (Comment, NewComment (NewComment), SortBy (..))
 --
 -- instance Arbitrary (Key Comment) where
 --   arbitrary = toSqlKey <$> arbitrary
---
--- instance Arbitrary Text where
---   arbitrary = pack <$> arbitrary
+-- instance Arbitrary Text where arbitrary = pack <$> arbitrary
 --
 -- instance Arbitrary SortBy where
 --   arbitrary = oneof $ pure <$> [Old, New, Popular, Controversial]
@@ -35,6 +33,9 @@ genNewComment = NewComment <$> genText <*> Gen.maybe genNum <*> genText <*> genT
 
 genNum :: (Integral a, MonadGen m) => m a
 genNum = Gen.integral (Range.constantFrom 0 0 10000)
+
+genInt64 :: (MonadGen m) => m Int64
+genInt64 = Gen.int64 (Range.constantFrom 0 0 10000)
 
 genText :: (MonadGen m) => m Text
 genText = Gen.text (Range.constantFrom 0 0 10000) Gen.unicode

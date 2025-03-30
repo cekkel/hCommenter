@@ -1,3 +1,4 @@
+{-# LANGUAGE IncoherentInstances #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module ApiRules.Wai where
@@ -7,28 +8,23 @@ import Data.Function ((&))
 import Data.Maybe (fromJust)
 import Hedgehog
 import Hedgehog.Servant
-import Network.HTTP.Types (Status (statusCode), hCacheControl, methodGet, methodPost, ok200)
-import Network.Wai (Application, Request (..), mapRequestHeaders)
+import Network.HTTP.Types (Status (statusCode), hCacheControl, methodGet)
+import Network.Wai (Request (..))
 import Network.Wai.Test
-  ( SRequest (SRequest, simpleRequest)
-  , SResponse (simpleHeaders, simpleStatus)
+  ( SResponse (simpleHeaders, simpleStatus)
   , defaultRequest
   , request
   , setPath
   , withSession
   )
-import Servant.API
-import Servant.API.Verbs
 import Servant.Client
 import Test.Hspec
 import Test.Hspec.Hedgehog (hedgehog, modifyMaxSuccess)
 
-import Data.ByteString.Lazy.Internal qualified as Lazy
-import Hedgehog.Gen qualified as Gen
 import Network.HTTP.Client qualified as Client
 
 import Server
-import Utils.Generators (genCommentKey, genKey, genNewComment, genSortBy, genText)
+import Utils.Generators
 
 runWaiRuleTests :: IO ()
 runWaiRuleTests = hspec apiPropertySpec
@@ -60,25 +56,8 @@ provideRequestHandler = do
   myApp <- app <$> readEnv
   pure $ liftIO . withSession myApp . request
 
-requireApiBestPracticesFor apiProxy makeReq = hedgehog $ do
-  req <- forAll $ genReq apiProxy
-  response <- liftIO (makeReq req)
-
-  alwaysCacheControlOnGetRequests req response
-
--- neverRespondWithInternalError response
-
-alwaysCacheControlOnGetRequests :: Request -> SResponse -> PropertyT IO ()
-alwaysCacheControlOnGetRequests req response = do
-  when (requestMethod req == methodGet) $ do
-    diff (hCacheControl, "no-cache") elem (simpleHeaders response)
-
-neverRespondWithInternalError :: SResponse -> PropertyT IO ()
-neverRespondWithInternalError response = do
-  diff (statusCode (simpleStatus response)) (<) 500
-
 genReq apiProxy =
-  genRequest apiProxy (genCommentKey :*: genSortBy :*: genText :*: genNewComment :*: GNil)
+  genRequest apiProxy (genCommentKey :*: genSortBy :*: genText :*: genNewComment :*: genInt64 :*: GNil)
     <&> \makeReq -> toWaiRequest $ makeReq $ fromJust $ parseBaseUrl ""
 
 toWaiRequest :: Client.Request -> Request
@@ -89,3 +68,23 @@ toWaiRequest creq =
   creqMethod = Client.method creq
   creqPath = Client.path creq
   creqHeaders = Client.requestHeaders creq
+
+requireApiBestPracticesFor apiProxy makeReq = hedgehog $ do
+  req <- forAll $ genReq apiProxy
+  response <- liftIO (makeReq req)
+
+  alwaysCacheControlOnGetRequests req response
+  neverRespondWithInternalError response
+
+------------------------------------------
+-- RULES
+------------------------------------------
+
+alwaysCacheControlOnGetRequests :: Request -> SResponse -> PropertyT IO ()
+alwaysCacheControlOnGetRequests req response = do
+  when (requestMethod req == methodGet) $ do
+    diff (hCacheControl, "no-cache") elem (simpleHeaders response)
+
+neverRespondWithInternalError :: SResponse -> PropertyT IO ()
+neverRespondWithInternalError response = do
+  diff (statusCode (simpleStatus response)) (<) 500

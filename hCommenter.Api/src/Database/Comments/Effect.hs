@@ -64,7 +64,8 @@ runCommentStorageSQL = do
             lift $ logDebug [fmt|Performing edits: {tshow edits}|]
 
             updatedComment <-
-              catch (P.updateGet cID sqlEdits) $ \(e :: IOError) -> lift $ do
+              -- TODO: Update to use more specific error type when possible.
+              catchAny (P.updateGet cID sqlEdits) $ \e -> lift $ do
                 throwError $
                   CommentNotFound [fmt|Failed to update comment {fromSqlKey cID} with error: {tshow e}|]
 
