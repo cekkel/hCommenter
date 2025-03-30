@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Database.StorageTypes where
+module Database.Schema where
 
 import Data.Aeson
   ( Object

@@ -46,11 +46,11 @@ import Effectful qualified as E
 import Effectful.Error.Static qualified as ES
 import Effectful.Reader.Static qualified as RS
 
-import Database.Interface (CommentStorage)
+import Database.Comments.Effect (runCommentStorageSQL)
+import Database.Comments.Interface (CommentStorage)
 import Database.Mockserver (initDevSqliteDB)
+import Database.Schema
 import Database.SqlPool (SqlPool, runSqlPool)
-import Database.SqlStorage (runCommentStorageSQL)
-import Database.StorageTypes
 import Logging.LogContext (LogField (AppError, CorrelationID))
 import Logging.LogEffect (Log, runLog)
 import Logging.Utilities (addLogContext, logError)

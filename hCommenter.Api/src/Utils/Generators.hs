@@ -6,7 +6,7 @@ import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Internal.Range qualified as Range
 
-import Database.StorageTypes (Comment, NewComment (NewComment), SortBy (..))
+import Database.Schema (Comment, NewComment (NewComment), SortBy (..))
 
 --
 -- instance Arbitrary (Key Comment) where

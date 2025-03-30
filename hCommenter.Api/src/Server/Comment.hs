@@ -26,8 +26,8 @@ import Prelude hiding (Handler, log, sortBy)
 
 import Effectful qualified as E
 
-import Database.Interface (CommentUpdate (..))
-import Database.StorageTypes
+import Database.Comments.Interface (CommentUpdate (..))
+import Database.Schema
   ( Comment
   , NewComment
   , SortBy (..)
@@ -39,7 +39,7 @@ import Logging.Utilities (addLogContext, addLogNamespace, logError, logInfo, log
 import Mapping.ExternalTypes (ViewComment)
 import Server.ServerTypes (InputError)
 
-import Database.Interface qualified as DB
+import Database.Comments.Interface qualified as DB
 
 type CommentsAPI =
   "comments"

@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Database.Interface
+module Database.Comments.Interface
   ( getCommentsForConvo
   , getCommentsForUser
   , getReplies
@@ -17,7 +17,7 @@ import Database.Persist.Sql (Key)
 import Effectful (Dispatch (Dynamic), DispatchOf, Effect)
 import Effectful.TH (makeEffect)
 
-import Database.StorageTypes
+import Database.Schema
   ( Comment
   , NewComment
   , SortBy (..)

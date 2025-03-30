@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Database.SqlStorage (runCommentStorageSQL) where
+module Database.Comments.Effect (runCommentStorageSQL) where
 
 import Database.Persist ((+=.), (=.), (==.))
 import Database.Persist.Sqlite (fromSqlKey)
@@ -13,15 +13,15 @@ import PyF (fmt)
 import Database.Persist qualified as P
 import Effectful.Reader.Static qualified as ES
 
-import Database.Interface (CommentStorage (..), CommentUpdate (..))
-import Database.SqlPool (SqlPool, withConn)
-import Database.StorageTypes
+import Database.Comments.Interface (CommentStorage (..), CommentUpdate (..))
+import Database.Schema
   ( Comment (..)
   , EntityField (..)
   , SortBy (..)
   , StorageError (..)
   , fromNewComment
   )
+import Database.SqlPool (SqlPool, withConn)
 import Logging.LogEffect (Log)
 import Logging.Utilities (logDebug)
 import Mapping.Typeclass (MapsFrom (mapFrom))

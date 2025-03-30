@@ -27,12 +27,16 @@ library
         Server
         Utils.Generators
     other-modules:
-        Database.Interface
+        Database.Authors.Effect
+        Database.Authors.Interface
+        Database.Comments.Effect
+        Database.Comments.Interface
+        Database.Conversations.Effect
+        Database.Conversations.Interface
         Database.LocalStorage
         Database.Mockserver
+        Database.Schema
         Database.SqlPool
-        Database.SqlStorage
-        Database.StorageTypes
         Logging.Config
         Logging.Grafana
         Logging.LogContext

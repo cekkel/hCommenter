@@ -2,7 +2,7 @@ module Mapping.Typeclass where
 
 import Database.Persist.Sql (Entity (Entity))
 
-import Database.StorageTypes (Comment)
+import Database.Schema (Comment)
 import Mapping.Comments (storageToViewComment)
 import Mapping.ExternalTypes (ViewComment)
 

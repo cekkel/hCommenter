@@ -13,8 +13,8 @@ import Servant
 
 import Effectful qualified as E
 
-import Database.Interface (CommentStorage, CommentUpdate (SendDownvote, SendUpvote), editComment)
-import Database.StorageTypes (Comment, Key)
+import Database.Comments.Interface (CommentStorage, CommentUpdate (SendDownvote, SendUpvote), editComment)
+import Database.Schema (Comment, Key)
 import Logging.LogContext (LogField (CommentId))
 import Logging.LogEffect (Log)
 import Logging.Utilities (addLogContext, addLogNamespace, logInfo)

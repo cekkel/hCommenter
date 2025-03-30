@@ -3,7 +3,7 @@ module Mapping.Comments (storageToViewComment) where
 import Database.Persist.Sql (fromSqlKey)
 import Optics
 
-import Database.StorageTypes
+import Database.Schema
 import Mapping.ExternalTypes
   ( ViewComment (..)
   )

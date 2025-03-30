@@ -12,8 +12,8 @@ import Optics
 import Data.Map qualified as M
 import Effectful.Reader.Static qualified as ES
 
+import Database.Schema
 import Database.SqlPool (runSqlPool, withConn)
-import Database.StorageTypes
 import Logging.LogEffect (runLog)
 import Utils.Environment (Env)
 import Utils.RequestContext (mkRequestContext)

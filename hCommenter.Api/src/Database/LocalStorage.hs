@@ -19,9 +19,10 @@ import Database.Persist.Sql (Entity (Entity))
 -- import Effectful.Dispatch.Dynamic (interpret)
 -- import Effectful.Error.Static (Error, throwError)
 -- import Mapping.Typeclass (MapsFrom (mapFrom))
+
 import Optics
 
-import Database.StorageTypes
+import Database.Schema
 
 -- runCommentStorageIO ::
 --   ( Error StorageError :> es

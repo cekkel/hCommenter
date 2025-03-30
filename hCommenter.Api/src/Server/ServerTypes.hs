@@ -3,7 +3,7 @@ module Server.ServerTypes (ErrorResponse (..), CustomError (..), InputError (..)
 import Data.Aeson (FromJSON, ToJSON)
 import PyF (PyFCategory (PyFString), PyFClassify)
 
-import Database.StorageTypes (StorageError)
+import Database.Schema (StorageError)
 
 data Backend
   = LocalFile
