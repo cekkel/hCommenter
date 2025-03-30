@@ -47,8 +47,7 @@ import Prelude hiding (Handler, singleton, sortBy)
 
 data StorageError
   = CommentNotFound Text
-  | UserNotFound Text
-  | ConvoNotFound Text
+  | UserOrConvoNotFound Text
   | UnhandledStorageError Text
   deriving (Eq, Show)
 

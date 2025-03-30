@@ -43,16 +43,17 @@ import Prelude hiding (Handler)
 
 import Data.Aeson qualified as JSON
 import Effectful qualified as E
-import Effectful.Reader.Static qualified as ES
+import Effectful.Error.Static qualified as ES
+import Effectful.Reader.Static qualified as RS
 
 import Database.Interface (CommentStorage)
 import Database.Mockserver (initDevSqliteDB)
 import Database.SqlPool (SqlPool, runSqlPool)
 import Database.SqlStorage (runCommentStorageSQL)
 import Database.StorageTypes
-import Logging.LogContext (LogField (CorrelationID))
+import Logging.LogContext (LogField (AppError, CorrelationID))
 import Logging.LogEffect (Log, runLog)
-import Logging.Utilities (addLogContext)
+import Logging.Utilities (addLogContext, logError)
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Exceptions (logOnException)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
@@ -95,13 +96,13 @@ serverAPI ctx = do
 
 effToHandler
   :: RequestContext
-  -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, ES.Reader RequestContext, IOE] a
+  -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, RS.Reader RequestContext, IOE] a
   -> Handler a
 effToHandler ctx m = do
   result <-
     liftIO
       $ runEff
-        . ES.runReader ctx
+        . RS.runReader ctx
         . runLog (ctx ^. #env)
         . addGlobalLogContext
         . runAndLiftError StorageError
@@ -113,19 +114,30 @@ effToHandler ctx m = do
   Handler $ except $ handleServerResponse result
 
 runAndLiftError
-  :: (e -> CustomError)
-  -> Eff (Error e : es) (Either (CallStack, CustomError) a)
+  :: (Log E.:> es)
+  => (e -> CustomError)
+  -> Eff (ES.Error e : es) (Either (CallStack, CustomError) a)
   -> Eff es (Either (CallStack, CustomError) a)
-runAndLiftError f = fmap (join . mapLeft (second f)) . runError
+runAndLiftError f effs = do
+  errs <- runError effs
+
+  let
+    combinedEithers = join $ mapLeft (fmap f) errs
+
+  case combinedEithers of
+    Left e -> do
+      addLogContext [AppError e] $ logError [fmt|ERROR ENCOUNTERED: {tshow e}|]
+      pure $ Left e
+    _ -> pure combinedEithers
 
 addGlobalLogContext
-  :: ( ES.Reader RequestContext E.:> es
-     , Log E.:> es
+  :: ( Log E.:> es
+     , RS.Reader RequestContext E.:> es
      )
   => Eff es a
   -> Eff es a
 addGlobalLogContext eff = do
-  corrId <- ES.asks $ view #correlationId
+  corrId <- RS.asks $ view #correlationId
   addLogContext [CorrelationID corrId] eff
 
 handleServerResponse :: Either (CallStack, CustomError) a -> Either ServerError a
@@ -133,8 +145,7 @@ handleServerResponse (Right val) = Right val
 handleServerResponse (Left (_, err)) = case err of
   StorageError innerErr -> Left $ case innerErr of
     CommentNotFound _ -> servantErrorWithText err404 "Comment not found"
-    UserNotFound _ -> servantErrorWithText err404 "Can't find the user"
-    ConvoNotFound _ -> servantErrorWithText err404 "Can't find the conversation"
+    UserOrConvoNotFound _ -> servantErrorWithText err404 "Unable to find user or conversation"
     UnhandledStorageError _ -> servantErrorWithText err500 "An unhandled storage exception occurred. Sorry!"
   InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
     BadArgument txt -> [fmt|Bad argument: {txt}|]

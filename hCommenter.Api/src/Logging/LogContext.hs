@@ -1,7 +1,10 @@
-module Logging.LogContext (LogField (..), logFieldToObjectPair) where
+module Logging.LogContext (LogField (..), logFieldToObjectPairs) where
 
 import Data.Aeson.Types (Pair, (.=))
+import Effectful.Error.Static (CallStack)
 import Network.HTTP.Types (Method, Status (statusCode))
+
+import Server.ServerTypes (CustomError)
 
 data LogField
   = CorrelationID Text
@@ -13,18 +16,18 @@ data LogField
   | RequestMethod Method
   | RequestPath Text
   | StatusCode Status
-  | AppError SomeException
+  | AppError (CallStack, CustomError)
   deriving (Show)
 
-logFieldToObjectPair :: LogField -> Pair
-logFieldToObjectPair = \case
-  CorrelationID txt -> "CorrelationID" .= txt
-  ConvoUrl txt -> "ConvoUrl" .= txt
-  CommentId txt -> "CommentId" .= txt
-  ParentId txt -> "ParentId" .= txt
-  Username txt -> "Username" .= txt
-  Note txt -> "Note" .= txt
-  RequestMethod method -> "Method" .= decodeUtf8 method
-  RequestPath path -> "Path" .= path
-  StatusCode status -> "StatusCode" .= tshow (statusCode status)
-  AppError e -> "AppError" .= tshow e
+logFieldToObjectPairs :: LogField -> [Pair]
+logFieldToObjectPairs = \case
+  CorrelationID txt -> ["CorrelationID" .= txt]
+  ConvoUrl txt -> ["ConvoUrl" .= txt]
+  CommentId txt -> ["CommentId" .= txt]
+  ParentId txt -> ["ParentId" .= txt]
+  Username txt -> ["Username" .= txt]
+  Note txt -> ["Note" .= txt]
+  RequestMethod method -> ["Method" .= decodeUtf8 method]
+  RequestPath path -> ["Path" .= path]
+  StatusCode status -> ["StatusCode" .= tshow (statusCode status)]
+  AppError (stack, err) -> ["CallStack" .= tshow stack, "Error" .= tshow err]

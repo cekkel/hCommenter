@@ -20,7 +20,7 @@ import Effectful.Dispatch.Static
 import Katip
 import Prelude hiding (log, singleton)
 
-import Logging.LogContext (LogField, logFieldToObjectPair)
+import Logging.LogContext (LogField, logFieldToObjectPairs)
 import Logging.LogEffect
   ( Log
   , getKatipContext'
@@ -71,7 +71,7 @@ addLogNamespace ns = localKatipNamespace' (<> ns)
 addLogContext :: forall es a. (Log :> es) => [LogField] -> Eff es a -> Eff es a
 addLogContext fields = localKatipContext' (<> liftPayload context)
  where
-  context = object $ logFieldToObjectPair <$> fields
+  context = object $ concatMap logFieldToObjectPairs fields
 
 instance LogItem Object where
   payloadKeys _ _ = AllKeys
