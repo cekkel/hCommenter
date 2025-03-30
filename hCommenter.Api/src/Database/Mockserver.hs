@@ -4,6 +4,7 @@ import Database.Persist (Filter)
 import Database.Persist.Sql
   ( PersistQueryWrite (deleteWhere)
   , PersistStoreWrite (insertMany_)
+  , runMigration
   , toSqlKey
   )
 import Effectful (runEff)
@@ -51,6 +52,7 @@ initDevSqliteDB env = do
     ctx = mkRequestContext env "DevInitialisation"
 
   runEff $ runLog env . ES.runReader ctx . runSqlPool $ withConn $ do
+    runMigration migrateAll
     -- Manually delete all data in database before refreshing with mock data.
     deleteWhere ([] :: [Filter Comment]) -- Comments must go first due to FK constraint
     deleteWhere ([] :: [Filter Conversation])
