@@ -53,15 +53,14 @@ jobs:
       - name: Get branch name (pull request)
         if: github.event_name == 'pull_request'
         shell: bash
-        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" \
-          >> $GITHUB_ENV
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
 
       # Then store the tag names as a whole for easy re-use.
       - name: Construct api image tag names
         id: construct_tags
         shell: bash
         run: |
-          echo "base_image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}:base" >> $GITHUB_OUTPUT; \
+          echo "base_image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}:base" >> $GITHUB_OUTPUT;
           echo "full_image_tag=${REGISTRY}/${GITHUB_ORG}/${API_NAME}:${BRANCH_NAME}" >> $GITHUB_OUTPUT;
 
       - name: Set up Docker Buildx
@@ -74,14 +73,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # This conditionally creates a 'base' image for the API, since installing
+      # This creates a 'base' image for the API, since installing
       # haskell deps can take >10 mins.
       - name: "Build and push: API base"
         uses: docker/build-push-action@v6
-        if: ${{ github.event.inputs.rebuild_api_base }}
         with:
           context: hCommenter.Api/
           file: hCommenter.Api/base.Dockerfile
+          # Unless explicitly requested, just build the new base from the old one.
+          build-args: >
+            BASE_IMAGE=${{ github.event.inputs.rebuild_api_base
+            && 'haskell:9.10.1-slim-bullseye'
+            || steps.construct_tags.outputs.base_image_tag }}
           push: true
           tags: ${{ steps.construct_tags.outputs.base_image_tag }}
           cache-from: type=gha
