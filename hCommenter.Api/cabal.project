@@ -1,8 +1,6 @@
+with-compiler: ghc-9.10.1
 packages: ./*.cabal
 tests: True
 
--- Old package, has old deps. I'm lazy since this is just a package for testing.
+-- Old package, has old deps. OK since this is just a package for testing.
 allow-newer: hedgehog-servant:all
-
--- This is a bit cheeky but they need to update. Dep of opentelemetry package.
-allow-newer: proto-lens:base
