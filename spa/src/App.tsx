@@ -31,7 +31,9 @@ const App = () => {
 
           <div className="space-y-8">
             <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Search by Username</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Search by Username
+              </h2>
               <form onSubmit={handleUsernameSubmit} className="flex gap-2">
                 <div className="flex-1">
                   <input
@@ -54,7 +56,9 @@ const App = () => {
             <CommentsList username={username} />
 
             <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Search by Conversation URL</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Search by Conversation URL
+              </h2>
               <form onSubmit={handleConvoSubmit} className="flex gap-2">
                 <div className="flex-1">
                   <input
@@ -75,12 +79,11 @@ const App = () => {
             </div>
 
             <ConversationComments convoUrl={convoUrl} />
-
           </div>
         </div>
       </div>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;

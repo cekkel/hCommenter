@@ -23,7 +23,7 @@ export const customInstance = <T>(
   // @ts-ignore
   promise.cancel = () => {
     source.cancel("Request canceled by the user.");
-  }
+  };
 
   return promise;
-}
+};
