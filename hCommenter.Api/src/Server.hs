@@ -86,5 +86,6 @@ messageConsoleAndRun = do
         & setPort (env ^. #port)
         & setOnException (logOnException env)
 
+  initDevSqliteDB env
   putStrLn [fmt|\nListening in {env ^. #backend} mode, on port {env ^. #port}...\n|]
   runSettings settings $ app env
