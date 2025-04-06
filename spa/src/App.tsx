@@ -49,8 +49,9 @@ const App = () => {
                   Search
                 </button>
               </form>
-              <CommentsList username={username} />
             </div>
+
+            <CommentsList username={username} />
 
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Search by Conversation URL</h2>
@@ -71,8 +72,10 @@ const App = () => {
                   Search
                 </button>
               </form>
-              <ConversationComments convoUrl={convoUrl} />
             </div>
+
+            <ConversationComments convoUrl={convoUrl} />
+
           </div>
         </div>
       </div>
