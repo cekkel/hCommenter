@@ -8,8 +8,8 @@ const queryClient = new QueryClient();
 const App = () => {
   const [username, setUsername] = useState("Abby");
   const [inputValue, setInputValue] = useState("Abby");
-  const [convoUrl, setConvoUrl] = useState("example.com");
-  const [convoInputValue, setConvoInputValue] = useState("example.com");
+  const [convoUrl, setConvoUrl] = useState("convo.com");
+  const [convoInputValue, setConvoInputValue] = useState("convo.com");
 
   const handleUsernameSubmit = (e: React.FormEvent) => {
     e.preventDefault();

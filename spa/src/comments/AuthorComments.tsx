@@ -35,7 +35,7 @@ export const CommentsList = (props: AuthorProps) => {
         Comments by {props.username}
       </h2>
       {comments?.length === 0 ? <EmptyComments /> : comments?.map((comment) => (
-        <Comment key={comment.id} comment={comment} />
+        <Comment key={comment.id} comment={comment} showUrl={true} />
       ))}
     </div>
   );
