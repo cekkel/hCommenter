@@ -1,8 +1,9 @@
+---
 services:
   backend:
     build:
       context: hCommenter.Api
-      dockerfile: build.Dockerfile
+      dockerfile: deploy/run.Dockerfile
     ports:
       - "8080:8080"
     env_file:

@@ -19,11 +19,16 @@ WORKDIR /opt/hCommenter
 #     ghcup set cabal 3.12.1.0 && \
 #     cabal update
 
-# First install dependencies only, to improve caching
+# Install pkg-config (local) dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    zlib1g
+
+# Then install dependencies only first, to improve caching
 COPY ./Makefile .
 COPY ./package.yaml .
-COPY ./cabal.project .
-COPY ./hCommenter-Api.cabal .
+COPY ./cabal.* .
+COPY ./*.cabal .
 RUN cabal update && make build-only-deps
 
 # Build app to speed up new compilations further.
