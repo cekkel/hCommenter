@@ -63,6 +63,7 @@ dependencies:
   - aeson
   - persistent
   - persistent-sqlite
+  - esqueleto
   - resource-pool
   - http-api-data
   - hedgehog

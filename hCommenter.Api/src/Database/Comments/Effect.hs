@@ -3,8 +3,25 @@
 
 module Database.Comments.Effect (runCommentStorageSQL) where
 
-import Database.Persist ((+=.), (=.), (==.))
-import Database.Persist.Sqlite (fromSqlKey)
+import Database.Esqueleto.Experimental
+  ( OrderBy
+  , SqlBackend
+  , SqlExpr
+  , Value (..)
+  , asc
+  , desc
+  , from
+  , fromSqlKey
+  , just
+  , orderBy
+  , select
+  , table
+  , val
+  , where_
+  , (-.)
+  , (==.)
+  , (^.)
+  )
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Static (Error, throwError)
@@ -24,6 +41,7 @@ import Database.Schema
 import Database.SqlPool (SqlPool, withConn)
 import Logging.LogEffect (Log)
 import Logging.Utilities (logDebug)
+import Mapping.ExternalTypes (ViewComment)
 import Mapping.Typeclass (MapsFrom (mapFrom))
 import Utils.RequestContext (RequestContext)
 
@@ -40,12 +58,12 @@ runCommentStorageSQL = do
   interpret
     ( \_ action ->
         withConn $ case action of
-          GetCommentsForConvo convoUrlQ sortMethod -> do
-            map mapFrom <$> P.selectList [CommentConvoUrl ==. convoUrlQ] (generateSort sortMethod)
-          GetCommentsForUser userNameQ sortMethod -> do
-            map mapFrom <$> P.selectList [CommentAuthor ==. userNameQ] (generateSort sortMethod)
-          GetReplies cID sortMethod -> do
-            map mapFrom <$> P.selectList [CommentParent ==. Just cID] (generateSort sortMethod)
+          GetCommentsForConvo convoUrlQ sortMethod -> getCommentsWhere sortMethod $
+            \comments -> comments ^. CommentConvoUrl ==. val convoUrlQ
+          GetCommentsForUser userNameQ sortMethod -> getCommentsWhere sortMethod $
+            \comments -> comments ^. CommentAuthor ==. val userNameQ
+          GetReplies cID sortMethod -> getCommentsWhere sortMethod $
+            \comments -> comments ^. CommentParent ==. just (val cID)
           InsertComment comment -> do
             -- TODO: Add a time effect to get the current time, instead of using raw IO
             fullComment <- liftIO $ fromNewComment comment
@@ -57,9 +75,9 @@ runCommentStorageSQL = do
             let
               sqlEdits =
                 edits <&> \case
-                  SendNewContent newContent -> CommentMessage =. newContent
-                  SendUpvote -> CommentUpvotes +=. 1
-                  SendDownvote -> CommentDownvotes +=. 1
+                  SendNewContent newContent -> CommentMessage P.=. newContent
+                  SendUpvote -> CommentUpvotes P.+=. 1
+                  SendDownvote -> CommentDownvotes P.+=. 1
 
             lift $ logDebug [fmt|Performing edits: {tshow edits}|]
 
@@ -81,10 +99,22 @@ runCommentStorageSQL = do
             P.delete cID
     )
 
--- PERF: Needs revisiting since sorts in persistent are basic.
-generateSort :: SortBy -> [P.SelectOpt Comment]
-generateSort sortMethod = case sortMethod of
-  Popular -> [P.Desc CommentUpvotes]
-  Controversial -> [P.Desc CommentDownvotes]
-  Old -> [P.Asc CommentDateCreated]
-  New -> [P.Desc CommentDateCreated]
+getCommentsWhere
+  :: (MonadIO m)
+  => SortBy
+  -> (SqlExpr (P.Entity Comment) -> SqlExpr (Value Bool))
+  -> ReaderT SqlBackend m [ViewComment]
+getCommentsWhere sortMethod condition = (map . map) mapFrom $
+  select $
+    do
+      comments <- from $ table @Comment
+      where_ $ condition comments
+      orderBy $ makeSort sortMethod comments
+      pure comments
+
+makeSort :: SortBy -> SqlExpr (P.Entity Comment) -> [SqlExpr OrderBy]
+makeSort sortMethod comments = case sortMethod of
+  Popular -> [desc $ (comments ^. CommentUpvotes) -. (comments ^. CommentDownvotes)]
+  Controversial -> [desc $ comments ^. CommentDownvotes]
+  Old -> [asc $ comments ^. CommentDateCreated]
+  New -> [desc $ comments ^. CommentDateCreated]
