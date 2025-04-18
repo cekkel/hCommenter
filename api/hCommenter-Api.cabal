@@ -22,7 +22,7 @@ source-repository head
     type: git
     location: https://github.com/cekkel/hCommenter
 
-library backend
+library
     visibility: public
     exposed-modules:
         Server
@@ -60,7 +60,7 @@ library backend
         Utils.Environment
         Utils.RequestContext
     hs-source-dirs:
-        src/backend
+        src
     default-extensions:
         OverloadedStrings
         TypeFamilies
@@ -85,65 +85,6 @@ library backend
         effectful-th,
         esqueleto,
         extra,
-        hedgehog,
-        http-api-data,
-        http-client,
-        http-client-tls,
-        http-types,
-        katip,
-        monad-logger,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant,
-        servant-client,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        text,
-        time,
-        transformers,
-        unordered-containers,
-        uuid,
-        wai,
-        warp
-    mixins:
-        base hiding (Prelude),
-        classy-prelude (ClassyPrelude as Prelude)
-    default-language: GHC2024
-
-library frontend
-    visibility: public
-    exposed-modules:
-        FrontendServer
-    hs-source-dirs:
-        src/frontend
-    default-extensions:
-        OverloadedStrings
-        TypeFamilies
-        NoMonomorphismRestriction
-        AllowAmbiguousTypes
-        DuplicateRecordFields
-        OverloadedLabels
-        RecordWildCards
-        MultiWayIf
-    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror -fplugin=Effectful.Plugin
-    build-depends:
-        PyF,
-        aeson,
-        aeson-pretty,
-        base ==4.20.*,
-        bytestring,
-        classy-prelude,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        esqueleto,
-        extra,
-        hCommenter-Api:backend,
         hedgehog,
         http-api-data,
         http-client,
@@ -200,7 +141,7 @@ executable backend-exe
         effectful-th,
         esqueleto,
         extra,
-        hCommenter-Api:backend,
+        hCommenter-Api,
         hedgehog,
         http-api-data,
         http-client,
@@ -257,7 +198,7 @@ executable frontend-exe
         effectful-th,
         esqueleto,
         extra,
-        hCommenter-Api:frontend,
+        hCommenter-Api,
         hedgehog,
         http-api-data,
         http-client,
@@ -321,7 +262,7 @@ test-suite spec
         effectful-th,
         esqueleto,
         extra,
-        hCommenter-Api:backend,
+        hCommenter-Api,
         hedgehog,
         hedgehog-servant,
         hspec,

@@ -75,36 +75,26 @@ dependencies:
   - text
   - uuid
 
-internal-libraries:
-  backend:
-    visibility: public
-    source-dirs: src/backend
-    exposed-modules:
-      - Server
-      - Utils.Generators
-    ghc-options: -fplugin=Effectful.Plugin
-
-  frontend:
-    visibility: public
-    source-dirs: src/frontend
-    exposed-modules:
-      - FrontendServer
-    ghc-options: -fplugin=Effectful.Plugin
-    dependencies:
-      - hCommenter-Api:backend
+library:
+  visibility: public
+  source-dirs: src
+  exposed-modules:
+    - Server
+    - Utils.Generators
+  ghc-options: -fplugin=Effectful.Plugin
 
 executables:
   backend-exe:
     main: Main.hs
     source-dirs: app/backend
     dependencies:
-      - hCommenter-Api:backend
+      - hCommenter-Api
 
   frontend-exe:
     main: Main.hs
     source-dirs: app/frontend
     dependencies:
-      - hCommenter-Api:frontend
+      - hCommenter-Api
 
 tests:
   spec:
@@ -120,7 +110,7 @@ tests:
       - mockery
       - interpolate
       - hspec-wai
-      - hCommenter-Api:backend
+      - hCommenter-Api
       - wai-extra
       - http-types
     build-tools: hspec-discover
