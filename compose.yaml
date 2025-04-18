@@ -2,7 +2,7 @@
 services:
   backend:
     build:
-      context: hCommenter.Api
+      context: api
       dockerfile: deploy/run.Dockerfile
     ports:
       - "8080:8080"
@@ -13,7 +13,7 @@ services:
   frontend-dev:
     profiles: [dev]
     build:
-      context: hCommenter.Spa
+      context: spa
       target: dev
     ports:
       - "5173:5173"
@@ -21,7 +21,7 @@ services:
   frontend-prod:
     profiles: [prod]
     build:
-      context: hCommenter.Spa
+      context: spa
       target: prod
     ports:
       - "80:80"
