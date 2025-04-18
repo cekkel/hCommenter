@@ -3,7 +3,6 @@
 module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
 import Database.Persist.Sql (PersistEntity (Key), fromSqlKey, toSqlKey)
-import Effectful.Error.Static (Error)
 import Optics
 import PyF (fmt)
 import Servant
@@ -31,13 +30,11 @@ import Database.Schema
   ( Comment
   , NewComment
   , SortBy (..)
-  , StorageError
   )
 import Logging.LogContext (LogField (CommentId, ConvoUrl, ParentId, Username))
 import Logging.LogEffect (Log)
 import Logging.Utilities (addLogContext, addLogNamespace, logError, logInfo, logWarn)
 import Mapping.ExternalTypes (ViewComment)
-import Server.ServerTypes (InputError)
 
 import Database.Comments.Interface qualified as DB
 
@@ -79,8 +76,6 @@ type CommentsAPI =
 
 commentServer
   :: ( DB.CommentStorage E.:> es
-     , Error InputError E.:> es
-     , Error StorageError E.:> es
      , Log E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)

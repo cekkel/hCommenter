@@ -9,14 +9,8 @@ import Control.Monad.Logger
   , toLogStr
   )
 import Data.Aeson (Object, Value, object)
-import Effectful
-  ( Eff
-  , (:>)
-  )
-import Effectful.Dispatch.Static
-  ( HasCallStack
-  , unsafeEff_
-  )
+import Effectful (Eff, (:>))
+import Effectful.Dispatch.Static (unsafeEff_)
 import Katip
 import Prelude hiding (log, singleton)
 
@@ -37,7 +31,7 @@ import Logging.LogEffect
  - TODO: Remove these functions once the issue is resolved.
  -}
 
-askForLoggerIO :: (HasCallStack, Log :> es) => Eff es (Maybe Loc -> Severity -> LogStr -> IO ())
+askForLoggerIO :: (Log :> es) => Eff es (Maybe Loc -> Severity -> LogStr -> IO ())
 askForLoggerIO = do
   ctx <- getKatipContext'
   ns <- getKatipNamespace'

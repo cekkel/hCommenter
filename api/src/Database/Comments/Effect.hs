@@ -28,7 +28,6 @@ import Effectful.Error.Static (Error, throwError)
 import PyF (fmt)
 
 import Database.Persist qualified as P
-import Effectful.Reader.Static qualified as ES
 
 import Database.Comments.Interface (CommentStorage (..), CommentUpdate (..))
 import Database.Schema
@@ -43,11 +42,9 @@ import Logging.LogEffect (Log)
 import Logging.Utilities (logDebug)
 import Mapping.ExternalTypes (ViewComment)
 import Mapping.Typeclass (MapsFrom (mapFrom))
-import Utils.RequestContext (RequestContext)
 
 runCommentStorageSQL
-  :: ( ES.Reader RequestContext :> es
-     , Error StorageError :> es
+  :: ( Error StorageError :> es
      , IOE :> es
      , Log :> es
      , SqlPool :> es

@@ -2,10 +2,10 @@
 spec-version: 0.38.0
 name: hCommenter-Api
 version: 0.1.0
-synopsis: Backend for a generic commenting system.
+synopsis: Backend & experimental frontend for a generic commenting system.
 description: N/A
-author: Charles Taylor <taylorc822@gmail.com>
-maintainer: Charles Taylor <taylorc822@gmail.com>
+author: Charles Taylor <mail@charlesekkel.me>
+maintainer: Charles Taylor <mail@charlesekkel.me>
 github: cekkel/hCommenter
 category: Web
 license: MIT
@@ -15,6 +15,8 @@ extra-doc-files:
 ghc-options:
   -Wall
   -fno-warn-orphans
+  -Wredundant-constraints
+  -Werror
   # -fno-warn-unused-imports
 
 language: GHC2024
