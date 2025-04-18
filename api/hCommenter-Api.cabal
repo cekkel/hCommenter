@@ -23,6 +23,7 @@ source-repository head
     location: https://github.com/cekkel/hCommenter
 
 library backend
+    visibility: public
     exposed-modules:
         Server
         Utils.Generators
@@ -59,7 +60,7 @@ library backend
         Utils.Environment
         Utils.RequestContext
     hs-source-dirs:
-        backend
+        src/backend
     default-extensions:
         OverloadedStrings
         TypeFamilies
@@ -113,10 +114,11 @@ library backend
     default-language: GHC2024
 
 library frontend
+    visibility: public
     exposed-modules:
         FrontendServer
     hs-source-dirs:
-        frontend
+        src/frontend
     default-extensions:
         OverloadedStrings
         TypeFamilies
@@ -127,52 +129,6 @@ library frontend
         RecordWildCards
         MultiWayIf
     ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror -fplugin=Effectful.Plugin
-    build-depends:
-        PyF,
-        aeson,
-        aeson-pretty,
-        base ==4.20.*,
-        bytestring,
-        classy-prelude,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        esqueleto,
-        extra,
-        hedgehog,
-        http-api-data,
-        http-client,
-        http-client-tls,
-        http-types,
-        katip,
-        monad-logger,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant,
-        servant-client,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        text,
-        time,
-        transformers,
-        unordered-containers,
-        uuid,
-        wai,
-        warp
-    mixins:
-        base hiding (Prelude),
-        classy-prelude (ClassyPrelude as Prelude)
-    default-language: GHC2024
-
-executable hCommenter-Api
-    main-is: Main.hs
-    other-modules:
-        Frontend
     build-depends:
         PyF,
         aeson,
@@ -214,8 +170,12 @@ executable hCommenter-Api
     mixins:
         base hiding (Prelude),
         classy-prelude (ClassyPrelude as Prelude)
+    default-language: GHC2024
+
+executable backend-exe
+    main-is: Main.hs
     hs-source-dirs:
-        app
+        app/backend
     default-extensions:
         OverloadedStrings
         TypeFamilies
@@ -226,6 +186,104 @@ executable hCommenter-Api
         RecordWildCards
         MultiWayIf
     ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
+    build-depends:
+        PyF,
+        aeson,
+        aeson-pretty,
+        base ==4.20.*,
+        bytestring,
+        classy-prelude,
+        containers,
+        effectful,
+        effectful-core,
+        effectful-plugin,
+        effectful-th,
+        esqueleto,
+        extra,
+        hCommenter-Api:backend,
+        hedgehog,
+        http-api-data,
+        http-client,
+        http-client-tls,
+        http-types,
+        katip,
+        monad-logger,
+        optics,
+        persistent,
+        persistent-sqlite,
+        resource-pool,
+        servant,
+        servant-client,
+        servant-server,
+        servant-swagger,
+        swagger2,
+        text,
+        time,
+        transformers,
+        unordered-containers,
+        uuid,
+        wai,
+        warp
+    mixins:
+        base hiding (Prelude),
+        classy-prelude (ClassyPrelude as Prelude)
+    default-language: GHC2024
+
+executable frontend-exe
+    main-is: Main.hs
+    hs-source-dirs:
+        app/frontend
+    default-extensions:
+        OverloadedStrings
+        TypeFamilies
+        NoMonomorphismRestriction
+        AllowAmbiguousTypes
+        DuplicateRecordFields
+        OverloadedLabels
+        RecordWildCards
+        MultiWayIf
+    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
+    build-depends:
+        PyF,
+        aeson,
+        aeson-pretty,
+        base ==4.20.*,
+        bytestring,
+        classy-prelude,
+        containers,
+        effectful,
+        effectful-core,
+        effectful-plugin,
+        effectful-th,
+        esqueleto,
+        extra,
+        hCommenter-Api:frontend,
+        hedgehog,
+        http-api-data,
+        http-client,
+        http-client-tls,
+        http-types,
+        katip,
+        monad-logger,
+        optics,
+        persistent,
+        persistent-sqlite,
+        resource-pool,
+        servant,
+        servant-client,
+        servant-server,
+        servant-swagger,
+        swagger2,
+        text,
+        time,
+        transformers,
+        unordered-containers,
+        uuid,
+        wai,
+        warp
+    mixins:
+        base hiding (Prelude),
+        classy-prelude (ClassyPrelude as Prelude)
     default-language: GHC2024
 
 test-suite spec

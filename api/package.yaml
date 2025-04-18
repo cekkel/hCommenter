@@ -77,23 +77,34 @@ dependencies:
 
 internal-libraries:
   backend:
-    source-dirs: backend
+    visibility: public
+    source-dirs: src/backend
     exposed-modules:
       - Server
-      - Utils.Generators ## For testing with
+      - Utils.Generators
     ghc-options: -fplugin=Effectful.Plugin
 
   frontend:
-    source-dirs: frontend
+    visibility: public
+    source-dirs: src/frontend
     exposed-modules:
       - FrontendServer
     ghc-options: -fplugin=Effectful.Plugin
+    dependencies:
+      - hCommenter-Api:backend
 
-executable:
-  main: Main.hs
-  source-dirs: app
-  dependencies:
-    - hCommenter-Api:backend
+executables:
+  backend-exe:
+    main: Main.hs
+    source-dirs: app/backend
+    dependencies:
+      - hCommenter-Api:backend
+
+  frontend-exe:
+    main: Main.hs
+    source-dirs: app/frontend
+    dependencies:
+      - hCommenter-Api:frontend
 
 tests:
   spec:
