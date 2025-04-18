@@ -1,4 +1,4 @@
-cabal-version: 2.0
+cabal-version: 3.0
 
 -- This file has been generated from package.yaml by hpack version 0.38.0.
 --
@@ -22,7 +22,7 @@ source-repository head
     type: git
     location: https://github.com/cekkel/hCommenter
 
-library
+library backend
     exposed-modules:
         Server
         Utils.Generators
@@ -58,6 +58,18 @@ library
         Server.Voting
         Utils.Environment
         Utils.RequestContext
+    hs-source-dirs:
+        backend
+    default-extensions:
+        OverloadedStrings
+        TypeFamilies
+        NoMonomorphismRestriction
+        AllowAmbiguousTypes
+        DuplicateRecordFields
+        OverloadedLabels
+        RecordWildCards
+        MultiWayIf
+    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror -fplugin=Effectful.Plugin
     build-depends:
         PyF,
         aeson,
@@ -98,10 +110,13 @@ library
     mixins:
         base hiding (Prelude),
         classy-prelude (ClassyPrelude as Prelude)
-    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror -fplugin=Effectful.Plugin
-    hs-source-dirs:
-        src
     default-language: GHC2024
+
+library frontend
+    exposed-modules:
+        FrontendServer
+    hs-source-dirs:
+        frontend
     default-extensions:
         OverloadedStrings
         TypeFamilies
@@ -111,6 +126,48 @@ library
         OverloadedLabels
         RecordWildCards
         MultiWayIf
+    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror -fplugin=Effectful.Plugin
+    build-depends:
+        PyF,
+        aeson,
+        aeson-pretty,
+        base ==4.20.*,
+        bytestring,
+        classy-prelude,
+        containers,
+        effectful,
+        effectful-core,
+        effectful-plugin,
+        effectful-th,
+        esqueleto,
+        extra,
+        hedgehog,
+        http-api-data,
+        http-client,
+        http-client-tls,
+        http-types,
+        katip,
+        monad-logger,
+        optics,
+        persistent,
+        persistent-sqlite,
+        resource-pool,
+        servant,
+        servant-client,
+        servant-server,
+        servant-swagger,
+        swagger2,
+        text,
+        time,
+        transformers,
+        unordered-containers,
+        uuid,
+        wai,
+        warp
+    mixins:
+        base hiding (Prelude),
+        classy-prelude (ClassyPrelude as Prelude)
+    default-language: GHC2024
 
 executable hCommenter-Api
     main-is: Main.hs
@@ -130,7 +187,7 @@ executable hCommenter-Api
         effectful-th,
         esqueleto,
         extra,
-        hCommenter-Api,
+        hCommenter-Api:backend,
         hedgehog,
         http-api-data,
         http-client,
@@ -206,7 +263,7 @@ test-suite spec
         effectful-th,
         esqueleto,
         extra,
-        hCommenter-Api,
+        hCommenter-Api:backend,
         hedgehog,
         hedgehog-servant,
         hspec,

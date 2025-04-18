@@ -3,6 +3,7 @@
   "checkProject": true,
   "formattingProvider": "fourmolu",
   "maxCompletions": 40,
+  "sessionLoading": "multipleComponents"
   "plugin": {
     "alternateNumberFormat": {
       "globalOn": true
