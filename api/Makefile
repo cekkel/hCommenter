@@ -39,7 +39,13 @@ run-front: check-hpack
 build-only-deps: check-hpack
 	cabal build --only-dependencies -j
 
-build-static: check-hpack
-	cabal build --enable-executable-static
 
-.PHONY: all run-hpack build build-no-deps build-static
+build-backend-static: check-hpack
+	cabal build backend-exe --enable-executable-static \
+	&& cp "$(shell cabal list-bin backend-exe)" .
+
+build-frontend-static: check-hpack
+	cabal build frontend-exe --enable-executable-static \
+	&& cp "$(shell cabal list-bin frontend-exe)" .
+
+.PHONY: all run-hpack build build-no-deps build-backend-static build-frontend-static

@@ -9,19 +9,18 @@ services:
     env_file:
       - .env
       - .env.local
-
-  frontend-dev:
-    profiles: [dev]
-    build:
-      context: spa
-      target: dev
-    ports:
-      - "5173:5173"
-
-  frontend-prod:
-    profiles: [prod]
-    build:
-      context: spa
-      target: prod
-    ports:
-      - "80:80"
+# frontend-dev:
+#   profiles: [dev]
+#   build:
+#     context: spa
+#     target: dev
+#   ports:
+#     - "5173:5173"
+#
+# frontend-prod:
+#   profiles: [prod]
+#   build:
+#     context: spa
+#     target: prod
+#   ports:
+#     - "80:80"

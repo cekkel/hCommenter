@@ -1,12 +1,12 @@
 PROJECT_NAME := hCommenter-Api
 
-docker-base-init:
+docker-build-init:
 	cd api; \
-	docker build --file ./deploy/base.Dockerfile . --tag hcommenter:base
+	docker build --file ./deploy/build.Dockerfile . --tag hcommenter:base
 
-docker-base:
+docker-build:
 	cd api; \
-	docker build --file ./deploy/base.Dockerfile . --tag hcommenter:base --build-arg BASE_IMAGE=hcommenter:base
+	docker build --file ./deploy/build.Dockerfile . --tag hcommenter:base --build-arg BASE_IMAGE=hcommenter:base
 
 dev:
 	docker compose --profile dev up --build

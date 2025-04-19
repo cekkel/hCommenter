@@ -24,11 +24,6 @@ source-repository head
 
 library
     exposed-modules:
-        EntryPoints
-        Frontend.Server
-        RestAPI.Server
-        Utils.Generators
-    other-modules:
         Database.Authors.Effect
         Database.Authors.Interface
         Database.Comments.Effect
@@ -40,6 +35,8 @@ library
         Database.Schema
         Database.SqlPool
         EffectInjection
+        EntryPoints
+        Frontend.Server
         Logging.Config
         Logging.LogContext
         Logging.LogEffect
@@ -58,9 +55,11 @@ library
         RestAPI.Endpoints.Health
         RestAPI.Endpoints.Swagger
         RestAPI.Endpoints.Voting
+        RestAPI.Server
         RestAPI.ServerTypes
         Utils.Environment
         Utils.Error
+        Utils.Generators
         Utils.RequestContext
     hs-source-dirs:
         src

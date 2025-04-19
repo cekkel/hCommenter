@@ -1,4 +1,6 @@
 dist-newstyle/
+*-exe
+
 swagger.json
 localStorage.txt
 sqliteStorage.*

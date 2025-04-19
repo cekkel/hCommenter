@@ -12,7 +12,8 @@ This is a commenting solution which can be easily added to any web page.
 
 ## Get started locally
 
-1. Run `make docker-base` to create the base image for the API (to speed up build).
+1. Run `make docker-build-init` (if it's the first ever build on a machine) or `make docker-build` 
+   to create the base image for the API (to speed up build).
 2. Run `make dev` to build & start the API & SPA containers (dev).
 3. Access the app at `http://localhost:5173`.
 
