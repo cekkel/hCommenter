@@ -30,8 +30,11 @@ test-ci: check-hpack run-test
 # --test-option=--match="" \
 # --test-option=--seed=""
 
-run: run-hpack
-	cabal run
+run-back: check-hpack
+	cabal run backend-exe
+
+run-front: check-hpack
+	cabal run frontend-exe
 
 build-only-deps: check-hpack
 	cabal build --only-dependencies -j

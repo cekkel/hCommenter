@@ -1,4 +1,4 @@
-module Server.Swagger where
+module RestAPI.Endpoints.Swagger where
 
 import Data.Function ((&))
 import Data.Swagger

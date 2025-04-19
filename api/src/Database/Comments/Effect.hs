@@ -24,10 +24,10 @@ import Database.Esqueleto.Experimental
   )
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
-import Effectful.Error.Static (Error, throwError)
 import PyF (fmt)
 
 import Database.Persist qualified as P
+import Effectful.Error.Static qualified as ES
 
 import Database.Comments.Interface (CommentStorage (..), CommentUpdate (..))
 import Database.Schema
@@ -44,7 +44,7 @@ import Mapping.ExternalTypes (ViewComment)
 import Mapping.Typeclass (MapsFrom (mapFrom))
 
 runCommentStorageSQL
-  :: ( Error StorageError :> es
+  :: ( ES.Error StorageError :> es
      , IOE :> es
      , Log :> es
      , SqlPool :> es
@@ -66,7 +66,7 @@ runCommentStorageSQL = do
             fullComment <- liftIO $ fromNewComment comment
 
             catchAny (P.insert fullComment) $ \e -> lift $ do
-              throwError $
+              ES.throwError $
                 UserOrConvoNotFound [fmt|Failed to insert comment with error: {tshow e}|]
           EditComment cID edits -> do
             let
@@ -81,7 +81,7 @@ runCommentStorageSQL = do
             updatedComment <-
               -- TODO: Update to use more specific error type when possible.
               catchAny (P.updateGet cID sqlEdits) $ \e -> lift $ do
-                throwError $
+                ES.throwError $
                   CommentNotFound [fmt|Failed to update comment {fromSqlKey cID} with error: {tshow e}|]
 
             lift $ logDebug [fmt|Updated comment to: {tshow updatedComment}|]
@@ -90,7 +90,7 @@ runCommentStorageSQL = do
           DeleteComment cID -> do
             comment <- P.get cID -- just to check if it exists
             when (isNothing comment) $ lift $ do
-              throwError $
+              ES.throwError $
                 CommentNotFound [fmt|Comment {fromSqlKey cID} not found, so it cannot be deleted|]
 
             P.delete cID

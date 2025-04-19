@@ -45,6 +45,14 @@ import PyF (PyFCategory (PyFString), PyFClassify)
 import Web.HttpApiData
 import Prelude hiding (Handler, singleton, sortBy)
 
+data Backend
+  = LocalFile
+  | SQLite
+  | ToBeDeterminedProd
+  deriving (Read, Show)
+
+type instance PyFClassify Backend = 'PyFString
+
 data StorageError
   = CommentNotFound Text
   | UserOrConvoNotFound Text

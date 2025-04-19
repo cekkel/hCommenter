@@ -4,7 +4,6 @@
 module Server
   ( initDevSqliteDB
   , app
-  , Backend (..)
   , serverAPI
   , readEnv
   , API
@@ -21,29 +20,20 @@ import Effectful (Eff)
 import Network.Wai.Handler.Warp (defaultSettings, runSettings, setOnException, setPort)
 import Optics
 import PyF (fmt)
-import Servant
-  ( Application
-  , Context (EmptyContext, (:.))
-  , Proxy (..)
-  , Server
-  , hoistServer
-  , serveWithContext
-  , type (:<|>) (..)
-  )
+import Servant (Application, Context (EmptyContext, (:.)), Proxy (..), Server, hoistServer, serveWithContext, type (:<|>) (..))
 import Servant.Swagger (HasSwagger (toSwagger))
 import Prelude hiding (Handler)
 
 import Database.Mockserver (initDevSqliteDB)
-import EffectInjection (effToHandler)
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Exceptions (logOnException)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
 import Middleware.ServantErrorFormatters (customFormatters)
-import Server.Comment (CommentsAPI, commentServer)
-import Server.Health (HealthAPI, healthServer)
-import Server.ServerTypes (Backend (..))
-import Server.Swagger (SwaggerAPI, withMetadata)
-import Server.Voting (VotingAPI, votingServer)
+import RestAPI.EffectInjection (effToHandler)
+import RestAPI.Endpoints.Comment (CommentsAPI, commentServer)
+import RestAPI.Endpoints.Health (HealthAPI, healthServer)
+import RestAPI.Endpoints.Swagger (SwaggerAPI, withMetadata)
+import RestAPI.Endpoints.Voting (VotingAPI, votingServer)
 import Utils.Environment (Env, readEnv)
 import Utils.RequestContext (RequestContext)
 

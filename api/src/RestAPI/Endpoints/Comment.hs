@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module Server.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
+module RestAPI.Endpoints.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
 import Database.Persist.Sql (PersistEntity (Key), fromSqlKey, toSqlKey)
 import Optics

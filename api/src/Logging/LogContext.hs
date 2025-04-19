@@ -4,7 +4,7 @@ import Data.Aeson.Types (Pair, (.=))
 import Effectful.Error.Static (CallStack)
 import Network.HTTP.Types (Method, Status (statusCode))
 
-import Server.ServerTypes (CustomError)
+import Utils.Error (CustomError)
 
 data LogField
   = CorrelationID Text

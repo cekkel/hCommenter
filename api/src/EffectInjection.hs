@@ -1,24 +1,13 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE UndecidableInstances #-}
 
-module EffectInjection (effToHandler) where
+module EffectInjection (runSharedEffects, SharedEffectsPlus) where
 
-import Control.Monad.Trans.Except (except)
-import Data.Either.Extra (mapLeft)
-import Effectful (Eff, IOE, runEff)
+import Effectful (Eff, IOE)
 import Effectful.Error.Static (CallStack, Error, runError)
 import Optics
 import PyF (fmt)
-import Servant
-  ( Handler (Handler)
-  , ServerError (errBody, errHTTPCode, errHeaders)
-  , err400
-  , err404
-  , err500
-  )
 import Prelude hiding (Handler)
 
-import Data.Aeson qualified as JSON
 import Effectful qualified as E
 import Effectful.Error.Static qualified as ES
 import Effectful.Reader.Static qualified as RS
@@ -30,44 +19,49 @@ import Database.SqlPool (SqlPool, runSqlPool)
 import Logging.LogContext (LogField (AppError, CorrelationID))
 import Logging.LogEffect (Log, runLog)
 import Logging.Utilities (addLogContext, logError)
-import Server.ServerTypes (CustomError (..), ErrorResponse (ErrorResponse), InputError (..))
+import RestAPI.ServerTypes (InputError (..))
+import Utils.Error (CustomError (InputError, StorageError))
 import Utils.RequestContext (RequestContext)
 
-effToHandler
-  :: RequestContext
-  -> Eff [CommentStorage, SqlPool, Error InputError, Error StorageError, Log, RS.Reader RequestContext, IOE] a
-  -> Handler a
-effToHandler ctx m = do
-  result <-
-    liftIO
-      $ runEff
-        . RS.runReader ctx
-        . runLog (ctx ^. #env)
-        . addGlobalLogContext
-        . runAndLiftError StorageError
-        . runAndLiftError InputError
-        . fmap Right
-        . runSqlPool
-        . runCommentStorageSQL
-      $ m
-  Handler $ except $ handleServerResponse result
+type SharedEffectsPlus es =
+  CommentStorage
+    : SqlPool
+    : Error InputError
+    : Error StorageError
+    : Error CustomError
+    : Log
+    : RS.Reader RequestContext
+    : es
 
-runAndLiftError
-  :: (Log E.:> es)
-  => (e -> CustomError)
-  -> Eff (ES.Error e : es) (Either (CallStack, CustomError) a)
+runSharedEffects
+  :: (IOE E.:> es)
+  => RequestContext
+  -> Eff (SharedEffectsPlus es) a
   -> Eff es (Either (CallStack, CustomError) a)
-runAndLiftError f effs = do
-  errs <- runError effs
+runSharedEffects ctx =
+  RS.runReader ctx
+    . runLog (ctx ^. #env)
+    . addGlobalLogContext
+    . runError @CustomError
+    . liftError StorageError
+    . liftError InputError
+    . runSqlPool
+    . runCommentStorageSQL
 
-  let
-    combinedEithers = join $ mapLeft (fmap f) errs
-
-  case combinedEithers of
-    Left e -> do
-      addLogContext [AppError e] $ logError [fmt|ERROR ENCOUNTERED: {tshow e}|]
-      pure $ Left e
-    _ -> pure combinedEithers
+liftError
+  :: (ES.Error CustomError E.:> es, Log E.:> es, Show e)
+  => (e -> CustomError)
+  -> Eff (ES.Error e : es) a
+  -> Eff es a
+liftError f eff = do
+  result <- runError eff
+  case result of
+    Right val -> pure val
+    Left (stack, err) -> do
+      let
+        liftedErr = f err
+      addLogContext [AppError (stack, liftedErr)] $ logError [fmt|ERROR ENCOUNTERED: {tshow err}|]
+      ES.throwError liftedErr
 
 addGlobalLogContext
   :: ( Log E.:> es
@@ -78,19 +72,3 @@ addGlobalLogContext
 addGlobalLogContext eff = do
   corrId <- RS.asks $ view #correlationId
   addLogContext [CorrelationID corrId] eff
-
-handleServerResponse :: Either (CallStack, CustomError) a -> Either ServerError a
-handleServerResponse (Right val) = Right val
-handleServerResponse (Left (_, err)) = case err of
-  StorageError innerErr -> Left $ case innerErr of
-    CommentNotFound _ -> servantErrorWithText err404 "Comment not found"
-    UserOrConvoNotFound _ -> servantErrorWithText err404 "Unable to find user or conversation"
-    UnhandledStorageError _ -> servantErrorWithText err500 "An unhandled storage exception occurred. Sorry!"
-  InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
-    BadArgument txt -> [fmt|Bad argument: {txt}|]
- where
-  servantErrorWithText sErr msg =
-    sErr
-      { errBody = JSON.encode $ ErrorResponse msg (errHTTPCode sErr)
-      , errHeaders = [(fromString "Content-Type", "application/json;charset=utf-8")]
-      }

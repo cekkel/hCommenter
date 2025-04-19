@@ -10,8 +10,8 @@ import Database.Persist.Sqlite (SqlBackend, createSqlitePool)
 import Optics
 import System.Environment (getEnv)
 
+import Database.Schema (Backend (SQLite))
 import Logging.Config (LoggingConf, readLoggingConf)
-import Server.ServerTypes (Backend (SQLite))
 
 data Env = Env
   { backend :: !Backend

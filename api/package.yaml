@@ -76,7 +76,6 @@ dependencies:
   - uuid
 
 library:
-  visibility: public
   source-dirs: src
   exposed-modules:
     - Server

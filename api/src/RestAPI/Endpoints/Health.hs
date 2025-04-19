@@ -1,4 +1,4 @@
-module Server.Health (healthServer, HealthAPI) where
+module RestAPI.Endpoints.Health (healthServer, HealthAPI) where
 
 import Servant
   ( Description

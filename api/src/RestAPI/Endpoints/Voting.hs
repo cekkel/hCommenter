@@ -1,4 +1,4 @@
-module Server.Voting (VotingAPI, votingServer) where
+module RestAPI.Endpoints.Voting (VotingAPI, votingServer) where
 
 import Database.Persist.Sql (fromSqlKey)
 import Servant
