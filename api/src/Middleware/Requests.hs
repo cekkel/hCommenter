@@ -2,6 +2,7 @@
 
 module Middleware.Requests where
 
+import Data.ByteString.Builder (toLazyByteString)
 import Data.UUID (toASCIIBytes)
 import Data.UUID.V4 (nextRandom)
 import Effectful (runEff)
@@ -11,10 +12,11 @@ import Network.Wai
   , Response
   , mapRequestHeaders
   , responseStatus
+  , responseToStream
   )
 import PyF (fmt)
 
-import Logging.LogContext (LogField (CorrelationID, RequestMethod, RequestPath, StatusCode))
+import Logging.LogContext (LogField (CorrelationID, RequestMethod, RequestPath, ResponseBody, StatusCode))
 import Logging.LogEffect (runLog)
 import Logging.Utilities (addLogContext, logError, logInfo, logWarn)
 import Middleware.Headers (correlationIDHeaderName)
@@ -60,15 +62,32 @@ logRequest env correlationId req = do
 
 logResponse :: Env -> Text -> Response -> IO Response
 logResponse env correlationId response = do
+  let
+    isError = not $ statusIsSuccessful status
+
+  content <- if isError then getResponseContent response else pure "Hidden"
+
   runEff
     . runLog env
     . addLogContext
       [ CorrelationID correlationId
       , StatusCode status
+      , ResponseBody content
       ]
-    $ (if statusIsSuccessful status then logInfo else logError)
-      [fmt|REQUEST COMPLETE: Responded with {statusMessage status}|]
+    $ do
+      (if isError then logError else logInfo)
+        [fmt|REQUEST COMPLETE: Responded with {statusMessage status}|]
 
   pure response
  where
   status = responseStatus response
+
+getResponseContent :: Response -> IO Text
+getResponseContent response =
+  let
+    (_, _, extractContentWith) = responseToStream response
+  in
+    extractContentWith $ \f -> do
+      content <- newIORef mempty
+      f (\chunk -> modifyIORef' content (<> chunk)) (return ())
+      decodeUtf8 . toStrict . toLazyByteString <$> readIORef content

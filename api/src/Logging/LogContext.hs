@@ -15,6 +15,7 @@ data LogField
   | Note Text
   | RequestMethod Method
   | RequestPath Text
+  | ResponseBody Text
   | StatusCode Status
   | AppError (CallStack, CustomError)
   deriving (Show)
@@ -29,5 +30,6 @@ logFieldToObjectPairs = \case
   Note txt -> ["Note" .= txt]
   RequestMethod method -> ["Method" .= decodeUtf8 method]
   RequestPath path -> ["Path" .= path]
+  ResponseBody content -> ["ResponseBody" .= content]
   StatusCode status -> ["StatusCode" .= tshow (statusCode status)]
   AppError (stack, err) -> ["CallStack" .= tshow stack, "Error" .= tshow err]
