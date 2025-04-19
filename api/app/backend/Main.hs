@@ -1,6 +1,6 @@
 module Main where
 
-import Server (messageConsoleAndRun)
+import EntryPoints (messageConsoleAndRun)
 
 main :: IO ()
 main = messageConsoleAndRun

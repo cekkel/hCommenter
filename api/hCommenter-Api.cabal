@@ -24,7 +24,9 @@ source-repository head
 
 library
     exposed-modules:
-        Server
+        EntryPoints
+        Frontend.Server
+        RestAPI.Server
         Utils.Generators
     other-modules:
         Database.Authors.Effect

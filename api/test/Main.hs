@@ -4,7 +4,7 @@ import System.Environment (setEnv)
 
 import ApiRules.HttpClient (runInstanceRuleTests)
 import ApiRules.Wai
-import Server (initDevSqliteDB, readEnv)
+import RestAPI.Server (initDevSqliteDB, readEnv)
 
 main :: IO ()
 main = do

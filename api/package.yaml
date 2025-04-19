@@ -78,7 +78,9 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-    - Server
+    - EntryPoints
+    - Frontend.Server
+    - RestAPI.Server
     - Utils.Generators
   ghc-options: -fplugin=Effectful.Plugin
 

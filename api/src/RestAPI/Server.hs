@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Server
+module RestAPI.Server
   ( initDevSqliteDB
   , app
   , serverAPI

@@ -21,7 +21,7 @@ import System.Environment (setEnv)
 import Test.Hspec
 import Test.Hspec.Hedgehog (hedgehog, modifyMaxSuccess)
 
-import Server
+import RestAPI.Server
 import Utils.Generators (genCommentKey, genInt64, genNewComment, genSortBy, genText)
 
 testPort :: Int

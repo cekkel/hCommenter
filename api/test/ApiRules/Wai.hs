@@ -23,7 +23,7 @@ import Test.Hspec.Hedgehog (hedgehog, modifyMaxSuccess)
 
 import Network.HTTP.Client qualified as Client
 
-import Server
+import RestAPI.Server
 import Utils.Generators
 
 runWaiRuleTests :: IO ()
