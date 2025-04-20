@@ -16,29 +16,11 @@ check-hpack:
 		@false; \
 	fi
 
-run-test:
-	cabal test \
-		--test-show-details=direct
-
 build: run-hpack
 	cabal build
 
-test: run-hpack run-test
-
-test-ci: check-hpack run-test
-
-# --test-option=--match="" \
-# --test-option=--seed=""
-
-run-back: check-hpack
-	cabal run backend-exe
-
-run-front: check-hpack
-	cabal run frontend-exe
-
 build-only-deps: check-hpack
 	cabal build --only-dependencies -j
-
 
 build-backend-static: check-hpack
 	cabal build backend-exe --enable-executable-static \
@@ -48,4 +30,18 @@ build-frontend-static: check-hpack
 	cabal build frontend-exe --enable-executable-static \
 	&& cp "$(shell cabal list-bin frontend-exe)" .
 
-.PHONY: all run-hpack build build-no-deps build-backend-static build-frontend-static
+test: check-hpack
+	cabal test \
+		--test-show-details=direct
+
+# Uncomment the following lines to run specific tests for hedgehog
+# --test-option=--match="" \
+# --test-option=--seed=""
+
+run-back: check-hpack
+	cabal run backend-exe
+
+run-front: check-hpack
+	cabal run frontend-exe
+
+.PHONY: all run-hpack build build-no-deps build-backend-static build-frontend-static run-back run-front

@@ -1,0 +1,2 @@
+--command=cabal repl src/EntryPoints.hs
+--reload=src
