@@ -1,0 +1,54 @@
+# Default recipe (shows available commands)
+default:
+    @just --list
+
+# Project configuration
+project := "hCommenter-Api"
+cabal-file := "hCommenter-Api.cabal"
+hpack-file := "package.yaml"
+hpack := "hpack"
+
+# Run hpack to generate .cabal file
+run-hpack:
+    {{hpack}} -f
+
+# Check if hpack needs to be run
+check-hpack:
+    #!/usr/bin/env sh
+    if [ ! -f "{{cabal-file}}" ] || [ "{{cabal-file}}" -ot "{{hpack-file}}" ]; then
+        echo "Cabal file is out of date, hpack needs to be run."
+        exit 1
+    fi
+
+# Build the project
+build: run-hpack
+    cabal build
+
+# Build only dependencies
+build-only-deps: check-hpack
+    cabal build --only-dependencies -j
+
+# Build backend executable (static)
+build-backend-static: check-hpack
+    cabal build backend-exe --enable-executable-static
+    cp "$(cabal list-bin backend-exe)" .
+
+# Build frontend executable (static)
+build-frontend-static: check-hpack
+    cabal build frontend-exe --enable-executable-static
+    cp "$(cabal list-bin frontend-exe)" .
+
+# Run tests
+test: check-hpack
+    cabal test --test-show-details=direct
+    # Uncomment the following lines to run specific tests for hedgehog
+    # --test-option=--match="" \
+    # --test-option=--seed=""
+
+# Run backend
+run-back: check-hpack
+    cabal run backend-exe
+
+# Run frontend
+run-front: check-hpack
+    cabal run frontend-exe

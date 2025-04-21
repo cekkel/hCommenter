@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE=haskell:9.10.1-slim-bullseye
+# NOTE: Please, occasionally check for the latest version of the base image
+ARG BASE_IMAGE=haskell:9.10.1-slim-bullseye@sha256:8bac50f7fb10b02f631ed1db17f953f722c47a7d6c8d137154d88a5b556c42d4
 
 FROM $BASE_IMAGE AS base
 WORKDIR /opt/hCommenter
@@ -19,17 +20,25 @@ WORKDIR /opt/hCommenter
 #     ghcup set cabal 3.12.1.0 && \
 #     cabal update
 
-# Install pkg-config (local) dependencies
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    zlib1g
+##
+## Dependency stage
+##
+
+# Install pkg-config (local) dependencies and other tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config zlib1g
+
+# Install 'just' (a makefile alternative). Not available in apt, so installing it manually
+COPY ./scripts/install_just.sh .
+RUN chmod +x ./install_just.sh \
+    && ./install_just.sh
 
 # Then install dependencies only first, to improve caching
-COPY ./Makefile .
+COPY ./justfile .
 COPY ./package.yaml .
 COPY ./cabal.* .
 COPY ./*.cabal .
-RUN cabal update && make build-only-deps
+RUN cabal update && just build-only-deps
 
 # Build app to speed up new compilations further.
 COPY . ./

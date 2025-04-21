@@ -5,7 +5,7 @@ WORKDIR /opt/hCommenter
 
 # Now build the app executable (it will be copied to current directory)
 COPY . ./
-RUN make build-backend-static
+RUN just build-backend-static
 
 #
 # FINAL SEPARATE IMAGE WITH JUST THE STATICALLY-LINKED EXECUTABLE
