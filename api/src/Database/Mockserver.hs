@@ -1,6 +1,6 @@
 module Database.Mockserver where
 
-import Database.Persist (Filter)
+import Database.Persist (Filter, selectList)
 import Database.Persist.Sql
   ( PersistQueryWrite (deleteWhere)
   , PersistStoreWrite (insertMany_)
@@ -53,11 +53,10 @@ initDevSqliteDB env = do
 
   runEff $ runLog env . ES.runReader ctx . runSqlPool $ withConn $ do
     runMigration migrateAll
-    -- Manually delete all data in database before refreshing with mock data.
-    deleteWhere ([] :: [Filter Comment]) -- Comments must go first due to FK constraint
-    deleteWhere ([] :: [Filter Conversation])
-    deleteWhere ([] :: [Filter User])
 
-    insertMany_ $ map snd $ M.toList $ mockComments ^. #convoStore
-    insertMany_ $ map snd $ M.toList $ mockComments ^. #userStore
-    insertMany_ $ map snd $ M.toList $ mockComments ^. #commentStore
+    comments <- selectList ([] :: [Filter Comment]) []
+
+    when (null comments) $ do
+      insertMany_ $ map snd $ M.toList $ mockComments ^. #convoStore
+      insertMany_ $ map snd $ M.toList $ mockComments ^. #userStore
+      insertMany_ $ map snd $ M.toList $ mockComments ^. #commentStore

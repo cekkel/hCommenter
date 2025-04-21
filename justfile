@@ -24,8 +24,8 @@ docker-build:
 
 # Run development environment
 dev:
-    docker compose --profile dev up --build
+    docker compose --profile dev up --watch
 
 # Run production environment
 prod:
-    docker compose --profile prod up --build
+    docker compose --profile prod up

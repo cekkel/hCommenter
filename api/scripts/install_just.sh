@@ -22,11 +22,8 @@ echo "$INSTALL_SHA256  $INSTALL_FILE" | sha256sum -c -
 echo "Installing Just version ${JUST_VERSION}..."
 JUST_INSTALL_VERSION=$JUST_VERSION bash "$INSTALL_FILE"
 
-echo "Adding executable to PATH..."
-export PATH="$PATH:$HOME/bin"
-
 echo "Moving to /usr/bin..."
-sudo mv "$HOME/bin/just" /usr/bin/just
+mv "$HOME/bin/just" /usr/bin/just
 
 echo "Installed Just version $(just --version)."
 echo "At $(which just)"

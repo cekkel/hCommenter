@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # NOTE: Please, occasionally check for the latest version of the base image
-ARG BASE_IMAGE=haskell:9.10.1-slim-bullseye@sha256:8bac50f7fb10b02f631ed1db17f953f722c47a7d6c8d137154d88a5b556c42d4
+ARG BASE_IMAGE=haskell:9.10.1-bullseye@sha256:63cc96fd6a57c345dc259881d20929839797677346cbfdd770b8504b9238f822
 
 FROM $BASE_IMAGE AS base
 WORKDIR /opt/hCommenter
@@ -33,6 +33,9 @@ COPY ./scripts/install_just.sh .
 RUN chmod +x ./install_just.sh \
     && ./install_just.sh
 
+# Install ghcid for use as a hot-reload tool.
+RUN cabal install ghcid --overwrite-policy=always
+
 # Then install dependencies only first, to improve caching
 COPY ./justfile .
 COPY ./package.yaml .
@@ -45,4 +48,5 @@ COPY . ./
 RUN cabal build
 
 # Allow use of base image for running tests
+# -c for executing commands properly
 ENTRYPOINT ["/bin/bash"]

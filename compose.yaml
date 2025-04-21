@@ -3,12 +3,26 @@ services:
   backend:
     build:
       context: api
-      dockerfile: deploy/run.Dockerfile
+      dockerfile: deploy/build.Dockerfile
+      args:
+        BASE_IMAGE: hcommenter:base
     ports:
       - "8080:8080"
     env_file:
       - .env
       - .env.local
+    entrypoint: ghcid -T EntryPoints.messageConsoleAndRun
+    develop:
+      watch:
+        - action: sync
+          path: ./api/src
+          target: /opt/hCommenter/src
+          ignore:
+            - dist-newstyle/
+
+        # Need to do a full rebuild if a dep changes.
+        - action: rebuild
+          path: hCommenter-Api.cabal
 
   frontend-dev:
     profiles: [dev]
@@ -17,6 +31,17 @@ services:
       target: dev
     ports:
       - "5173:5173"
+    develop:
+      watch:
+        - action: sync
+          path: ./spa
+          target: /app
+          ignore:
+            - node_modules/
+
+        # Need to do a full rebuild if a dep changes.
+        - action: rebuild
+          path: package.json
 
   frontend-prod:
     profiles: [prod]
