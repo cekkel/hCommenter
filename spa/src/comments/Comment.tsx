@@ -1,9 +1,7 @@
 import { Calendar, LinkIcon, PlayIcon, UserRoundPen } from "lucide-react";
-import { ViewComment } from "../api/model";
-import {
-  usePostCommentsIdDownvote,
-  usePostCommentsIdUpvote,
-} from "../api/generated/hCommenterAPI";
+import { ViewComment } from "../client";
+import { useMutation } from "@tanstack/react-query";
+import { postCommentsByIdDownvoteMutation, postCommentsByIdUpvoteMutation } from "../client/@tanstack/react-query.gen";
 
 interface CommentProps {
   comment: ViewComment;
@@ -11,17 +9,17 @@ interface CommentProps {
 }
 
 export const Comment = ({ comment, showUrl = false }: CommentProps) => {
-  const sendUpvote = usePostCommentsIdUpvote();
-  const sendDownvote = usePostCommentsIdDownvote();
+  const sendUpvote = useMutation({ ...postCommentsByIdUpvoteMutation() })
+  const sendDownvote = useMutation({ ...postCommentsByIdDownvoteMutation() })
 
   const upvote = () => {
     // Handle upvote logic here
-    sendUpvote.mutate({ id: comment.id });
+    sendUpvote.mutate({ path: { id: comment.id } });
     console.log("Upvoted comment with id:", comment.id);
   };
   const downvote = () => {
     // Handle downvote logic here
-    sendDownvote.mutate({ id: comment.id });
+    sendDownvote.mutate({ path: { id: comment.id } });
     console.log("Downvoted comment with id:", comment.id);
   };
   return (

@@ -1,5 +1,6 @@
-import { useGetCommentsUserUsername } from "../api/generated/hCommenterAPI";
+import { useQuery } from "@tanstack/react-query";
 import { Comment } from "./Comment";
+import { getCommentsUserByUsernameOptions } from "../client/@tanstack/react-query.gen";
 
 interface AuthorProps {
   username: string;
@@ -10,7 +11,7 @@ export const CommentsList = (props: AuthorProps) => {
     data: comments,
     isLoading,
     error,
-  } = useGetCommentsUserUsername(props.username);
+  } = useQuery({ ...getCommentsUserByUsernameOptions({ path: { username: props.username } }) });
 
   if (isLoading)
     return (

@@ -1,5 +1,6 @@
-import { useGetCommentsConversationConvoUrl } from "../api/generated/hCommenterAPI";
+import { useQuery } from "@tanstack/react-query";
 import { Comment } from "./Comment";
+import { getCommentsConversationByConvoUrlOptions } from "../client/@tanstack/react-query.gen";
 
 interface ConversationProps {
   convoUrl: string;
@@ -10,7 +11,13 @@ export const ConversationComments = (props: ConversationProps) => {
     data: comments,
     isLoading,
     error,
-  } = useGetCommentsConversationConvoUrl(props.convoUrl, { sortby: "Popular" });
+  } = useQuery({
+    ...getCommentsConversationByConvoUrlOptions(
+      {
+        path: { convoUrl: props.convoUrl },
+        query: { sortby: "Popular" }
+      })
+  });
 
   if (isLoading)
     return (
