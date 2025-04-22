@@ -34,14 +34,14 @@ RUN chmod +x ./install_just.sh \
     && ./install_just.sh
 
 # Install ghcid for use as a hot-reload tool.
-RUN cabal install ghcid --overwrite-policy=always
+RUN cabal update && cabal install ghcid --overwrite-policy=always
 
 # Then install dependencies only first, to improve caching
 COPY ./justfile .
 COPY ./package.yaml .
 COPY ./cabal.* .
 COPY ./*.cabal .
-RUN cabal update && just build-only-deps
+RUN just build-only-deps
 
 # Build app to speed up new compilations further.
 COPY . ./
