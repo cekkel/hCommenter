@@ -22,7 +22,20 @@ services:
 
         # Need to do a full rebuild if a dep changes.
         - action: rebuild
-          path: hCommenter-Api.cabal
+          path: ./api/hCommenter-Api.cabal
+
+  # This is not present in prod - we use APIM instead.
+  # However, we need it localhost to add cors headers (otherwise spa breaks)
+  reverse-proxy:
+    build: ./proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    develop:
+      watch:
+        - action: rebuild
+          path: ./proxy/nginx.conf
 
   frontend-dev:
     profiles: [dev]
@@ -41,7 +54,7 @@ services:
 
         # Need to do a full rebuild if a dep changes.
         - action: rebuild
-          path: package.json
+          path: ./spa/package.json
 
   frontend-prod:
     profiles: [prod]
