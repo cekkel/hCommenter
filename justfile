@@ -24,8 +24,8 @@ rebuild-base-image:
 
 # Run development environment
 dev:
-    docker compose --profile dev up --watch
+    docker compose --profile dev up --watch --remove-orphans --build
 
 # Run production environment
 prod:
-    docker compose --profile prod up
+    docker compose --profile prod up --build --remove-orphans
