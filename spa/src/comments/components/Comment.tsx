@@ -3,6 +3,7 @@ import { ViewComment } from "../../client";
 import { useMutation } from "@tanstack/react-query";
 import { postCommentsByIdDownvoteMutation, postCommentsByIdUpvoteMutation } from "../../client/@tanstack/react-query.gen";
 import { NewComment } from "./NewComment";
+import { Button } from "react-aria-components";
 
 interface CommentProps {
   comment: ViewComment;
@@ -28,20 +29,20 @@ export const Comment = ({ comment, showUrl = false }: CommentProps) => {
       <div className="absolute top-4 right-4 flex items-center space-x-2 text-sm text-gray-500">
         <span className="text-lg">{comment.score}</span>
         <div className="flex flex-col">
-          <button onClick={upvote} className="cursor-pointer">
+          <Button onPress={upvote} className="cursor-pointer">
             <PlayIcon
               className="fill-blue-500 h-5 w-5 -mb-1.5 rotate-270 hover:fill-blue-800 active:stroke-2 stroke-blue-800 transition-all"
               size={24}
               strokeWidth={0}
             />
-          </button>
-          <button onClick={downvote} className="cursor-pointer">
+          </Button>
+          <Button onPress={downvote} className="cursor-pointer">
             <PlayIcon
               className="fill-red-400 h-5 w-5 rotate-90 hover:fill-red-800 active:stroke-2 stroke-red-800 transition-all"
               size={24}
               strokeWidth={0}
             />
-          </button>
+          </Button>
         </div>
       </div>
       <p className="text-gray-800 text-lg mb-4">{comment.message}</p>
