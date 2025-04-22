@@ -2,6 +2,7 @@ import { Calendar, LinkIcon, PlayIcon, UserRoundPen } from "lucide-react";
 import { ViewComment } from "../../client";
 import { useMutation } from "@tanstack/react-query";
 import { postCommentsByIdDownvoteMutation, postCommentsByIdUpvoteMutation } from "../../client/@tanstack/react-query.gen";
+import { NewComment } from "./NewComment";
 
 interface CommentProps {
   comment: ViewComment;
@@ -82,6 +83,7 @@ export const Comment = ({ comment, showUrl = false }: CommentProps) => {
           />
           <span>{new Date(comment.created).toLocaleDateString()}</span>
         </div>
+        <NewComment convoUrl={comment.conversationUrl} author={comment.authorName} parentId={comment.id} />
       </div>
     </div>
   );
