@@ -95,7 +95,7 @@ jobs:
         with:
           image: ${{ steps.construct_tags.outputs.base_image_tag }}
           options: --env-file .env
-          run: make test-ci
+          run: just test
 
       # Now actually create the API image.
       - name: "Build and push: API full image"

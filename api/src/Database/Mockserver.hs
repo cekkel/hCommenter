@@ -1,12 +1,7 @@
 module Database.Mockserver where
 
 import Database.Persist (Filter, selectList)
-import Database.Persist.Sql
-  ( PersistQueryWrite (deleteWhere)
-  , PersistStoreWrite (insertMany_)
-  , runMigration
-  , toSqlKey
-  )
+import Database.Persist.Sql (PersistStoreWrite (insertMany_), runMigration, toSqlKey)
 import Effectful (runEff)
 import Optics
 
