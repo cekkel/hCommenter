@@ -78,8 +78,8 @@ jobs:
       - name: "Build and push: API base"
         uses: docker/build-push-action@v6
         with:
-          context: hCommenter.Api/
-          file: hCommenter.Api/deploy/build.Dockerfile
+          context: api/
+          file: api/deploy/build.Dockerfile
           # Unless explicitly requested, just build the new base from the old one.
           build-args: >
             BASE_IMAGE=${{ github.event.inputs.rebuild_api_base
@@ -101,8 +101,8 @@ jobs:
       - name: "Build and push: API full image"
         uses: docker/build-push-action@v6
         with:
-          context: hCommenter.Api/
-          file: hCommenter.Api/deploy/run.Dockerfile
+          context: api/
+          file: api/deploy/run.Dockerfile
           build-args: BASE_IMAGE=${{ steps.construct_tags.outputs.base_image_tag }}
           push: true
           tags: ${{ steps.construct_tags.outputs.full_image_tag }}
