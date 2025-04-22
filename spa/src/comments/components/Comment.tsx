@@ -1,7 +1,7 @@
 import { Calendar, LinkIcon, PlayIcon, UserRoundPen } from "lucide-react";
-import { ViewComment } from "../client";
+import { ViewComment } from "../../client";
 import { useMutation } from "@tanstack/react-query";
-import { postCommentsByIdDownvoteMutation, postCommentsByIdUpvoteMutation } from "../client/@tanstack/react-query.gen";
+import { postCommentsByIdDownvoteMutation, postCommentsByIdUpvoteMutation } from "../../client/@tanstack/react-query.gen";
 
 interface CommentProps {
   comment: ViewComment;

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CommentsList } from "./comments/AuthorComments";
+import { AuthorComments } from "./comments/AuthorComments";
 import { ConversationComments } from "./comments/ConversationComments";
 import { useState } from "react";
 import { SearchForm } from "./components/SearchForm";
@@ -34,7 +34,7 @@ const App = () => {
           placeholder="Enter username..."
         />
 
-        <CommentsList username={username} />
+        <AuthorComments username={username} />
 
         <SearchForm
           title="Search by Conversation URL"
