@@ -65,6 +65,7 @@ library
         src
     default-extensions:
         OverloadedStrings
+        NamedDefaults
         TypeFamilies
         NoMonomorphismRestriction
         AllowAmbiguousTypes
@@ -77,7 +78,7 @@ library
         PyF,
         aeson,
         aeson-pretty,
-        base ==4.20.*,
+        base ==4.21.*,
         bytestring,
         classy-prelude,
         containers,
@@ -121,6 +122,7 @@ executable backend-exe
         app/backend
     default-extensions:
         OverloadedStrings
+        NamedDefaults
         TypeFamilies
         NoMonomorphismRestriction
         AllowAmbiguousTypes
@@ -133,7 +135,7 @@ executable backend-exe
         PyF,
         aeson,
         aeson-pretty,
-        base ==4.20.*,
+        base ==4.21.*,
         bytestring,
         classy-prelude,
         containers,
@@ -178,6 +180,7 @@ executable frontend-exe
         app/frontend
     default-extensions:
         OverloadedStrings
+        NamedDefaults
         TypeFamilies
         NoMonomorphismRestriction
         AllowAmbiguousTypes
@@ -190,7 +193,7 @@ executable frontend-exe
         PyF,
         aeson,
         aeson-pretty,
-        base ==4.20.*,
+        base ==4.21.*,
         bytestring,
         classy-prelude,
         containers,
@@ -239,6 +242,7 @@ test-suite spec
         test
     default-extensions:
         OverloadedStrings
+        NamedDefaults
         TypeFamilies
         NoMonomorphismRestriction
         AllowAmbiguousTypes
@@ -254,7 +258,7 @@ test-suite spec
         PyF,
         aeson,
         aeson-pretty,
-        base ==4.20.*,
+        base ==4.21.*,
         bytestring,
         classy-prelude,
         containers,

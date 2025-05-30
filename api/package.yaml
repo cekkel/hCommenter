@@ -23,6 +23,7 @@ language: GHC2024
 
 default-extensions:
   - OverloadedStrings
+  - NamedDefaults
   - TypeFamilies
   - NoMonomorphismRestriction
   - AllowAmbiguousTypes
@@ -33,7 +34,7 @@ default-extensions:
 
 dependencies:
   - name: base
-    version: "^>= 4.20"
+    version: "^>= 4.21"
     mixin:
       - hiding (Prelude)
   - name: classy-prelude
