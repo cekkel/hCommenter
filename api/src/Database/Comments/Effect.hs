@@ -25,6 +25,7 @@ import Database.Esqueleto.Experimental
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import PyF (fmt)
+import UnliftIO (catchAny)
 
 import Database.Persist qualified as P
 import Effectful.Error.Static qualified as ES
@@ -101,7 +102,7 @@ getCommentsWhere
   => SortBy
   -> (SqlExpr (P.Entity Comment) -> SqlExpr (Value Bool))
   -> ReaderT SqlBackend m [ViewComment]
-getCommentsWhere sortMethod condition = (map . map) mapFrom $
+getCommentsWhere sortMethod condition = (fmap . fmap) mapFrom $
   select $
     do
       comments <- from $ table @Comment

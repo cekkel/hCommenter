@@ -3,8 +3,6 @@
 
 module ApiRules.Wai where
 
-import Data.Data (Proxy (Proxy))
-import Data.Function ((&))
 import Data.Maybe (fromJust)
 import Hedgehog
 import Hedgehog.Servant

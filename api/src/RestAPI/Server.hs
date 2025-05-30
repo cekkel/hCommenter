@@ -20,9 +20,8 @@ import Effectful (Eff)
 import Network.Wai.Handler.Warp (defaultSettings, runSettings, setOnException, setPort)
 import Optics
 import PyF (fmt)
-import Servant (Application, Context (EmptyContext, (:.)), Proxy (..), Server, hoistServer, serveWithContext, type (:<|>) (..))
+import Servant (Application, Context (EmptyContext, (:.)), Server, hoistServer, serveWithContext, type (:<|>) (..))
 import Servant.Swagger (HasSwagger (toSwagger))
-import Prelude hiding (Handler)
 
 import Database.Mockserver (initDevSqliteDB)
 import Middleware.Combined (addCustomMiddleware)

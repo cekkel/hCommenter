@@ -5,7 +5,6 @@ module RestAPI.EffectInjection (effToHandler) where
 
 import Control.Monad.Trans.Except (except)
 import Effectful (Eff, IOE, runEff)
-import Effectful.Error.Static (CallStack)
 import PyF (fmt)
 import Servant
   ( Handler (Handler)
@@ -14,7 +13,6 @@ import Servant
   , err404
   , err500
   )
-import Prelude hiding (Handler)
 
 import Data.Aeson qualified as JSON
 

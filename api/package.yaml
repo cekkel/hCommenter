@@ -37,9 +37,9 @@ dependencies:
     version: "^>= 4.21"
     mixin:
       - hiding (Prelude)
-  - name: classy-prelude
+  - name: my-prelude
     mixin:
-      - (ClassyPrelude as Prelude)
+      - (MyPrelude as Prelude)
   - extra
   - time
   - servant
@@ -57,6 +57,7 @@ dependencies:
   - aeson-pretty
   - containers
   - transformers
+  - unliftio
   - effectful
   - effectful-core
   - effectful-th
@@ -75,6 +76,23 @@ dependencies:
   - unordered-containers
   - text
   - uuid
+
+# Hack to be able to use cabal mixins to use custom prelude automatically.
+internal-libraries:
+  my-prelude:
+    default-extensions: NoImplicitPrelude
+    source-dirs: prelude
+    exposed-modules: MyPrelude
+    verbatim:
+      build-depends: PyF,
+        aeson,
+        aeson-pretty,
+        base ==4.21.*,
+        relude,
+        text,
+        extra,
+        time
+      mixins: base hiding (Prelude)
 
 library:
   source-dirs: src

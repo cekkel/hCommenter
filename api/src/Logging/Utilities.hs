@@ -12,7 +12,6 @@ import Data.Aeson (Object, Value, object)
 import Effectful (Eff, (:>))
 import Effectful.Dispatch.Static (unsafeEff_)
 import Katip
-import Prelude hiding (log, singleton)
 
 import Logging.LogContext (LogField, logFieldToObjectPairs)
 import Logging.LogEffect

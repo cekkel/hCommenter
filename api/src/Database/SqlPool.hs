@@ -15,7 +15,6 @@ import Effectful
 import Effectful.Dispatch.Dynamic (interpret, localSeqUnliftIO)
 import Effectful.TH (makeEffect)
 import Optics
-import Prelude hiding (Reader, ask)
 
 import Effectful.Reader.Static qualified as ES
 

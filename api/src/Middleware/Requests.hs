@@ -27,7 +27,7 @@ getCorrelationId req = do
   let
     headers = requestHeaders req
 
-  decodeUtf8 . snd <$> find (\(name, _) -> name == correlationIDHeaderName) headers
+  decodeUtf8 @Text . snd <$> find (\(name, _) -> name == correlationIDHeaderName) headers
 
 addCorrelationIdIfMissing :: Env -> Request -> IO (Request, Text)
 addCorrelationIdIfMissing env req = do
@@ -58,7 +58,7 @@ logRequest env correlationId req = do
       [fmt|STARTING REQUEST: {method} {path}|]
  where
   method = requestMethod req
-  path = decodeUtf8 $ rawPathInfo req
+  path = decodeUtf8 @Text $ rawPathInfo req
 
 logResponse :: Env -> Text -> Response -> IO Response
 logResponse env correlationId response = do
@@ -90,4 +90,4 @@ getResponseContent response =
     extractContentWith $ \f -> do
       content <- newIORef mempty
       f (\chunk -> modifyIORef' content (<> chunk)) (return ())
-      decodeUtf8 . toStrict . toLazyByteString <$> readIORef content
+      decodeUtf8 @Text . toStrict . toLazyByteString <$> readIORef content

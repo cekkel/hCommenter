@@ -3,7 +3,6 @@
 module ApiRules.HttpClient where
 
 import Control.Concurrent (forkIO)
-import Data.Data (Proxy (Proxy))
 import Data.Maybe (fromJust)
 import Hedgehog
 import Hedgehog.Servant

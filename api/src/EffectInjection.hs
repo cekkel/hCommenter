@@ -3,10 +3,9 @@
 module EffectInjection (runSharedEffects, SharedEffectsPlus) where
 
 import Effectful (Eff, IOE)
-import Effectful.Error.Static (CallStack, Error, runError)
+import Effectful.Error.Static (Error, runError)
 import Optics
 import PyF (fmt)
-import Prelude hiding (Handler)
 
 import Effectful qualified as E
 import Effectful.Error.Static qualified as ES

@@ -7,6 +7,7 @@ module Utils.Environment (LoggingConf, Env (..), readEnv) where
 import Control.Monad.Logger (LoggingT, MonadLoggerIO)
 import Data.Pool (Pool)
 import Database.Persist.Sqlite (SqlBackend, createSqlitePool)
+import Effectful (MonadUnliftIO)
 import Optics
 import System.Environment (getEnv)
 
@@ -32,8 +33,8 @@ readEnv :: IO Env
 readEnv = do
   appName <- pack <$> getEnv "APP__NAME"
   envName <- pack <$> getEnv "APP__ENVIRONMENT"
-  mPort <- readMay <$> getEnv "APP__PORT"
-  mBackend <- readMay <$> getEnv "APP__BACKEND"
+  mPort <- readMaybe <$> getEnv "APP__PORT"
+  mBackend <- readMaybe <$> getEnv "APP__BACKEND"
 
   let
     backend = fromMaybe (error "Backend provided in 'APP__BACKEND' is missing or invalid") mBackend

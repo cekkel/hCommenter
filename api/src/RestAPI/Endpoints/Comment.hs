@@ -21,7 +21,6 @@ import Servant
   , type (:<|>) (..)
   , type (:>)
   )
-import Prelude hiding (Handler, log, sortBy)
 
 import Effectful qualified as E
 

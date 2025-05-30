@@ -28,7 +28,6 @@ import Effectful.Dispatch.Static
 import Katip
 import Optics
 import PyF (PyFCategory (PyFString), PyFClassify)
-import Prelude hiding (log, singleton)
 
 import Utils.Environment
 

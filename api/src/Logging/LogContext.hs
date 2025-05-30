@@ -1,7 +1,6 @@
 module Logging.LogContext (LogField (..), logFieldToObjectPairs) where
 
 import Data.Aeson.Types (Pair, (.=))
-import Effectful.Error.Static (CallStack)
 import Network.HTTP.Types (Method, Status (statusCode))
 
 import Utils.Error (CustomError)
@@ -28,7 +27,7 @@ logFieldToObjectPairs = \case
   ParentId txt -> ["ParentId" .= txt]
   Username txt -> ["Username" .= txt]
   Note txt -> ["Note" .= txt]
-  RequestMethod method -> ["Method" .= decodeUtf8 method]
+  RequestMethod method -> ["Method" .= decodeUtf8 @Text method]
   RequestPath path -> ["Path" .= path]
   ResponseBody content -> ["ResponseBody" .= content]
   StatusCode status -> ["StatusCode" .= tshow (statusCode status)]

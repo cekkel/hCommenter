@@ -80,7 +80,6 @@ library
         aeson-pretty,
         base ==4.21.*,
         bytestring,
-        classy-prelude,
         containers,
         effectful,
         effectful-core,
@@ -95,6 +94,7 @@ library
         http-types,
         katip,
         monad-logger,
+        my-prelude,
         optics,
         persistent,
         persistent-sqlite,
@@ -107,13 +107,35 @@ library
         text,
         time,
         transformers,
+        unliftio,
         unordered-containers,
         uuid,
         wai,
         warp
     mixins:
         base hiding (Prelude),
-        classy-prelude (ClassyPrelude as Prelude)
+        my-prelude (MyPrelude as Prelude)
+    default-language: GHC2024
+
+library my-prelude
+    exposed-modules:
+        MyPrelude
+    hs-source-dirs:
+        prelude
+    default-extensions:
+        OverloadedStrings
+        NamedDefaults
+        TypeFamilies
+        NoMonomorphismRestriction
+        AllowAmbiguousTypes
+        DuplicateRecordFields
+        OverloadedLabels
+        RecordWildCards
+        MultiWayIf
+        NoImplicitPrelude
+    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
+    build-depends: PyF, aeson, aeson-pretty, base ==4.21.*, relude, text, extra, time
+    mixins: base hiding (Prelude)
     default-language: GHC2024
 
 executable backend-exe
@@ -137,7 +159,6 @@ executable backend-exe
         aeson-pretty,
         base ==4.21.*,
         bytestring,
-        classy-prelude,
         containers,
         effectful,
         effectful-core,
@@ -153,6 +174,7 @@ executable backend-exe
         http-types,
         katip,
         monad-logger,
+        my-prelude,
         optics,
         persistent,
         persistent-sqlite,
@@ -165,13 +187,14 @@ executable backend-exe
         text,
         time,
         transformers,
+        unliftio,
         unordered-containers,
         uuid,
         wai,
         warp
     mixins:
         base hiding (Prelude),
-        classy-prelude (ClassyPrelude as Prelude)
+        my-prelude (MyPrelude as Prelude)
     default-language: GHC2024
 
 executable frontend-exe
@@ -195,7 +218,6 @@ executable frontend-exe
         aeson-pretty,
         base ==4.21.*,
         bytestring,
-        classy-prelude,
         containers,
         effectful,
         effectful-core,
@@ -211,6 +233,7 @@ executable frontend-exe
         http-types,
         katip,
         monad-logger,
+        my-prelude,
         optics,
         persistent,
         persistent-sqlite,
@@ -223,13 +246,14 @@ executable frontend-exe
         text,
         time,
         transformers,
+        unliftio,
         unordered-containers,
         uuid,
         wai,
         warp
     mixins:
         base hiding (Prelude),
-        classy-prelude (ClassyPrelude as Prelude)
+        my-prelude (MyPrelude as Prelude)
     default-language: GHC2024
 
 test-suite spec
@@ -260,7 +284,6 @@ test-suite spec
         aeson-pretty,
         base ==4.21.*,
         bytestring,
-        classy-prelude,
         containers,
         effectful,
         effectful-core,
@@ -282,6 +305,7 @@ test-suite spec
         katip,
         mockery,
         monad-logger,
+        my-prelude,
         optics,
         persistent,
         persistent-sqlite,
@@ -295,6 +319,7 @@ test-suite spec
         text,
         time,
         transformers,
+        unliftio,
         unordered-containers,
         uuid,
         wai,
@@ -302,5 +327,5 @@ test-suite spec
         warp
     mixins:
         base hiding (Prelude),
-        classy-prelude (ClassyPrelude as Prelude)
+        my-prelude (MyPrelude as Prelude)
     default-language: GHC2024

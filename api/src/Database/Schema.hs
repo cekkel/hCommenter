@@ -21,6 +21,7 @@ import Data.Swagger
   , defaultSchemaOptions
   , genericDeclareNamedSchema
   )
+import Data.Time.Clock (getCurrentTime)
 import Database.Persist
   ( PersistCore (BackendKey)
   , PersistEntity (Key)
@@ -43,7 +44,6 @@ import Katip
 import Optics
 import PyF (PyFCategory (PyFString), PyFClassify)
 import Web.HttpApiData
-import Prelude hiding (Handler, singleton, sortBy)
 
 data Backend
   = LocalFile
@@ -140,7 +140,9 @@ instance ToSchema NewComment where
 
 instance FromHttpApiData NewComment where
   parseQueryParam :: Text -> Either Text NewComment
-  parseQueryParam = maybe (Left "Comment not formatted correctly") Right . readMay
+  parseQueryParam =
+    maybe (Left "Comment not formatted correctly") Right
+      . readMay
 
 instance ToObject Comment
 
@@ -170,7 +172,9 @@ instance ToParamSchema SortBy
 
 instance FromHttpApiData SortBy where
   parseQueryParam :: Text -> Either Text SortBy
-  parseQueryParam = maybe (Left "Invalid sorting method") Right . readMay
+  parseQueryParam =
+    maybe (Left "Invalid sorting method") Right
+      . readMay
 
 mkComment
   :: Text

@@ -7,13 +7,14 @@ module Logging.Scribes.Grafana where
 
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Time (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types (statusIsSuccessful)
 import Optics
 import PyF (fmt)
-import Servant (Header, JSON, NoContent (..), Post, Proxy (Proxy), ReqBody, (:>))
+import Servant (Header, JSON, NoContent (..), Post, ReqBody, (:>))
 import Servant.Client
   ( BaseUrl (..)
   , ClientEnv
@@ -48,7 +49,7 @@ readGrafanaConf = do
   httpManager <- newManager tlsManagerSettings
 
   let
-    enableDebugLogs = (== "true") . toLower $ enableDebugLogs'
+    enableDebugLogs = (== "true") . toLower . pack $ enableDebugLogs'
     authToken = [fmt|Bearer {grafanaAccountNum}:{grafanaToken}|]
     httpClientEnv =
       mkClientEnv
@@ -167,10 +168,11 @@ data StreamInfo = StreamInfo
 
 -- | Convert all fields in an object to text. Needed because Loki only accepts string values for fields.
 allFieldsText :: Object -> Object
-allFieldsText = AK.map toText
+allFieldsText = AK.map fieldToText
  where
-  toText :: Value -> Value
-  toText (A.String t) = A.String t
-  toText (A.Number n) = A.String $ tshow n
-  toText (A.Bool b) = A.String $ tshow b
-  toText _ = A.String "unknown"
+  fieldToText :: Value -> Value
+  fieldToText = \case
+    A.String t -> A.String t
+    A.Number n -> A.String $ tshow n
+    A.Bool b -> A.String $ tshow b
+    _ -> A.String "unknown"

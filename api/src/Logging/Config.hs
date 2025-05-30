@@ -38,7 +38,7 @@ getConsoleScribe severity = mkHandleScribe ColorIfTerminal stdout (permitItem se
 readLoggingConf :: Text -> Text -> IO LoggingConf
 readLoggingConf appName envName = do
   severity <- fromMaybe InfoS . K.textToSeverity . pack <$> getEnv "LOGGING__SEVERITY"
-  verbosity <- fromMaybe V3 . readMay <$> getEnv "LOGGING__VERBOSITY"
+  verbosity <- fromMaybe V3 . readMaybe <$> getEnv "LOGGING__VERBOSITY"
 
   let
     component' = Namespace [appName]

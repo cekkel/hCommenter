@@ -10,7 +10,6 @@ import Servant
   , ErrorFormatters (bodyParserErrorFormatter, notFoundErrorFormatter)
   , JSON
   , NotFoundErrorFormatter
-  , Proxy (Proxy)
   , ServerError (errBody, errHeaders)
   , defaultErrorFormatters
   , err400
@@ -30,7 +29,7 @@ customFormatter :: ErrorFormatter
 customFormatter tr req err =
   let
     -- aeson Value which will be sent to the client
-    value = object ["combinator" .= show tr, "error" .= err]
+    value = object ["combinator" .= tshow tr, "error" .= err]
     -- Accept header of the request
     accH = getAcceptHeader req
   in
