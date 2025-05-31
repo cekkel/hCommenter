@@ -80,11 +80,11 @@ jobs:
         with:
           context: api/
           file: api/deploy/build.Dockerfile
-          # Unless explicitly requested, just build the new base from the old one.
+          # Only use the default base image (which would cause a full rebuild) if explicitly requested.
           build-args: >
-            BASE_IMAGE=${{ github.event.inputs.rebuild_api_base
-            && 'haskell:9.10.1-slim-bullseye'
-            || steps.construct_tags.outputs.base_image_tag }}
+            ${{ github.event.inputs.rebuild_api_base
+            && ''
+            || format('BASE_IMAGE={0}', steps.construct_tags.outputs.base_image_tag) }}
           push: true
           tags: ${{ steps.construct_tags.outputs.base_image_tag }}
           cache-from: type=gha
