@@ -1,6 +1,7 @@
 with-compiler: ghc-9.12.2
 packages: ./*.cabal
 tests: True
+multi-repl: True
 
 -- Old package, has old deps. OK since this is just a package for testing.
 allow-newer: hedgehog-servant:all

@@ -4,328 +4,325 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 
-name:               hCommenter-Api
-version:            0.1.0
-synopsis:           Backend & experimental frontend for a generic commenting system.
-description:        N/A
-author:             Charles Taylor <mail@charlesekkel.me>
-maintainer:         Charles Taylor <mail@charlesekkel.me>
-license:            MIT
-category:           Web
-homepage:           https://github.com/cekkel/hCommenter#readme
-bug-reports:        https://github.com/cekkel/hCommenter/issues
-build-type:         Simple
+name:           hCommenter-Api
+version:        0.1.0
+synopsis:       Backend & experimental frontend for a generic commenting system.
+description:    N/A
+category:       Web
+homepage:       https://github.com/cekkel/hCommenter#readme
+bug-reports:    https://github.com/cekkel/hCommenter/issues
+author:         Charles Taylor <mail@charlesekkel.me>
+maintainer:     Charles Taylor <mail@charlesekkel.me>
+license:        MIT
+build-type:     Simple
 extra-doc-files:
     README.md
 
 source-repository head
-    type: git
-    location: https://github.com/cekkel/hCommenter
+  type: git
+  location: https://github.com/cekkel/hCommenter
 
 library
-    exposed-modules:
-        Database.Authors.Effect
-        Database.Authors.Interface
-        Database.Comments.Effect
-        Database.Comments.Interface
-        Database.Conversations.Effect
-        Database.Conversations.Interface
-        Database.LocalStorage
-        Database.Mockserver
-        Database.Schema
-        Database.SqlPool
-        EffectInjection
-        EntryPoints
-        Frontend.Server
-        Logging.Config
-        Logging.LogContext
-        Logging.LogEffect
-        Logging.Scribes.Grafana
-        Logging.Utilities
-        Mapping.Comments
-        Mapping.ExternalTypes
-        Mapping.Typeclass
-        Middleware.Combined
-        Middleware.Exceptions
-        Middleware.Headers
-        Middleware.Requests
-        Middleware.ServantErrorFormatters
-        RestAPI.EffectInjection
-        RestAPI.Endpoints.Comment
-        RestAPI.Endpoints.Health
-        RestAPI.Endpoints.Swagger
-        RestAPI.Endpoints.Voting
-        RestAPI.Server
-        RestAPI.ServerTypes
-        Utils.Environment
-        Utils.Error
-        Utils.Generators
-        Utils.RequestContext
-    hs-source-dirs:
-        src
-    default-extensions:
-        OverloadedStrings
-        NamedDefaults
-        TypeFamilies
-        NoMonomorphismRestriction
-        AllowAmbiguousTypes
-        DuplicateRecordFields
-        OverloadedLabels
-        RecordWildCards
-        MultiWayIf
-    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror -fplugin=Effectful.Plugin
-    build-depends:
-        PyF,
-        aeson,
-        aeson-pretty,
-        base ==4.21.*,
-        bytestring,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        esqueleto,
-        extra,
-        hedgehog,
-        http-api-data,
-        http-client,
-        http-client-tls,
-        http-types,
-        katip,
-        monad-logger,
-        my-prelude,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant,
-        servant-client,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        text,
-        time,
-        transformers,
-        unliftio,
-        unordered-containers,
-        uuid,
-        wai,
-        warp
-    mixins:
-        base hiding (Prelude),
-        my-prelude (MyPrelude as Prelude)
-    default-language: GHC2024
+  exposed-modules:
+      Database.Authors.Effect
+      Database.Authors.Interface
+      Database.Comments.Effect
+      Database.Comments.Interface
+      Database.Conversations.Effect
+      Database.Conversations.Interface
+      Database.LocalStorage
+      Database.Mockserver
+      Database.Schema
+      Database.SqlPool
+      EffectInjection
+      EntryPoints
+      Frontend.Server
+      Logging.Config
+      Logging.LogContext
+      Logging.LogEffect
+      Logging.Scribes.Grafana
+      Logging.Utilities
+      Mapping.Comments
+      Mapping.ExternalTypes
+      Mapping.Typeclass
+      Middleware.Combined
+      Middleware.Exceptions
+      Middleware.Headers
+      Middleware.Requests
+      Middleware.ServantErrorFormatters
+      RestAPI.EffectInjection
+      RestAPI.Endpoints.Comment
+      RestAPI.Endpoints.Health
+      RestAPI.Endpoints.Swagger
+      RestAPI.Endpoints.Voting
+      RestAPI.Server
+      RestAPI.ServerTypes
+      Utils.Environment
+      Utils.Error
+      Utils.Generators
+      Utils.RequestContext
+  hs-source-dirs:
+      src
+  default-extensions:
+      OverloadedStrings
+      NamedDefaults
+      TypeFamilies
+      NoMonomorphismRestriction
+      AllowAmbiguousTypes
+      DuplicateRecordFields
+      OverloadedLabels
+      RecordWildCards
+      MultiWayIf
+  ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror -fplugin=Effectful.Plugin
+  build-depends:
+      PyF
+    , aeson
+    , aeson-pretty
+    , base ==4.21.*
+    , bytestring
+    , containers
+    , effectful
+    , effectful-core
+    , effectful-plugin
+    , effectful-th
+    , esqueleto
+    , extra
+    , hedgehog
+    , http-api-data
+    , http-client
+    , http-client-tls
+    , http-types
+    , katip
+    , monad-logger
+    , my-prelude
+    , optics
+    , persistent
+    , persistent-sqlite
+    , resource-pool
+    , servant
+    , servant-client
+    , servant-server
+    , servant-swagger
+    , swagger2
+    , text
+    , time
+    , transformers
+    , unliftio
+    , unordered-containers
+    , uuid
+    , wai
+    , warp
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2024
 
 library my-prelude
-    exposed-modules:
-        MyPrelude
-    hs-source-dirs:
-        prelude
-    default-extensions:
-        OverloadedStrings
-        NamedDefaults
-        TypeFamilies
-        NoMonomorphismRestriction
-        AllowAmbiguousTypes
-        DuplicateRecordFields
-        OverloadedLabels
-        RecordWildCards
-        MultiWayIf
-        NoImplicitPrelude
-    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
-    build-depends: PyF, aeson, aeson-pretty, base ==4.21.*, relude, text, extra, time
-    mixins: base hiding (Prelude)
-    default-language: GHC2024
+  exposed-modules:
+      Prelude
+  hs-source-dirs:
+      my-prelude
+  default-extensions:
+      OverloadedStrings
+      NamedDefaults
+      TypeFamilies
+      NoMonomorphismRestriction
+      AllowAmbiguousTypes
+      DuplicateRecordFields
+      OverloadedLabels
+      RecordWildCards
+      MultiWayIf
+      NoImplicitPrelude
+  ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2024
+  build-depends: PyF, aeson, aeson-pretty, base ==4.21.*, relude, text, extra, time
 
 executable backend-exe
-    main-is: Main.hs
-    hs-source-dirs:
-        app/backend
-    default-extensions:
-        OverloadedStrings
-        NamedDefaults
-        TypeFamilies
-        NoMonomorphismRestriction
-        AllowAmbiguousTypes
-        DuplicateRecordFields
-        OverloadedLabels
-        RecordWildCards
-        MultiWayIf
-    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
-    build-depends:
-        PyF,
-        aeson,
-        aeson-pretty,
-        base ==4.21.*,
-        bytestring,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        esqueleto,
-        extra,
-        hCommenter-Api,
-        hedgehog,
-        http-api-data,
-        http-client,
-        http-client-tls,
-        http-types,
-        katip,
-        monad-logger,
-        my-prelude,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant,
-        servant-client,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        text,
-        time,
-        transformers,
-        unliftio,
-        unordered-containers,
-        uuid,
-        wai,
-        warp
-    mixins:
-        base hiding (Prelude),
-        my-prelude (MyPrelude as Prelude)
-    default-language: GHC2024
+  main-is: Main.hs
+  hs-source-dirs:
+      app/backend
+  default-extensions:
+      OverloadedStrings
+      NamedDefaults
+      TypeFamilies
+      NoMonomorphismRestriction
+      AllowAmbiguousTypes
+      DuplicateRecordFields
+      OverloadedLabels
+      RecordWildCards
+      MultiWayIf
+  ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
+  build-depends:
+      PyF
+    , aeson
+    , aeson-pretty
+    , base ==4.21.*
+    , bytestring
+    , containers
+    , effectful
+    , effectful-core
+    , effectful-plugin
+    , effectful-th
+    , esqueleto
+    , extra
+    , hCommenter-Api
+    , hedgehog
+    , http-api-data
+    , http-client
+    , http-client-tls
+    , http-types
+    , katip
+    , monad-logger
+    , my-prelude
+    , optics
+    , persistent
+    , persistent-sqlite
+    , resource-pool
+    , servant
+    , servant-client
+    , servant-server
+    , servant-swagger
+    , swagger2
+    , text
+    , time
+    , transformers
+    , unliftio
+    , unordered-containers
+    , uuid
+    , wai
+    , warp
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2024
 
 executable frontend-exe
-    main-is: Main.hs
-    hs-source-dirs:
-        app/frontend
-    default-extensions:
-        OverloadedStrings
-        NamedDefaults
-        TypeFamilies
-        NoMonomorphismRestriction
-        AllowAmbiguousTypes
-        DuplicateRecordFields
-        OverloadedLabels
-        RecordWildCards
-        MultiWayIf
-    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
-    build-depends:
-        PyF,
-        aeson,
-        aeson-pretty,
-        base ==4.21.*,
-        bytestring,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        esqueleto,
-        extra,
-        hCommenter-Api,
-        hedgehog,
-        http-api-data,
-        http-client,
-        http-client-tls,
-        http-types,
-        katip,
-        monad-logger,
-        my-prelude,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant,
-        servant-client,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        text,
-        time,
-        transformers,
-        unliftio,
-        unordered-containers,
-        uuid,
-        wai,
-        warp
-    mixins:
-        base hiding (Prelude),
-        my-prelude (MyPrelude as Prelude)
-    default-language: GHC2024
+  main-is: Main.hs
+  hs-source-dirs:
+      app/frontend
+  default-extensions:
+      OverloadedStrings
+      NamedDefaults
+      TypeFamilies
+      NoMonomorphismRestriction
+      AllowAmbiguousTypes
+      DuplicateRecordFields
+      OverloadedLabels
+      RecordWildCards
+      MultiWayIf
+  ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
+  build-depends:
+      PyF
+    , aeson
+    , aeson-pretty
+    , base ==4.21.*
+    , bytestring
+    , containers
+    , effectful
+    , effectful-core
+    , effectful-plugin
+    , effectful-th
+    , esqueleto
+    , extra
+    , hCommenter-Api
+    , hedgehog
+    , http-api-data
+    , http-client
+    , http-client-tls
+    , http-types
+    , katip
+    , monad-logger
+    , my-prelude
+    , optics
+    , persistent
+    , persistent-sqlite
+    , resource-pool
+    , servant
+    , servant-client
+    , servant-server
+    , servant-swagger
+    , swagger2
+    , text
+    , time
+    , transformers
+    , unliftio
+    , unordered-containers
+    , uuid
+    , wai
+    , warp
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2024
 
 test-suite spec
-    type: exitcode-stdio-1.0
-    main-is: Main.hs
-    other-modules:
-        ApiRules.HttpClient
-        ApiRules.Wai
-    hs-source-dirs:
-        test
-    default-extensions:
-        OverloadedStrings
-        NamedDefaults
-        TypeFamilies
-        NoMonomorphismRestriction
-        AllowAmbiguousTypes
-        DuplicateRecordFields
-        OverloadedLabels
-        RecordWildCards
-        MultiWayIf
-    ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
-    cpp-options: -DTEST
-    build-tool-depends:
-        hspec-discover:hspec-discover
-    build-depends:
-        PyF,
-        aeson,
-        aeson-pretty,
-        base ==4.21.*,
-        bytestring,
-        containers,
-        effectful,
-        effectful-core,
-        effectful-plugin,
-        effectful-th,
-        esqueleto,
-        extra,
-        hCommenter-Api,
-        hedgehog,
-        hedgehog-servant,
-        hspec,
-        hspec-hedgehog,
-        hspec-wai,
-        http-api-data,
-        http-client,
-        http-client-tls,
-        http-types,
-        interpolate,
-        katip,
-        mockery,
-        monad-logger,
-        my-prelude,
-        optics,
-        persistent,
-        persistent-sqlite,
-        resource-pool,
-        servant,
-        servant-client,
-        servant-server,
-        servant-swagger,
-        swagger2,
-        temporary,
-        text,
-        time,
-        transformers,
-        unliftio,
-        unordered-containers,
-        uuid,
-        wai,
-        wai-extra,
-        warp
-    mixins:
-        base hiding (Prelude),
-        my-prelude (MyPrelude as Prelude)
-    default-language: GHC2024
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      ApiRules.HttpClient
+      ApiRules.Wai
+  hs-source-dirs:
+      test
+  default-extensions:
+      OverloadedStrings
+      NamedDefaults
+      TypeFamilies
+      NoMonomorphismRestriction
+      AllowAmbiguousTypes
+      DuplicateRecordFields
+      OverloadedLabels
+      RecordWildCards
+      MultiWayIf
+  ghc-options: -Wall -fno-warn-orphans -Wredundant-constraints -Werror
+  cpp-options: -DTEST
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      PyF
+    , aeson
+    , aeson-pretty
+    , base ==4.21.*
+    , bytestring
+    , containers
+    , effectful
+    , effectful-core
+    , effectful-plugin
+    , effectful-th
+    , esqueleto
+    , extra
+    , hCommenter-Api
+    , hedgehog
+    , hedgehog-servant
+    , hspec
+    , hspec-hedgehog
+    , hspec-wai
+    , http-api-data
+    , http-client
+    , http-client-tls
+    , http-types
+    , interpolate
+    , katip
+    , mockery
+    , monad-logger
+    , my-prelude
+    , optics
+    , persistent
+    , persistent-sqlite
+    , resource-pool
+    , servant
+    , servant-client
+    , servant-server
+    , servant-swagger
+    , swagger2
+    , temporary
+    , text
+    , time
+    , transformers
+    , unliftio
+    , unordered-containers
+    , uuid
+    , wai
+    , wai-extra
+    , warp
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2024

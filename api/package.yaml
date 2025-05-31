@@ -37,9 +37,7 @@ dependencies:
     version: "^>= 4.21"
     mixin:
       - hiding (Prelude)
-  - name: my-prelude
-    mixin:
-      - (MyPrelude as Prelude)
+  - my-prelude
   - extra
   - time
   - servant
@@ -81,8 +79,9 @@ dependencies:
 internal-libraries:
   my-prelude:
     default-extensions: NoImplicitPrelude
-    source-dirs: prelude
-    exposed-modules: MyPrelude
+    source-dirs: my-prelude
+    exposed-modules: Prelude
+    # Must be verbatim to override shared deps
     verbatim:
       build-depends: PyF,
         aeson,
@@ -92,7 +91,6 @@ internal-libraries:
         text,
         extra,
         time
-      mixins: base hiding (Prelude)
 
 library:
   source-dirs: src

@@ -1,4 +1,4 @@
-module MyPrelude
+module Prelude
   ( module Relude
   , tshow
   , readMay

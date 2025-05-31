@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # NOTE: Please, occasionally check for the latest version of the base image
-ARG BASE_IMAGE=haskell:9.10.1-bullseye@sha256:63cc96fd6a57c345dc259881d20929839797677346cbfdd770b8504b9238f822
+ARG BASE_IMAGE=haskell:9.12.2-bookworm@sha256:fa33446b4a9b1319593dd7f809cc63426034690d72614945b1a4cb2209df660f
 
 FROM $BASE_IMAGE AS base
 WORKDIR /opt/hCommenter
