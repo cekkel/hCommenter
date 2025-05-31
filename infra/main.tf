@@ -69,7 +69,7 @@ resource "azurerm_container_app" "hcommenter" {
       // App startup check
       startup_probe {
         path          = "/health"
-        port          = 80
+        port          = 8080
         transport     = "HTTP"
         initial_delay = 10
       }
@@ -77,7 +77,7 @@ resource "azurerm_container_app" "hcommenter" {
       // Per revision
       readiness_probe {
         path          = "/health"
-        port          = 80
+        port          = 8080
         transport     = "HTTP"
         initial_delay = 10
       }
@@ -85,7 +85,7 @@ resource "azurerm_container_app" "hcommenter" {
       // Regular checks
       liveness_probe {
         path          = "/health"
-        port          = 80
+        port          = 8080
         transport     = "HTTP"
         initial_delay = 20
       }
@@ -98,7 +98,7 @@ resource "azurerm_container_app" "hcommenter" {
   ingress {
     external_enabled           = true
     allow_insecure_connections = true
-    target_port                = 80
+    target_port                = 8080
 
     traffic_weight { # Note: irrelevant as revision_mode is Single
       latest_revision = true
