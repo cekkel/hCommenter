@@ -132,16 +132,8 @@ jobs:
           targetPort: ${{ env.TARGET_PORT }}
           location: ${{ env.LOCATION }}
           environmentVariables: >
-            APP__NAME=hCommenter-Api
             APP__ENVIRONMENT=Test
-            APP__PORT=8080
-            APP__BACKEND=SQLite
             LOGGING__SEVERITY=Debug
-            LOGGING__VERBOSITY=V0
-            LOGGING__GRAFANA_URL=logs-prod-026.grafana.net
-            LOGGING__GRAFANA_ACC=1094195
-            LOGGING__GRAFANA_TOKEN=${{ secrets.GRAFANA_TOKEN }}
-            LOGGING__ENABLE_LOG_DEBUGGING_IN_CONSOLE=false
 
   #  deploy-production:
   #    steps:

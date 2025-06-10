@@ -15,7 +15,7 @@ FROM scratch
 COPY --from=build-stage /opt/hCommenter/backend-exe /
 
 # Port 80 to support azure app service expectations
-ENV APP_PORT=8080
-EXPOSE 8080
+ENV APP_PORT=80
+EXPOSE 80
 
 ENTRYPOINT ["/backend-exe"]

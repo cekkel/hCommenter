@@ -17,7 +17,7 @@ Putting that aside, the intention of this project is to create a commenting solu
 1. If the project has never been built on your machine, first run `just build-base-image`. This may take 10-20 minutes.
 2. Once the base image has been created, run `just dev` to build & start the API & SPA containers in file watch mode.
    The API & SPA should each restart when their respective source code changes.
-3. Access the full app at [[http://localhost:5173]], or call the API directly at [[http://localhost:8080]].
+3. Access the full app at [[http://localhost:5173]], or call the API directly at [[http://localhost:80]].
 
 ## Database Schema
 
