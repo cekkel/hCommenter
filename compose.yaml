@@ -7,7 +7,7 @@ services:
       args:
         BASE_IMAGE: hcommenter:base
     ports:
-      - "80:80"
+      - "3000:8080"
     env_file:
       - .env
       - .env.local
@@ -23,19 +23,6 @@ services:
         # Need to do a full rebuild if a dep changes.
         - action: rebuild
           path: ./api/hCommenter-Api.cabal
-
-  # This is not present in prod - we use APIM instead.
-  # However, we need it localhost to add cors headers (otherwise spa breaks)
-  reverse-proxy:
-    build: ./proxy
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    develop:
-      watch:
-        - action: rebuild
-          path: ./proxy/nginx.conf
 
   frontend-dev:
     profiles: [dev]
@@ -55,6 +42,20 @@ services:
         # Need to do a full rebuild if a dep changes.
         - action: rebuild
           path: ./spa/package.json
+
+  # This is not present in prod - we use APIM instead.
+  # However, we need it localhost to add cors headers (otherwise spa breaks)
+  reverse-proxy:
+    build: ./proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend-dev
+    develop:
+      watch:
+        - action: rebuild
+          path: ./proxy/nginx.conf
 
   frontend-prod:
     profiles: [prod]
