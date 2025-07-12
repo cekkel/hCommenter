@@ -15,7 +15,7 @@ import Data.Aeson
   )
 import Data.Aeson.KeyMap (singleton)
 import Data.Aeson.TH (deriveJSON)
-import Data.Swagger
+import Data.OpenApi
   ( ToParamSchema
   , ToSchema (declareNamedSchema)
   , defaultSchemaOptions

@@ -1,14 +1,12 @@
 module RestAPI.Endpoints.Swagger where
 
-import Data.Swagger
-  ( Swagger
-  )
+import Data.OpenApi (OpenApi)
 import Optics hiding ((&))
 import Servant (Get, JSON, (:>))
 
-type SwaggerAPI = "swagger.json" :> Get '[JSON] Swagger
+type SwaggerAPI = "swagger.json" :> Get '[JSON] OpenApi
 
-withMetadata :: Swagger -> Swagger
+withMetadata :: OpenApi -> OpenApi
 withMetadata swaggerDef =
   swaggerDef
     & #info

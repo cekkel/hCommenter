@@ -44,9 +44,10 @@ dependencies:
   - servant-server
   - servant-swagger
   - servant-client
+  - openapi3
+  - servant-openapi3
   - http-client
   - http-client-tls
-  - swagger2
   - wai
   - http-types
   - optics

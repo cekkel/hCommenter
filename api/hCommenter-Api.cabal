@@ -95,15 +95,16 @@ library
     , katip
     , monad-logger
     , my-prelude
+    , openapi3
     , optics
     , persistent
     , persistent-sqlite
     , resource-pool
     , servant
     , servant-client
+    , servant-openapi3
     , servant-server
     , servant-swagger
-    , swagger2
     , text
     , time
     , transformers
@@ -175,15 +176,16 @@ executable backend-exe
     , katip
     , monad-logger
     , my-prelude
+    , openapi3
     , optics
     , persistent
     , persistent-sqlite
     , resource-pool
     , servant
     , servant-client
+    , servant-openapi3
     , servant-server
     , servant-swagger
-    , swagger2
     , text
     , time
     , transformers
@@ -233,15 +235,16 @@ executable frontend-exe
     , katip
     , monad-logger
     , my-prelude
+    , openapi3
     , optics
     , persistent
     , persistent-sqlite
     , resource-pool
     , servant
     , servant-client
+    , servant-openapi3
     , servant-server
     , servant-swagger
-    , swagger2
     , text
     , time
     , transformers
@@ -304,15 +307,16 @@ test-suite spec
     , mockery
     , monad-logger
     , my-prelude
+    , openapi3
     , optics
     , persistent
     , persistent-sqlite
     , resource-pool
     , servant
     , servant-client
+    , servant-openapi3
     , servant-server
     , servant-swagger
-    , swagger2
     , temporary
     , text
     , time

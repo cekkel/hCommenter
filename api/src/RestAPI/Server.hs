@@ -15,13 +15,13 @@ module RestAPI.Server
   )
 where
 
-import Data.Swagger (Swagger)
+import Data.OpenApi (OpenApi)
 import Effectful (Eff)
 import Network.Wai.Handler.Warp (defaultSettings, runSettings, setOnException, setPort)
 import Optics
 import PyF (fmt)
 import Servant (Application, Context (EmptyContext, (:.)), Server, hoistServer, serveWithContext, type (:<|>) (..))
-import Servant.Swagger (HasSwagger (toSwagger))
+import Servant.OpenApi (HasOpenApi (toOpenApi))
 
 import Database.Mockserver (initDevSqliteDB)
 import Middleware.Combined (addCustomMiddleware)
@@ -49,8 +49,8 @@ fullAPI = Proxy
 functionalAPI :: Proxy FunctionalAPI
 functionalAPI = Proxy
 
-swaggerServer :: Eff es Swagger
-swaggerServer = pure $ withMetadata $ toSwagger functionalAPI
+swaggerServer :: Eff es OpenApi
+swaggerServer = pure $ withMetadata $ toOpenApi functionalAPI
 
 serverAPI :: RequestContext -> Server (Enriched API)
 serverAPI ctx = do

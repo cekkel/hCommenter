@@ -10,7 +10,7 @@ where
 
 import Data.Aeson (defaultOptions)
 import Data.Aeson.TH (deriveJSON)
-import Data.Swagger (ToSchema)
+import Data.OpenApi (ToSchema)
 import Optics
 
 -- | TODO: fill out pagination implementation
