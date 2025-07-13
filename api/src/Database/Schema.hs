@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -28,8 +29,7 @@ import Database.Persist
   )
 import Database.Persist.Sql (SqlBackend, toSqlKey)
 import Database.Persist.TH
-  ( MkPersistSettings (mpsFieldLabelModifier)
-  , mkMigrate
+  ( mkMigrate
   , mkPersist
   , persistLowerCase
   , share
@@ -63,41 +63,62 @@ data StorageError
   and include lens definitions.
 -}
 share
-  [ mkPersist
-      sqlSettings
-        { mpsFieldLabelModifier = \_ field -> field
-        }
-  , mkMigrate "migrateAll"
+  [ mkMigrate "migrateAll"
+  , mkPersist sqlSettings
   ]
   [persistLowerCase|
 User
-  username    Text
-  firstName   Text
-  lastName    Text
+  username     Text
+  email        Text
+  passwordHash Text
+  createdAt    UTCTime default=CURRENT_TIME
+  updatedAt    UTCTime default=CURRENT_TIME
 
   Primary username
+  UniqueEmail email
   deriving Show Read Eq Generic
 
 Conversation
-  url    Text
-  title  Text
+  url   Text
+  title Text
 
   Primary url
   deriving Show Read Eq Generic
 
 Comment
-  dateCreated UTCTime default=CURRENT_TIME
-  message     Text
-  upvotes     Int
-  downvotes   Int
+  conversationId Text
+  userId         Text
+  text           Text
+  upvotes        Int default=0
+  downvotes      Int default=0
+  parentId       CommentId Maybe
+  createdAt      UTCTime default=CURRENT_TIME
+  updatedAt      UTCTime default=CURRENT_TIME
 
-  parent      CommentId Maybe
-  author      Text
-  convoUrl    Text
+  Foreign Comment fk_parent parentId
+  Foreign User fk_posted_by userId
+  deriving Show Read Eq Generic
 
-  Foreign Comment fk_parent parent
-  Foreign User fk_posted_by author
-  Foreign Conversation fk_posted_to convoUrl
+Moderation
+  commentId   CommentId
+  moderatorId UserId
+  action      Text
+  reason      Text Maybe
+  createdAt   UTCTime default=CURRENT_TIME
+
+  Foreign Comment fk_comment commentId
+  Foreign User fk_moderator moderatorId
+  deriving Show Read Eq Generic
+
+Notification
+  userId      UserId
+  commentId   CommentId
+  type        Text
+  read        Bool default=False
+  createdAt   UTCTime default=CURRENT_TIME
+
+  Foreign User fk_user userId
+  Foreign Comment fk_comment commentId
   deriving Show Read Eq Generic
 |]
 
@@ -120,13 +141,14 @@ fromNewComment comment = do
   currTime <- getCurrentTime
   pure $
     Comment
-      { dateCreated = currTime
-      , message = comment ^. #message
-      , upvotes = 0
-      , downvotes = 0
-      , parent = toSqlKey <$> comment ^. #parent
-      , author = comment ^. #author
-      , convoUrl = comment ^. #convoUrl
+      { commentCreatedAt = currTime
+      , commentUpdatedAt = currTime
+      , commentText = comment ^. #message
+      , commentUpvotes = 0
+      , commentDownvotes = 0
+      , commentParentId = toSqlKey <$> comment ^. #parent
+      , commentUserId = comment ^. #author
+      , commentConversationId = comment ^. #convoUrl
       }
 
 deriving instance Generic (Key Conversation)
@@ -176,7 +198,7 @@ instance FromHttpApiData SortBy where
     maybe (Left "Invalid sorting method") Right
       . readMay
 
-mkComment
+mkMockComment
   :: Text
   -- ^ Username
   -> Text
@@ -184,9 +206,19 @@ mkComment
   -> Text
   -- ^ Message
   -> IO Comment
-mkComment username convoUrl msg = do
+mkMockComment username convoUrl msg = do
   currTime <- getCurrentTime
-  pure $ Comment currTime msg 0 0 Nothing username convoUrl
+  pure $
+    Comment
+      { commentConversationId = convoUrl
+      , commentUserId = username
+      , commentText = msg
+      , commentUpvotes = 0
+      , commentDownvotes = 0
+      , commentParentId = Nothing
+      , commentCreatedAt = currTime
+      , commentUpdatedAt = currTime
+      }
 
 data PureStorage = PureStorage
   { convoStore :: Map (Key Conversation) Conversation

@@ -97,7 +97,7 @@ import Database.Schema
 -- | TODO: Needs revisiting
 sortedComments :: SortBy -> [Entity Comment] -> [Entity Comment]
 sortedComments sortMethod = genericSortBy $ \(Entity _ c1) (Entity _ c2) -> case sortMethod of
-  Popular -> compare (c1 ^. #upvotes) (c2 ^. #upvotes)
-  Controversial -> compare (c1 ^. #downvotes) (c2 ^. #downvotes)
-  Old -> compare (c1 ^. #dateCreated) (c2 ^. #dateCreated)
-  New -> compare (c2 ^. #dateCreated) (c1 ^. #dateCreated)
+  Popular -> compare (c1 ^. #commentUpvotes) (c2 ^. #commentUpvotes)
+  Controversial -> compare (c1 ^. #commentDownvotes) (c2 ^. #commentDownvotes)
+  Old -> compare (c1 ^. #commentCreatedAt) (c2 ^. #commentCreatedAt)
+  New -> compare (c2 ^. #commentCreatedAt) (c1 ^. #commentCreatedAt)

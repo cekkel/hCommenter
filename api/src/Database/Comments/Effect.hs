@@ -57,11 +57,11 @@ runCommentStorageSQL = do
     ( \_ action ->
         withConn $ case action of
           GetCommentsForConvo convoUrlQ sortMethod -> getCommentsWhere sortMethod $
-            \comments -> comments ^. CommentConvoUrl ==. val convoUrlQ
+            \comments -> comments ^. CommentConversationId ==. val convoUrlQ
           GetCommentsForUser userNameQ sortMethod -> getCommentsWhere sortMethod $
-            \comments -> comments ^. CommentAuthor ==. val userNameQ
+            \comments -> comments ^. CommentUserId ==. val userNameQ
           GetReplies cID sortMethod -> getCommentsWhere sortMethod $
-            \comments -> comments ^. CommentParent ==. just (val cID)
+            \comments -> comments ^. CommentParentId ==. just (val cID)
           InsertComment comment -> do
             -- TODO: Add a time effect to get the current time, instead of using raw IO
             fullComment <- liftIO $ fromNewComment comment
@@ -73,7 +73,7 @@ runCommentStorageSQL = do
             let
               sqlEdits =
                 edits <&> \case
-                  SendNewContent newContent -> CommentMessage P.=. newContent
+                  SendNewContent newContent -> CommentText P.=. newContent
                   SendUpvote -> CommentUpvotes P.+=. 1
                   SendDownvote -> CommentDownvotes P.+=. 1
 
@@ -114,5 +114,5 @@ makeSort :: SortBy -> SqlExpr (P.Entity Comment) -> [SqlExpr OrderBy]
 makeSort sortMethod comments = case sortMethod of
   Popular -> [desc $ (comments ^. CommentUpvotes) -. (comments ^. CommentDownvotes)]
   Controversial -> [desc $ comments ^. CommentDownvotes]
-  Old -> [asc $ comments ^. CommentDateCreated]
-  New -> [desc $ comments ^. CommentDateCreated]
+  Old -> [asc $ comments ^. CommentCreatedAt]
+  New -> [desc $ comments ^. CommentCreatedAt]

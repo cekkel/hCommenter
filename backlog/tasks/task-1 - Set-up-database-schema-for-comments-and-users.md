@@ -4,6 +4,7 @@ title: Set up database schema for comments and users
 status: To Do
 assignee: []
 created_date: '2025-07-13'
+updated_date: '2025-07-13'
 labels: []
 dependencies: []
 ---

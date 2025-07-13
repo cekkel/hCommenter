@@ -12,12 +12,12 @@ storageToViewComment :: Key Comment -> Comment -> ViewComment
 storageToViewComment commentId comment =
   ViewComment
     { id = fromSqlKey commentId
-    , created = comment ^. #dateCreated
-    , message = comment ^. #message
-    , score = calculateScore (comment ^. #upvotes) (comment ^. #downvotes)
+    , created = comment ^. #commentCreatedAt
+    , message = comment ^. #commentText
+    , score = calculateScore (comment ^. #commentUpvotes) (comment ^. #commentDownvotes)
     , replies = Nothing
-    , authorName = comment ^. #author
-    , conversationUrl = comment ^. #convoUrl
+    , authorName = comment ^. #commentUserId
+    , conversationUrl = comment ^. #commentConversationId
     }
 
 calculateScore :: Int -> Int -> Int

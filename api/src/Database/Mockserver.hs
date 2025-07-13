@@ -1,5 +1,6 @@
 module Database.Mockserver where
 
+import Data.Time (getCurrentTime)
 import Database.Persist (Filter, selectList)
 import Database.Persist.Sql (PersistStoreWrite (insertMany_), runMigration, toSqlKey)
 import Effectful (runEff)
@@ -16,9 +17,11 @@ import Utils.RequestContext (mkRequestContext)
 
 mkMockComments :: IO PureStorage
 mkMockComments = do
-  comment1 <- mkComment "Johnny" "convo.com" "First"
-  comment2 <- mkComment "Abby" "convo.com" "Dangit, almost got first."
-  comment3 <- mkComment "Abby" "chat.com" "Whoops, wrong site."
+  comment1 <- mkMockComment "Johnny" "convo.com" "First"
+  comment2 <- mkMockComment "Abby" "convo.com" "Dangit, almost got first."
+  comment3 <- mkMockComment "Abby" "chat.com" "Whoops, wrong site."
+
+  currTime <- getCurrentTime
 
   pure $
     PureStorage
@@ -28,8 +31,8 @@ mkMockComments = do
           ]
       )
       ( M.fromList
-          [ (UserKey "Johnny", User "Johnny" "John" "Smith")
-          , (UserKey "Abby", User "Abby" "Abigail" "Smith")
+          [ (UserKey "Johnny", User "Johnny" "John" "Smith" currTime currTime)
+          , (UserKey "Abby", User "Abby" "Abigail" "Smith" currTime currTime)
           ]
       )
       ( M.fromList
