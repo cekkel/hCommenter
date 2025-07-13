@@ -10,9 +10,10 @@ As such, the user of the service does not need to manage the comment system them
 # Core Features  
 
 1. **Commenting**: Allows users to leave comments on content. This is the core functionality, enabling interaction and feedback.
-2. **User Authentication**: Supports user accounts for personalized experiences, allowing users to manage their comments and profiles.
-3. **Content Moderation**: Provides tools for content owners to moderate comments, ensuring a safe and respectful environment.
-4. **Notifications**: Notifies users of replies or mentions, keeping them engaged with the content.
+2. **Voting System**: Enables users to upvote or downvote comments, promoting constructive discussions.
+3. **User Authentication**: Supports user accounts for personalized experiences, allowing users to manage their comments and profiles.
+4. **Content Moderation**: Provides tools for content owners to moderate comments, ensuring a safe and respectful environment.
+5. **Notifications**: Notifies users of replies or mentions, keeping them engaged with the content.
 5. **Search and Filtering**: Enables users to search and filter comments, making it easier to find relevant discussions.
 6. **Analytics**: Offers insights into comment activity, helping content owners understand user engagement.
 7. **Integration**: Easily integrates with existing web applications, allowing for seamless addition of commenting functionality.
