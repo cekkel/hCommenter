@@ -1,7 +1,7 @@
 ---
 id: task-1
 title: Set up database schema for comments and users
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-07-13'
 updated_date: '2025-07-13'

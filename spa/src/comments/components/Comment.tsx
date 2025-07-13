@@ -84,7 +84,7 @@ export const Comment = ({ comment, showUrl = false }: CommentProps) => {
           />
           <span>{new Date(comment.created).toLocaleDateString()}</span>
         </div>
-        <NewComment convoUrl={comment.conversationUrl} author={comment.authorName} parentId={comment.id} />
+        <NewComment convoUrl={comment.conversationUrl} parentId={comment.id} triggerButtonText="Reply" />
       </div>
     </div>
   );

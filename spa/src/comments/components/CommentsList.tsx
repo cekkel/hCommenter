@@ -3,7 +3,7 @@ import { Comment } from "./Comment";
 
 // Main comments list component
 interface CommentsListProps {
-  title: string;
+  title?: string;
   comments?: ViewComment[];
   isLoading: boolean;
   error: unknown;
@@ -17,17 +17,19 @@ export const CommentsList = ({
   isLoading,
   error,
   showUrl = false,
-  emptyMessage
+  emptyMessage,
 }: CommentsListProps) => {
   if (isLoading) return <LoadingSpinner />;
   if (error) return <ErrorMessage />;
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">
-        {title}
-      </h2>
-      {!comments ? (
+      {title && (
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">
+          {title}
+        </h2>
+      )}
+      {!comments || comments.length === 0 ? (
         <EmptyComments message={emptyMessage} />
       ) : (
         comments.map((comment) => (
