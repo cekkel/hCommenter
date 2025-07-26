@@ -6,6 +6,8 @@ export const HomePage = () => {
   const [convoUrl, setConvoUrl] = useState("convo.com");
   const [convoInputValue, setConvoInputValue] = useState("convo.com");
 
+  // Add another function here to handle the form submission AI!
+
   const handleConvoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setConvoUrl(convoInputValue);
