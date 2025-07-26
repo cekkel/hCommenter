@@ -95,6 +95,7 @@ Comment
   createdAt      UTCTime default=CURRENT_TIME
   updatedAt      UTCTime default=CURRENT_TIME
 
+  Foreign Conversation fk_conversation conversationId
   Foreign Comment fk_parent parentId
   Foreign User fk_posted_by userId
   deriving Show Read Eq Generic
