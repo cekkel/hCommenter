@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   Button,
   Dialog,
@@ -25,6 +26,7 @@ interface NewCommentProps {
 }
 
 export const NewComment = (props: NewCommentProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const createComment = useMutation({
     ...postCommentsNewMutation(),
@@ -46,6 +48,7 @@ export const NewComment = (props: NewCommentProps) => {
           }),
         });
       }
+      setIsOpen(false);
     },
   });
 
@@ -70,9 +73,14 @@ export const NewComment = (props: NewCommentProps) => {
   };
 
   return (
-    <DialogTrigger>
+    <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       <Button className="btn-primary">{props.triggerButtonText || "Add Comment"}</Button>
-      <Popover className="w-[32rem]">
+      <Popover
+        className="w-[32rem]"
+        onClose={() => {
+          createComment.reset();
+        }}
+      >
         <OverlayArrow className="placement-bottom:rotate-180 stroke-gray-400 fill-white">
           <svg width={12} height={12} viewBox="0 0 12 12">
             <path d="M0 0 L6 6 L12 0" />
@@ -108,7 +116,7 @@ export const NewComment = (props: NewCommentProps) => {
                 />
               </TextField>
               <div className="mt-6 flex justify-end gap-3">
-                <Button onPress={close} className="btn-secondary">
+                <Button onPress={() => setIsOpen(false)} className="btn-secondary">
                   Cancel
                 </Button>
                 <Button type="submit" className="btn-primary">
