@@ -29,4 +29,5 @@ node_modules/
 # tasks.json
 # tasks/ 
 .aider*
+!.aider.conf.yml
 .env
