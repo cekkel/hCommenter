@@ -30,4 +30,3 @@ node_modules/
 # tasks/ 
 .aider*
 !.aider.conf.yml
-.env
