@@ -7,7 +7,7 @@ default:
 
 # Need to be running the API locally first and have prettier installed.
 write-swagger:
-    curl http://localhost:80/swagger.json | prettier --parser json > spa/api-swagger.json \
+    curl http://localhost:80/swagger.json | prettier --parser json > api/api-swagger.json
 
 # Build the initial Docker image
 build-base-image:
