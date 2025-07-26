@@ -17,5 +17,12 @@ This task involves creating the core functionality for users to post and view co
 ## Acceptance Criteria
 
 - [x] Users can post new comments.
-- [ ] Users can view a list of existing comments.
-- [ ] The system correctly associates comments with the content they belong to.
+- [x] Users can view a list of existing comments.
+- [x] The system correctly associates comments with the content they belong to.
+
+## Implementation Plan
+
+1.  Create a search form to input a conversation URL.
+2.  Fetch comments for the given URL using the `/comments/conversation/{convoUrl}` endpoint.
+3.  Display the fetched comments in a list.
+4.  Use the existing `ConversationComments` component to encapsulate this logic.
