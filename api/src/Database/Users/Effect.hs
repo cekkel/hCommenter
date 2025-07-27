@@ -2,13 +2,14 @@
 
 module Database.Users.Effect (runUserStorageSQL) where
 
-import Database.Persist qualified as P
 import Database.Persist.Sql (fromSqlKey)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
-import Effectful.Error.Static qualified as ES
 import PyF (fmt)
 import UnliftIO (catchAny)
+
+import Database.Persist qualified as P
+import Effectful.Error.Static qualified as ES
 
 import Database.Schema
   ( EntityField (..)
