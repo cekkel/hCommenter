@@ -24,7 +24,6 @@ source-repository head
 
 library
   exposed-modules:
-      Auth
       Database.Comments.Effect
       Database.Comments.Interface
       Database.Conversations.Effect
@@ -61,6 +60,7 @@ library
       RestAPI.Endpoints.Voting
       RestAPI.Server
       RestAPI.ServerTypes
+      Utils.Auth
       Utils.Environment
       Utils.Error
       Utils.Generators

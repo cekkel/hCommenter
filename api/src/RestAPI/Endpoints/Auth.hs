@@ -29,10 +29,10 @@ import Optics ((^.))
 import Servant
 import Servant.Auth.Server (Auth, Cookie, CookieSettings, JWT, JWTSettings, SetCookie)
 import Servant.OpenApi
+import Utils.Auth (UserAuth)
 
 import Effectful qualified as Eff
 
-import Auth (UserAuth)
 import Database.Users.Interface
 import Logging.LogEffect (Log)
 import Logging.Utilities (logInfo)

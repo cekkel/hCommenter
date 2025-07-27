@@ -34,8 +34,8 @@ import Servant
   )
 import Servant.Auth.Server (Auth)
 import Servant.OpenApi (HasOpenApi (toOpenApi))
+import Utils.Auth (UserAuth, authenticated)
 
-import Auth (UserAuth, authenticated)
 import Database.Mockserver (initDevSqliteDB)
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Exceptions (logOnException)

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Auth
+module Utils.Auth
   ( UserAuth (..)
   , authenticated
   )
