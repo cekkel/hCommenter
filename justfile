@@ -20,7 +20,8 @@ rebuild-base-image:
     docker build ./api \
       --file ./api/deploy/build.Dockerfile \
       --tag hcommenter:base \
-      --build-arg BASE_IMAGE=hcommenter:base
+      --build-arg BASE_IMAGE=hcommenter:base \
+      --no-cache
 
 # Run development environment
 dev:
