@@ -1,6 +1,4 @@
 {-# LANGUAGE DeriveAnyClass #-}
-
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Auth
