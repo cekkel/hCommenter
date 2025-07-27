@@ -280,7 +280,7 @@ watch-files: true
 test-cmd: env -C api just lint && env -C spa yarn lint
 
 ## Enable/disable automatic testing after changes (default: False)
-#auto-test: false
+auto-test: true
 
 ## Run tests, fix problems found and then exit
 #test: false

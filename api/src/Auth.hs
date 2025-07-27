@@ -1,23 +1,26 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Auth
-  ( User (..),
+  ( User (..)
   )
 where
 
-import Control.DeepSeq
 import Data.Aeson
-import Data.Text (Text)
-import GHC.Generics (Generic)
 import Servant.Auth.Server as SAS
+import Servant.Server.Experimental.Auth (AuthServerData)
 
 newtype User = User
   { username :: Text
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)
 
 instance ToJSON User
+
 instance FromJSON User
+
 instance ToJWT User
+
 instance FromJWT User
 
 -- | This is the user type that will be returned when a user is authenticated.

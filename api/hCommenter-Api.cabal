@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:
+      Auth
       Database.Authors.Effect
       Database.Authors.Interface
       Database.Comments.Effect
@@ -81,6 +82,8 @@ library
     , base ==4.21.*
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -92,6 +95,7 @@ library
     , http-client
     , http-client-tls
     , http-types
+    , jwt
     , katip
     , monad-logger
     , my-prelude
@@ -101,6 +105,8 @@ library
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
@@ -137,7 +143,7 @@ library my-prelude
   mixins:
       base hiding (Prelude)
   default-language: GHC2024
-  build-depends: PyF, aeson, aeson-pretty, base ==4.21.*, relude, text, extra, time
+  build-depends: PyF, aeson, aeson-pretty, base ==4.21.*, relude, servant-auth-server, text, extra, time
 
 executable backend-exe
   main-is: Main.hs
@@ -161,6 +167,8 @@ executable backend-exe
     , base ==4.21.*
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -173,6 +181,7 @@ executable backend-exe
     , http-client
     , http-client-tls
     , http-types
+    , jwt
     , katip
     , monad-logger
     , my-prelude
@@ -182,6 +191,8 @@ executable backend-exe
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
@@ -220,6 +231,8 @@ executable frontend-exe
     , base ==4.21.*
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -232,6 +245,7 @@ executable frontend-exe
     , http-client
     , http-client-tls
     , http-types
+    , jwt
     , katip
     , monad-logger
     , my-prelude
@@ -241,6 +255,8 @@ executable frontend-exe
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
@@ -286,6 +302,8 @@ test-suite spec
     , base ==4.21.*
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -303,6 +321,7 @@ test-suite spec
     , http-client-tls
     , http-types
     , interpolate
+    , jwt
     , katip
     , mockery
     , monad-logger
@@ -313,6 +332,8 @@ test-suite spec
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
