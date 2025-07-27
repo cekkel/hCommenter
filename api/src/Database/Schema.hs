@@ -137,6 +137,31 @@ data NewComment = NewComment
 makeFieldLabelsNoPrefix ''NewComment
 deriveJSON defaultOptions ''NewComment
 
+data NewUser = NewUser
+  { username :: Text
+  , email :: Text
+  , passwordHash :: Text
+  }
+  deriving (Eq, Generic, Read, Show)
+
+makeFieldLabelsNoPrefix ''NewUser
+deriveJSON defaultOptions ''NewUser
+
+instance ToSchema NewUser where
+  declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions
+
+fromNewUser :: NewUser -> IO User
+fromNewUser user = do
+  currTime <- getCurrentTime
+  pure $
+    User
+      { userUsername = user ^. #username
+      , userEmail = user ^. #email
+      , userPasswordHash = user ^. #passwordHash
+      , userCreatedAt = currTime
+      , userUpdatedAt = currTime
+      }
+
 fromNewComment :: NewComment -> IO Comment
 fromNewComment comment = do
   currTime <- getCurrentTime
