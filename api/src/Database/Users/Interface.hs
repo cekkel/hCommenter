@@ -15,8 +15,9 @@ import Database.Persist.Sql (Key)
 import Effectful (Dispatch (Dynamic), DispatchOf, Effect)
 import Effectful.TH (makeEffect)
 
-import Database.Schema (NewUser, User)
 import Mapping.ExternalTypes (ViewUser)
+
+import Database.Schema qualified as Schema
 
 type Username = Text
 
@@ -27,9 +28,10 @@ data UserUpdate
 
 data UserStorage :: Effect where
   GetUser :: Username -> UserStorage m ViewUser
-  InsertUser :: NewUser -> UserStorage m ViewUser
-  EditUser :: Key User -> [UserUpdate] -> UserStorage m ViewUser
-  DeleteUser :: Key User -> UserStorage m ()
+  -- TODO: Fix this, move NewUser out of Schema
+  InsertUser :: Schema.NewUser -> UserStorage m (Key Schema.User)
+  EditUser :: Key Schema.User -> [UserUpdate] -> UserStorage m ViewUser
+  DeleteUser :: Key Schema.User -> UserStorage m ()
 
 type instance DispatchOf UserStorage = 'Dynamic
 

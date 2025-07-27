@@ -4,7 +4,6 @@ module RestAPI.Endpoints.Comment (commentServer, SortBy (..), Comment, CommentsA
 
 import Database.Persist.Sql (PersistEntity (Key), fromSqlKey, toSqlKey)
 import Optics
-import PyF (fmt)
 import Servant
   ( Capture
   , Description

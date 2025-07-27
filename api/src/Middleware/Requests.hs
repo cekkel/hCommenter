@@ -14,7 +14,6 @@ import Network.Wai
   , responseStatus
   , responseToStream
   )
-import PyF (fmt)
 
 import Logging.LogContext (LogField (CorrelationID, RequestMethod, RequestPath, ResponseBody, StatusCode))
 import Logging.LogEffect (runLog)

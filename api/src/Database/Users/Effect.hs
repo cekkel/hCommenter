@@ -2,10 +2,8 @@
 
 module Database.Users.Effect (runUserStorageSQL) where
 
-import Database.Persist.Sql (fromSqlKey)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
-import PyF (fmt)
 import UnliftIO (catchAny)
 
 import Database.Persist qualified as P
@@ -14,8 +12,7 @@ import Effectful.Error.Static qualified as ES
 import Database.Schema
   ( EntityField (..)
   , StorageError (..)
-  , Unique (UniqueEmail, UniqueUser)
-  , User (..)
+  , Unique (UserPrimaryKey)
   , fromNewUser
   )
 import Database.SqlPool (SqlPool, withConn)
@@ -37,21 +34,15 @@ runUserStorageSQL = do
     ( \_ action ->
         withConn $ case action of
           GetUser uName -> do
-            maybeUser <- P.getBy $ UniqueUser uName
+            maybeUser <- P.getBy $ UserPrimaryKey uName
             case maybeUser of
               Nothing -> lift . ES.throwError . UserOrConvoNotFound $ [fmt|User '{uName}' not found|]
               Just user -> pure $ mapFrom user
           InsertUser newUser -> do
             fullUser <- liftIO $ fromNewUser newUser
-            catchAny (P.insert fullUser) $ \e ->
-              lift . ES.throwError . UserOrConvoNotFound $
+            catchAny (P.insert fullUser) $ \e -> lift $ do
+              ES.throwError . UserOrConvoNotFound $
                 [fmt|Failed to insert user with error: {tshow e}|]
-            -- TODO: This is a bit inefficient to immediately query, but it's the simplest way to get the full entity back
-            -- to map to a view type.
-            maybeUser <- P.getBy $ UniqueUser (userUsername fullUser)
-            case maybeUser of
-              Nothing -> lift . ES.throwError . UnhandledStorageError $ [fmt|Could not find user '{userUsername fullUser}' after insert|]
-              Just user -> pure $ mapFrom user
           EditUser uId edits -> do
             let
               sqlEdits =
@@ -64,7 +55,7 @@ runUserStorageSQL = do
             updatedUser <-
               catchAny (P.updateGet uId sqlEdits) $ \e -> lift $ do
                 ES.throwError $
-                  UserOrConvoNotFound [fmt|Failed to update user {fromSqlKey uId} with error: {tshow e}|]
+                  UserOrConvoNotFound [fmt|Failed to update user with error: {tshow e}|]
 
             lift $ logDebug [fmt|Updated user to: {tshow updatedUser}|]
 

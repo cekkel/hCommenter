@@ -5,7 +5,6 @@ module RestAPI.EffectInjection (effToHandler) where
 
 import Control.Monad.Trans.Except (except)
 import Effectful (Eff, IOE, runEff)
-import PyF (fmt)
 import Servant
   ( Handler (Handler)
   , ServerError (errBody, errHTTPCode, errHeaders)

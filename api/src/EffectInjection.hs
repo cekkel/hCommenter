@@ -5,7 +5,6 @@ module EffectInjection (runSharedEffects, SharedEffectsPlus) where
 import Effectful (Eff, IOE)
 import Effectful.Error.Static (Error, runError)
 import Optics
-import PyF (fmt)
 
 import Effectful qualified as E
 import Effectful.Error.Static qualified as ES
@@ -15,6 +14,8 @@ import Database.Comments.Effect (runCommentStorageSQL)
 import Database.Comments.Interface (CommentStorage)
 import Database.Schema
 import Database.SqlPool (SqlPool, runSqlPool)
+import Database.Users.Effect (runUserStorageSQL)
+import Database.Users.Interface (UserStorage)
 import Logging.LogContext (LogField (AppError, CorrelationID))
 import Logging.LogEffect (Log, runLog)
 import Logging.Utilities (addLogContext, logError)
@@ -24,6 +25,7 @@ import Utils.RequestContext (RequestContext)
 
 type SharedEffectsPlus es =
   CommentStorage
+    : UserStorage
     : SqlPool
     : Error InputError
     : Error StorageError
@@ -45,6 +47,7 @@ runSharedEffects ctx =
     . liftError StorageError
     . liftError InputError
     . runSqlPool
+    . runUserStorageSQL
     . runCommentStorageSQL
 
 liftError

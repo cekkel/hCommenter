@@ -2,20 +2,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Mapping.Users () where
+module Mapping.Users (storageToViewUser) where
 
-import Database.Persist (Entity (..))
+import Database.Persist (PersistEntity (Key))
 import Optics ((^.))
 
-import Database.Schema (User)
 import Mapping.ExternalTypes (ViewUser (..))
-import Mapping.Typeclass (MapsFrom (..))
 
-instance MapsFrom (Entity User) ViewUser where
-  mapFrom :: Entity User -> ViewUser
-  mapFrom (Entity _key user) =
-    ViewUser
-      { username = user ^. #username
-      , email = user ^. #email
-      , createdAt = user ^. #createdAt
-      }
+import Database.Schema qualified as Schema
+
+storageToViewUser :: Key Schema.User -> Schema.User -> ViewUser
+storageToViewUser _ user =
+  ViewUser
+    { username = user ^. #userUsername
+    , email = user ^. #userEmail
+    , createdAt = user ^. #userCreatedAt
+    }

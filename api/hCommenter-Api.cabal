@@ -47,6 +47,7 @@ library
       Mapping.Comments
       Mapping.ExternalTypes
       Mapping.Typeclass
+      Mapping.Users
       Middleware.Combined
       Middleware.Exceptions
       Middleware.Headers
