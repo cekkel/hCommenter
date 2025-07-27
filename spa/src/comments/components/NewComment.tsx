@@ -77,8 +77,8 @@ export const NewComment = (props: NewCommentProps) => {
       <Button className="btn-primary">{props.triggerButtonText || "Add Comment"}</Button>
       <Popover
         className="w-[32rem]"
-        onClose={() => {
-          createComment.reset();
+        onOpenChange={(isOpen: boolean) => {
+          if (isOpen) createComment.reset();
         }}
       >
         <OverlayArrow className="placement-bottom:rotate-180 stroke-gray-400 fill-white">
