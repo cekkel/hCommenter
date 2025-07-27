@@ -45,7 +45,6 @@ readEnv = do
     port = fromMaybe (error "Port provided in 'APP__PORT' is missing or invalid") mPort
 
   loggingConf <- readLoggingConf appName envName
-  key <- getKey
 
   pure $
     Env
@@ -55,7 +54,7 @@ readEnv = do
       , appName
       , envName
       , logging = loggingConf
-      , jwtSettings = defaultJWTSettings key
+      , jwtSettings = defaultJWTSettings getKey
       , cookieSettings = defaultCookieSettings
       }
 

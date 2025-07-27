@@ -15,9 +15,9 @@ This task involves setting up user registration and login functionality. It will
 
 ## Acceptance Criteria
 
-- [ ] Users can create a new account.
-- [ ] Users can log in with their credentials.
-- [ ] The system provides a way to manage user sessions.
+- [x] Users can create a new account.
+- [x] Users can log in with their credentials.
+- [x] The system provides a way to manage user sessions.
 
 ## Implementation Plan
 

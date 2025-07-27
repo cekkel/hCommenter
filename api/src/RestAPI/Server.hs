@@ -28,7 +28,10 @@ import Middleware.Combined (addCustomMiddleware)
 import Middleware.Exceptions (logOnException)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
 import Middleware.ServantErrorFormatters (customFormatters)
+import Auth (NewUser (..), User (..))
+import Database.Authors.Interface (findAuthorByUsername)
 import RestAPI.EffectInjection (effToHandler)
+import RestAPI.Endpoints.Auth (AuthAPI, authServer)
 import RestAPI.Endpoints.Comment (CommentsAPI, commentServer)
 import RestAPI.Endpoints.Health (HealthAPI, healthServer)
 import RestAPI.Endpoints.Swagger (SwaggerAPI, withMetadata)
@@ -36,7 +39,7 @@ import RestAPI.Endpoints.Voting (VotingAPI, votingServer)
 import Utils.Environment (Env, readEnv)
 import Utils.RequestContext (RequestContext)
 
-type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
+type FunctionalAPI = (HealthAPI :<|> AuthAPI :<|> CommentsAPI :<|> VotingAPI)
 
 type API = SwaggerAPI :<|> FunctionalAPI
 
@@ -56,15 +59,30 @@ serverAPI :: RequestContext -> Server (Enriched API)
 serverAPI ctx = do
   hoistServer enrichedAPI (effToHandler ctx) $
     enrichApiWithHeaders fullAPI $
-      swaggerServer :<|> (healthServer :<|> commentServer :<|> votingServer)
+      swaggerServer :<|> (healthServer :<|> authServer :<|> commentServer :<|> votingServer)
 
 app :: Env -> Application
 app env =
   let
+    checkPassword creds = do
+      result <- effToHandler (mempty & #authors .~ (env ^. #pool)) $ do
+        mUser <- findAuthorByUsername (creds ^. #username)
+        pure $
+          ( \user ->
+              ( user ^. #password
+              , User (user ^. #username)
+              )
+          )
+            <$> mUser
+      case result of
+        Left _ -> pure Nothing
+        Right r -> pure r
+
     -- This is the context that will be passed to the server.
     -- It contains the JWT and cookie settings.
     authContext =
-      customFormatters
+      checkPassword
+        :. customFormatters
         :. (env ^. #cookieSettings)
         :. (env ^. #jwtSettings)
         :. EmptyContext
