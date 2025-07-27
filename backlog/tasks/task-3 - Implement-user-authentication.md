@@ -24,3 +24,4 @@ This task involves setting up user registration and login functionality. It will
 1.  Add `servant-auth` dependency to the API's `package.yaml`.
 2.  Create an `Auth.hs` module to define authentication types and settings.
 3.  Integrate `servant-auth` settings (JWT, cookies) into the main application.
+4.  Add a password hashing library (`bcrypt`) to the project dependencies.
