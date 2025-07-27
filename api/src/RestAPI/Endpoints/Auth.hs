@@ -16,6 +16,7 @@ import Database.Authors.Interface
 import Utils.RequestContext (RequestContext)
 
 type AuthTypes = '[JWT, Cookie]
+
 type ProtectedRoutes = Auth AuthTypes User
 
 type AuthAPI =
