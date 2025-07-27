@@ -9,7 +9,7 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import Servant.Auth.Server as SAS
 
-data User = User
+newtype User = User
   { username :: Text
   }
   deriving stock (Eq, Show, Generic)

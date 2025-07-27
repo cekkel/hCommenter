@@ -42,6 +42,7 @@ dependencies:
   - time
   - servant
   - servant-auth
+  - servant-auth-server
   - servant-server
   - servant-swagger
   - servant-client
@@ -57,6 +58,7 @@ dependencies:
   - aeson-pretty
   - containers
   - cookie
+  - deepseq
   - transformers
   - unliftio
   - effectful
