@@ -63,7 +63,11 @@ app env =
   let
     -- This is the context that will be passed to the server.
     -- It contains the JWT and cookie settings.
-    authContext = customFormatters :. env ^. #cookieSettings :. env ^. #jwtSettings :. EmptyContext
+    authContext =
+      customFormatters
+        :. (env ^. #cookieSettings)
+        :. (env ^. #jwtSettings)
+        :. EmptyContext
   in
     addCustomMiddleware env $ \ctx ->
       -- context is needed to be able to provide custom error formatters for servant.
