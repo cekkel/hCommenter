@@ -38,12 +38,16 @@ type ProtectedRoutes = Auth AuthTypes Auth.User
 instance (HasOpenApi api) => HasOpenApi (ProtectedRoutes :> api) where
   toOpenApi _ =
     toOpenApi (Proxy :: Proxy api)
-      & components . securitySchemes <>~ securityDefinitions
-      & security .~ [jwtSecurityRequirement]
+      & components
+        . securitySchemes
+        <>~ securityDefinitions
+      & security
+        .~ [jwtSecurityRequirement]
    where
     securityDefinitions =
       mempty
-        & at "jwt" ?~ jwtSecurityScheme
+        & at "jwt"
+        ?~ jwtSecurityScheme
     jwtSecurityScheme =
       SecurityScheme
         { _securitySchemeType = SecuritySchemeHttp $ HttpSchemeBearer "JWT"
