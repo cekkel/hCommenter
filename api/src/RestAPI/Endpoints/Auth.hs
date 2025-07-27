@@ -5,14 +5,14 @@ module RestAPI.Endpoints.Auth (AuthAPI, authServer) where
 
 import Control.Monad.Logger (logError)
 import Crypto.BCrypt (hashPasswordUsingPolicy, slowerBcryptHashingPolicy)
-import Data.Text.Display (display)
-import Effectful (Eff, IOE, (:>))
 import Optics ((^.))
 import Servant
 import Servant.Auth.Server (Auth, Cookie, JWT)
 
+import Effectful qualified as Eff
+
 import Auth (NewUser (..), User (..))
-import Database.Authors.Interface
+import Database.Users.Interface
 import Utils.RequestContext (RequestContext)
 
 type AuthTypes = '[JWT, Cookie]
@@ -28,10 +28,10 @@ type AuthAPI =
            :<|> "me" :> ProtectedRoutes :> Get '[JSON] User
        )
 
-authServer :: (AuthorsRepo :> es, IOE :> es) => ServerT AuthAPI (Eff es)
+authServer :: (AuthorsRepo :> es, Eff.IOE :> es) => ServerT AuthAPI (Eff.Eff es)
 authServer = register :<|> login :<|> me
  where
-  register :: (AuthorsRepo :> es, IOE :> es) => NewUser -> Eff es NoContent
+  register :: (AuthorsRepo :> es, Eff.IOE :> es) => NewUser -> Eff.Eff es NoContent
   register newUser = do
     hashedPassword <-
       hashPasswordUsingPolicy slowerBcryptHashingPolicy (encodeUtf8 $ newUser ^. #password)
@@ -43,13 +43,13 @@ authServer = register :<|> login :<|> me
       Right _ -> pure NoContent
       Left e ->
         do
-          $ logError
-            (display e)
+          logError
+            (show e)
             throwError
             err500 {errBody = "Failed to register user."}
 
-  login :: (AuthorsRepo :> es) => NewUser -> Eff es (Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
+  login :: (AuthorsRepo :> es) => NewUser -> Eff.Eff es (Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
   login _ = error "login should be handled by servant-auth"
 
-  me :: User -> Eff es User
+  me :: User -> Eff.Eff es User
   me = pure
