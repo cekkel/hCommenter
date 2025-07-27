@@ -1,8 +1,9 @@
 module Auth
-  ( module Auth,
+  ( User (..),
   )
 where
 
+import Control.DeepSeq
 import Data.Aeson
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -12,6 +13,7 @@ data User = User
   { username :: Text
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 instance ToJSON User
 instance FromJSON User
