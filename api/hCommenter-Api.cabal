@@ -37,7 +37,6 @@ library
       EffectInjection
       EntryPoints
       Frontend.Server
-      Key
       Logging.Config
       Logging.LogContext
       Logging.LogEffect
@@ -64,6 +63,7 @@ library
       Utils.Environment
       Utils.Error
       Utils.Generators
+      Utils.Key
       Utils.RequestContext
   hs-source-dirs:
       src
