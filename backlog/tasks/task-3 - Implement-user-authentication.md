@@ -1,7 +1,7 @@
 ---
 id: task-3
 title: Implement user authentication
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-07-13'
 labels: []
@@ -18,3 +18,7 @@ This task involves setting up user registration and login functionality. It will
 - [ ] Users can create a new account.
 - [ ] Users can log in with their credentials.
 - [ ] The system provides a way to manage user sessions.
+
+## Implementation Plan
+
+1.  Add `servant-auth` dependency to the API's `package.yaml`.
