@@ -29,3 +29,12 @@ instance FromJWT User
 
 -- | This is the user type that will be returned when a user is authenticated.
 type instance AuthServerData (Auth auths User) = User
+
+data NewUser = NewUser
+  { username :: !Text
+  , password :: !Text
+  }
+  deriving stock (Eq, Generic, Show)
+
+deriving anyclass instance FromJSON NewUser
+deriving anyclass instance ToJSON NewUser
