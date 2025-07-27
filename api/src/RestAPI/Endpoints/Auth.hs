@@ -1,13 +1,25 @@
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-module RestAPI.Endpoints.Auth (AuthAPI, authServer) where
+module RestAPI.Endpoints.Auth (AuthAPI, authServer, CookieSettings, JWTSettings) where
 
+import Data.OpenApi
+  ( ApiKeyLocation (..)
+  , ApiKeyParams (..)
+  , HttpScheme (..)
+  , SecurityRequirement
+  , SecurityScheme (..)
+  , SecuritySchemeType (..)
+  )
+import Data.OpenApi.Lens (components, security, securitySchemes)
 import Database.Persist.Sql (Key, PersistValue (PersistText), keyToValues)
-import Optics ((^.))
+import Optics ((&), (.~), (<>~), (^.))
 import Servant
-import Servant.Auth.Server (Auth, Cookie, JWT, SetCookie)
+import Servant.Auth.Server (Auth, Cookie, CookieSettings, JWT, JWTSettings, SetCookie)
+import Servant.OpenApi
 
 import Effectful qualified as Eff
 
@@ -22,6 +34,22 @@ import Database.Schema qualified as Schema
 type AuthTypes = '[JWT, Cookie]
 
 type ProtectedRoutes = Auth AuthTypes Auth.User
+
+instance (HasOpenApi api) => HasOpenApi (ProtectedRoutes :> api) where
+  toOpenApi _ =
+    toOpenApi (Proxy :: Proxy api)
+      & components . securitySchemes <>~ securityDefinitions
+      & security .~ [jwtSecurityRequirement]
+   where
+    securityDefinitions =
+      mempty
+        & at "jwt" ?~ jwtSecurityScheme
+    jwtSecurityScheme =
+      SecurityScheme
+        { _securitySchemeType = SecuritySchemeHttp $ HttpSchemeBearer "JWT"
+        , _securitySchemeDescription = Just "JWT-based authentication"
+        }
+    jwtSecurityRequirement = SecurityRequirement $ mempty & at "jwt" ?~ []
 
 type AuthAPI =
   "auth"
