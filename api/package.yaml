@@ -75,6 +75,7 @@ dependencies:
   - resource-pool
   - http-api-data
   - jwt
+  - jose
   - hedgehog
   - warp
   - PyF

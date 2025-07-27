@@ -38,6 +38,7 @@ library
       EffectInjection
       EntryPoints
       Frontend.Server
+      Key
       Logging.Config
       Logging.LogContext
       Logging.LogEffect
@@ -80,6 +81,7 @@ library
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
     , cookie
@@ -95,6 +97,7 @@ library
     , http-client
     , http-client-tls
     , http-types
+    , jose
     , jwt
     , katip
     , monad-logger
@@ -165,6 +168,7 @@ executable backend-exe
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
     , cookie
@@ -181,6 +185,7 @@ executable backend-exe
     , http-client
     , http-client-tls
     , http-types
+    , jose
     , jwt
     , katip
     , monad-logger
@@ -229,6 +234,7 @@ executable frontend-exe
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
     , cookie
@@ -245,6 +251,7 @@ executable frontend-exe
     , http-client
     , http-client-tls
     , http-types
+    , jose
     , jwt
     , katip
     , monad-logger
@@ -300,6 +307,7 @@ test-suite spec
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
     , cookie
@@ -321,6 +329,7 @@ test-suite spec
     , http-client-tls
     , http-types
     , interpolate
+    , jose
     , jwt
     , katip
     , mockery
