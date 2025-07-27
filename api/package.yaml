@@ -41,6 +41,7 @@ dependencies:
   - extra
   - time
   - servant
+  - servant-auth
   - servant-server
   - servant-swagger
   - servant-client
@@ -55,6 +56,7 @@ dependencies:
   - aeson
   - aeson-pretty
   - containers
+  - cookie
   - transformers
   - unliftio
   - effectful
@@ -69,6 +71,7 @@ dependencies:
   - esqueleto
   - resource-pool
   - http-api-data
+  - jwt
   - hedgehog
   - warp
   - PyF
