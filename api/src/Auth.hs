@@ -35,4 +35,5 @@ data NewUser = NewUser
   deriving stock (Eq, Generic, Show)
 
 deriving anyclass instance FromJSON NewUser
+
 deriving anyclass instance ToJSON NewUser

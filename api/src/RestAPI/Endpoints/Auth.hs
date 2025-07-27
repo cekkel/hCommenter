@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module RestAPI.Endpoints.Auth (AuthAPI, authServer) where
