@@ -22,3 +22,4 @@ This task involves setting up user registration and login functionality. It will
 ## Implementation Plan
 
 1.  Add `servant-auth` dependency to the API's `package.yaml`.
+2.  Create an `Auth.hs` module to define authentication types and settings.
