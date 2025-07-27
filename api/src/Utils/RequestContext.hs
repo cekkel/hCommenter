@@ -8,11 +8,12 @@ import Optics (makeFieldLabelsNoPrefix)
 import Utils.Environment (Env)
 
 data RequestContext = RequestContext
-  { env :: !Env
+  { authUsername :: Maybe Text
+  , env :: !Env
   , correlationId :: !Text
   }
 
 makeFieldLabelsNoPrefix ''RequestContext
 
 mkRequestContext :: Env -> Text -> RequestContext
-mkRequestContext = RequestContext
+mkRequestContext = RequestContext Nothing

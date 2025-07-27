@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module RestAPI.Endpoints.Comment (commentServer, SortBy (..), Comment, CommentsAPI) where
 
@@ -10,11 +11,9 @@ import Servant
   , Get
   , HasServer (ServerT)
   , JSON
-  , NoContent (NoContent)
   , PlainText
   , Post
   , PostCreated
-  , PostNoContent
   , QueryParam
   , ReqBody
   , type (:<|>) (..)
@@ -38,20 +37,22 @@ import Database.Comments.Interface qualified as DB
 
 type CommentsAPI =
   "comments"
-    :> QueryParam "sortby" SortBy
     :> ( ( Description "Get all comments for a particular conversation (page)"
              :> "conversation"
+             :> QueryParam "sortby" SortBy
              :> Capture "convoUrl" Text
              :> Get '[JSON] [ViewComment]
          )
            :<|> ( Description "Get all comments for a particular user"
                     :> "user"
+                    :> QueryParam "sortby" SortBy
                     :> Capture "username" Text
                     :> Get '[JSON] [ViewComment]
                 )
            :<|> ( Description "Get all replies for a particular comment"
-                    :> Capture "id" (Key Comment)
                     :> "replies"
+                    :> QueryParam "sortby" SortBy
+                    :> Capture "id" (Key Comment)
                     :> Get '[JSON] [ViewComment]
                 )
            :<|> ( Description "Create a new comment and get new ID"
@@ -68,7 +69,7 @@ type CommentsAPI =
            :<|> ( Description "Delete a comment"
                     :> "delete"
                     :> Capture "id" (Key Comment)
-                    :> PostNoContent
+                    :> Post '[JSON] ()
                 )
        )
 
@@ -77,91 +78,91 @@ commentServer
      , Log E.:> es
      )
   => ServerT CommentsAPI (E.Eff es)
-commentServer mSortBy = getConvoComments :<|> getUserComments :<|> getReplies :<|> insertComment :<|> editComment :<|> deleteComment
- where
-  logSortBy =
-    maybe
-      (logWarn "Defaulting missing sort method to 'Popular'" >> pure Popular)
-      (\a -> logInfo [fmt|Sorting by '{a}'|] >> pure a)
-      mSortBy
+commentServer = getConvoComments :<|> getUserComments :<|> getReplies :<|> insertComment :<|> editComment :<|> deleteComment
 
-  getConvoComments convoUrl =
-    addLogNamespace "GetConvoComments"
-      . addLogContext [ConvoUrl convoUrl]
-      $ do
-        sortBy <- logSortBy
+logSortBy mSortBy =
+  maybe
+    (logWarn "Defaulting missing sort method to 'Popular'" >> pure Popular)
+    (\a -> logInfo [fmt|Sorting by '{a}'|] >> pure a)
+    mSortBy
 
-        logInfo [fmt|Getting all comments for conversation|]
+getConvoComments mSortBy convoUrl =
+  addLogNamespace "GetConvoComments"
+    . addLogContext [ConvoUrl convoUrl]
+    $ do
+      sortBy <- logSortBy mSortBy
 
-        comments <- DB.getCommentsForConvo convoUrl sortBy
+      logInfo [fmt|Getting all comments for conversation|]
 
-        logInfo [fmt|{length comments} conversation comments retrieved successfully.|]
-        pure comments
+      comments <- DB.getCommentsForConvo convoUrl sortBy
 
-  getUserComments username =
-    addLogNamespace "GetUserComments"
-      . addLogContext [Username username]
-      $ do
-        sortBy <- logSortBy
+      logInfo [fmt|{length comments} conversation comments retrieved successfully.|]
+      pure comments
 
-        logInfo [fmt|Getting all comments for username|]
+getUserComments mSortBy username =
+  addLogNamespace "GetUserComments"
+    . addLogContext [Username username]
+    $ do
+      sortBy <- logSortBy mSortBy
 
-        comments <- DB.getCommentsForUser username sortBy
+      logInfo [fmt|Getting all comments for username|]
 
-        when (null comments) $ do
-          logError [fmt|No comments found for this user with username: {username}|]
+      comments <- DB.getCommentsForUser username sortBy
 
-        logInfo [fmt|{length comments} user comments retrieved successfully.|]
-        pure comments
+      when (null comments) $ do
+        logError [fmt|No comments found for this user with username: {username}|]
 
-  getReplies cID =
-    addLogNamespace "GetUserComments"
-      . addLogContext [ParentId $ Just $ fromSqlKey cID]
-      $ do
-        sortBy <- logSortBy
+      logInfo [fmt|{length comments} user comments retrieved successfully.|]
+      pure comments
 
-        logInfo [fmt|Getting all replies for comment with ID: {fromSqlKey cID}|]
+getReplies mSortBy cID =
+  addLogNamespace "GetUserComments"
+    . addLogContext [ParentId $ Just $ fromSqlKey cID]
+    $ do
+      sortBy <- logSortBy mSortBy
 
-        replies <- DB.getReplies cID sortBy
+      logInfo [fmt|Getting all replies for comment with ID: {fromSqlKey cID}|]
 
-        when (null replies) $ do
-          logError [fmt|No replies found for this comment with ID: {fromSqlKey cID}|]
+      replies <- DB.getReplies cID sortBy
 
-        logInfo [fmt|{length replies} replies retrieved successfully.|]
-        pure replies
+      when (null replies) $ do
+        logError [fmt|No replies found for this comment with ID: {fromSqlKey cID}|]
 
-  insertComment comment =
-    addLogNamespace "NewComment"
-      . addLogContext
-        [ ConvoUrl (comment ^. #convoUrl)
-        , ParentId (comment ^. #parent)
-        ]
-      $ do
-        logInfo "Creating new comment"
+      logInfo [fmt|{length replies} replies retrieved successfully.|]
+      pure replies
 
-        cID <- DB.insertComment comment
+insertComment comment =
+  addLogNamespace "NewComment"
+    . addLogContext
+      [ ConvoUrl (comment ^. #convoUrl)
+      , ParentId (comment ^. #parent)
+      ]
+    $ do
+      logInfo "Creating new comment"
 
-        logInfo [fmt|New comment created with ID: {fromSqlKey cID}|]
-        pure $ fromSqlKey cID
+      cID <- DB.insertComment comment
 
-  editComment cID commentText =
-    addLogNamespace "EditComment"
-      . addLogContext [CommentId cID]
-      $ do
-        logInfo [fmt|Editing comment with ID: {cID} and text: {commentText}|]
+      logInfo [fmt|New comment created with ID: {fromSqlKey cID}|]
+      pure $ fromSqlKey cID
 
-        updatedComment <- DB.editComment (toSqlKey cID) [SendNewContent commentText]
+editComment cID commentText =
+  addLogNamespace "EditComment"
+    . addLogContext [CommentId cID]
+    $ do
+      logInfo [fmt|Editing comment with ID: {cID} and text: {commentText}|]
 
-        logInfo "Comment updated successfully"
-        pure updatedComment
+      updatedComment <- DB.editComment (toSqlKey cID) [SendNewContent commentText]
 
-  deleteComment cID =
-    addLogNamespace "DeleteComment"
-      . addLogContext [CommentId $ fromSqlKey cID]
-      $ do
-        logInfo [fmt|Deleting comment with ID: {fromSqlKey cID}|]
+      logInfo "Comment updated successfully"
+      pure updatedComment
 
-        DB.deleteComment cID
+deleteComment cID =
+  addLogNamespace "DeleteComment"
+    . addLogContext [CommentId $ fromSqlKey cID]
+    $ do
+      logInfo [fmt|Deleting comment with ID: {fromSqlKey cID}|]
 
-        logInfo "Comment deleted successfully"
-        pure NoContent
+      DB.deleteComment cID
+
+      logInfo "Comment deleted successfully"
+      pure ()

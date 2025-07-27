@@ -14,7 +14,9 @@ instance ToJSON ErrorResponse
 
 instance FromJSON ErrorResponse
 
-newtype InputError = BadArgument Text
+data InputError
+  = BadArgument Text
+  | AuthError Text
   deriving (Eq, Show)
 
 type ApiContexts = '[ErrorFormatters, CookieSettings, JWTSettings]

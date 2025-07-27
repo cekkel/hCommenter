@@ -20,12 +20,11 @@ type Enriched api = Header "Correlation-Id" Text :> api
 enrichApiWithHeaders
   :: forall api es
    . (HasServer api ApiContexts, Log E.:> es)
-  => Proxy api
-  -> ServerT api (Eff es)
+  => ServerT api (Eff es)
   -> ServerT (Enriched api) (Eff es)
-enrichApiWithHeaders api server mCorrelationId =
+enrichApiWithHeaders server mCorrelationId =
   hoistServerWithContext
-    api
+    (Proxy @api)
     (Proxy @ApiContexts)
     addCorrelationId
     server

@@ -38,6 +38,7 @@ handleServerResponse (Left (_, err)) = case err of
     UnhandledStorageError _ -> servantErrorWithText err500 "An unhandled storage exception occurred. Sorry!"
   InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
     BadArgument txt -> [fmt|Bad argument: {txt}|]
+    AuthError txt -> [fmt|Authentication error: {txt}|]
  where
   servantErrorWithText sErr msg =
     sErr

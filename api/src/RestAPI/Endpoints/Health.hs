@@ -2,9 +2,9 @@ module RestAPI.Endpoints.Health (healthServer, HealthAPI) where
 
 import Servant
   ( Description
-  , GetNoContent
+  , Get
   , HasServer (ServerT)
-  , NoContent (NoContent)
+  , JSON
   , type (:<|>) (..)
   , type (:>)
   )
@@ -18,11 +18,11 @@ import Logging.Utilities (logInfo)
 type HealthAPI =
   "health"
     :> ( ( Description "Returns 200 if service is online"
-             :> GetNoContent
+             :> Get '[JSON] ()
          )
            :<|> ( "status"
                     :> Description "Get status of dependant services"
-                    :> GetNoContent
+                    :> Get '[JSON] ()
                 )
        )
 
@@ -33,9 +33,9 @@ healthServer = getHealth :<|> getStatus
  where
   getHealth = do
     logInfo "Health checked"
-    pure NoContent
+    pure ()
 
   -- TODO: Implement proper status check of database and other dependencies
   getStatus = do
     logInfo "Status of dependenant services checked"
-    pure NoContent
+    pure ()

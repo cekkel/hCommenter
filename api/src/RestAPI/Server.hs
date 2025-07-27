@@ -1,5 +1,9 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-missing-methods #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module RestAPI.Server
   ( initDevSqliteDB
@@ -26,16 +30,19 @@ import Servant
   , Server
   , serveWithContext
   , type (:<|>) (..)
+  , type (:>)
   )
+import Servant.Auth.Server (Auth)
 import Servant.OpenApi (HasOpenApi (toOpenApi))
 
+import Auth (UserAuth, authenticated)
 import Database.Mockserver (initDevSqliteDB)
 import Middleware.Combined (addCustomMiddleware)
 import Middleware.Exceptions (logOnException)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
 import Middleware.ServantErrorFormatters (customFormatters)
 import RestAPI.EffectInjection (effToHandler)
-import RestAPI.Endpoints.Auth (AuthAPI, authServer)
+import RestAPI.Endpoints.Auth (AuthAPI, AuthTypes, authServer)
 import RestAPI.Endpoints.Comment (CommentsAPI, commentServer)
 import RestAPI.Endpoints.Health (HealthAPI, healthServer)
 import RestAPI.Endpoints.Swagger (SwaggerAPI, withMetadata)
@@ -44,15 +51,14 @@ import RestAPI.ServerTypes (ApiContexts)
 import Utils.Environment (Env, readEnv)
 import Utils.RequestContext (RequestContext)
 
-type FunctionalAPI = (HealthAPI :<|> AuthAPI :<|> CommentsAPI :<|> VotingAPI)
+type ProtectedAPI = CommentsAPI :<|> VotingAPI
+
+type FunctionalAPI = HealthAPI :<|> AuthAPI :<|> (Auth AuthTypes UserAuth :> ProtectedAPI)
 
 type API = SwaggerAPI :<|> FunctionalAPI
 
 enrichedAPI :: Proxy (Enriched API)
 enrichedAPI = Proxy
-
-fullAPI :: Proxy API
-fullAPI = Proxy
 
 functionalAPI :: Proxy FunctionalAPI
 functionalAPI = Proxy
@@ -60,11 +66,15 @@ functionalAPI = Proxy
 swaggerServer :: Eff es OpenApi
 swaggerServer = pure $ withMetadata $ toOpenApi functionalAPI
 
-serverAPI :: RequestContext -> Server (Enriched API)
+serverAPI :: (HasServer API ApiContexts) => RequestContext -> Server (Enriched API)
 serverAPI ctx = do
   hoistServerWithContext enrichedAPI (Proxy @ApiContexts) (effToHandler ctx) $
-    enrichApiWithHeaders fullAPI $
-      swaggerServer :<|> (healthServer :<|> authServer :<|> commentServer :<|> votingServer)
+    enrichApiWithHeaders @API $
+      swaggerServer
+        :<|> ( healthServer
+                 :<|> authServer
+                 :<|> authenticated @ProtectedAPI (commentServer :<|> votingServer)
+             )
 
 app :: Env -> Application
 app env =

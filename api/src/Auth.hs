@@ -1,39 +1,59 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Auth
-  ( User (..)
-  , NewUser (..)
+  ( UserAuth (..)
+  , authenticated
   )
 where
 
 import Data.Aeson
+import Effectful (Eff)
+import Servant (HasServer (ServerT, hoistServerWithContext), type (:>))
 import Servant.Auth.Server as SAS
 import Servant.Server.Experimental.Auth (AuthServerData)
 
-newtype User = User
+import Effectful qualified as Eff
+import Effectful.Error.Static qualified as ES
+import Effectful.Reader.Static qualified as RS
+
+import RestAPI.ServerTypes (ApiContexts, InputError (AuthError))
+import Utils.RequestContext (RequestContext (authUsername))
+
+newtype UserAuth = UserAuth
   { username :: Text
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)
 
-instance ToJSON User
+instance ToJSON UserAuth
 
-instance FromJSON User
+instance FromJSON UserAuth
 
-instance ToJWT User
+instance ToJWT UserAuth
 
-instance FromJWT User
+instance FromJWT UserAuth
 
 -- | This is the user type that will be returned when a user is authenticated.
-type instance AuthServerData (Auth auths User) = User
+type instance AuthServerData (Auth auths UserAuth) = UserAuth
 
-data NewUser = NewUser
-  { username :: !Text
-  , password :: !Text
-  }
-  deriving stock (Eq, Generic, Show)
-
-deriving anyclass instance FromJSON NewUser
-
-deriving anyclass instance ToJSON NewUser
+-- TODO: Could replace the request context with an enhanced context that includes the user information
+authenticated
+  :: forall api es auths
+   . ( ES.Error InputError Eff.:> es
+     , HasServer api ApiContexts
+     , RS.Reader RequestContext Eff.:> es
+     )
+  => ServerT api (Eff es)
+  -> ServerT (Auth auths UserAuth :> api) (Eff es)
+authenticated api authInfo =
+  hoistServerWithContext
+    (Proxy @api)
+    (Proxy @ApiContexts)
+    (handleAuth authInfo)
+    api
+ where
+  handleAuth :: AuthResult UserAuth -> Eff es a -> Eff es a
+  handleAuth = \case
+    Authenticated (UserAuth username) -> RS.local (\ctx -> ctx {authUsername = Just username})
+    _ -> const $ ES.throwError $ AuthError "Authentication failed"
