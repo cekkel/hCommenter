@@ -22,10 +22,10 @@ type ProtectedRoutes = Auth AuthTypes User
 type AuthAPI =
   "auth"
     :> ( "register" :> ReqBody '[JSON] NewUser :> PostCreated '[JSON] NoContent
-          :<|> "login"
-            :> ReqBody '[JSON] NewUser
-            :> Post '[JSON] (Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
-          :<|> "me" :> ProtectedRoutes :> Get '[JSON] User
+           :<|> "login"
+             :> ReqBody '[JSON] NewUser
+             :> Post '[JSON] (Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
+           :<|> "me" :> ProtectedRoutes :> Get '[JSON] User
        )
 
 authServer :: (AuthorsRepo :> es, IOE :> es) => ServerT AuthAPI (Eff es)
@@ -41,9 +41,12 @@ authServer = register :<|> login :<|> me
         hashedPassword
     case res of
       Right _ -> pure NoContent
-      Left e -> do
-        $logError (display e)
-        throwError err500{errBody = "Failed to register user."}
+      Left e ->
+        do
+          $ logError
+            (display e)
+            throwError
+            err500 {errBody = "Failed to register user."}
 
   login :: (AuthorsRepo :> es) => NewUser -> Eff es (Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
   login _ = error "login should be handled by servant-auth"
