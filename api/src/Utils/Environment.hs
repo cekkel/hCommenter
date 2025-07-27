@@ -8,12 +8,12 @@ import Control.Monad.Logger (LoggingT, MonadLoggerIO)
 import Data.Pool (Pool)
 import Database.Persist.Sqlite (SqlBackend, createSqlitePool)
 import Effectful (MonadUnliftIO)
+import Key (getKey)
 import Optics
 import Servant.Auth.Server (CookieSettings, JWTSettings, defaultCookieSettings, defaultJWTSettings)
 import System.Environment (getEnv)
 
 import Database.Schema (Backend (SQLite))
-import Key (getKey)
 import Logging.Config (LoggingConf, readLoggingConf)
 
 data Env = Env
