@@ -22,14 +22,11 @@ import Optics
 import Servant
   ( Application
   , Context (EmptyContext, (:.))
-  , ErrorFormatters
   , HasServer (hoistServerWithContext)
   , Server
-  , hoistServer
   , serveWithContext
   , type (:<|>) (..)
   )
-import Servant.Auth.Server (CookieSettings, JWTSettings)
 import Servant.OpenApi (HasOpenApi (toOpenApi))
 
 import Database.Mockserver (initDevSqliteDB)
@@ -49,8 +46,7 @@ import Utils.RequestContext (RequestContext)
 
 type FunctionalAPI = (HealthAPI :<|> AuthAPI :<|> CommentsAPI :<|> VotingAPI)
 
--- type API = SwaggerAPI :<|> FunctionalAPI
-type API = FunctionalAPI
+type API = SwaggerAPI :<|> FunctionalAPI
 
 enrichedAPI :: Proxy (Enriched API)
 enrichedAPI = Proxy
@@ -61,15 +57,14 @@ fullAPI = Proxy
 functionalAPI :: Proxy FunctionalAPI
 functionalAPI = Proxy
 
--- swaggerServer :: Eff es OpenApi
--- swaggerServer = pure $ withMetadata $ toOpenApi functionalAPI
+swaggerServer :: Eff es OpenApi
+swaggerServer = pure $ withMetadata $ toOpenApi functionalAPI
 
 serverAPI :: RequestContext -> Server (Enriched API)
 serverAPI ctx = do
   hoistServerWithContext enrichedAPI (Proxy @ApiContexts) (effToHandler ctx) $
     enrichApiWithHeaders fullAPI $
-      -- swaggerServer :<|> (healthServer :<|> authServer :<|> commentServer :<|> votingServer)
-      healthServer :<|> authServer :<|> commentServer :<|> votingServer
+      swaggerServer :<|> (healthServer :<|> authServer :<|> commentServer :<|> votingServer)
 
 app :: Env -> Application
 app env =
