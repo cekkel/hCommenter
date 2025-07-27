@@ -92,6 +92,7 @@ internal-libraries:
         aeson-pretty,
         base ==4.21.*,
         relude,
+        servant-auth-server,
         text,
         extra,
         time
