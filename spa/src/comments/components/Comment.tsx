@@ -1,7 +1,10 @@
 import { Calendar, LinkIcon, PlayIcon, UserRoundPen } from "lucide-react";
 import { ViewComment } from "../../client";
 import { useMutation } from "@tanstack/react-query";
-import { postCommentsByIdDownvoteMutation, postCommentsByIdUpvoteMutation } from "../../client/@tanstack/react-query.gen";
+import {
+  postCommentsByIdDownvoteMutation,
+  postCommentsByIdUpvoteMutation,
+} from "../../client/@tanstack/react-query.gen";
 import { NewComment } from "./NewComment";
 import { Button } from "react-aria-components";
 
@@ -11,8 +14,8 @@ interface CommentProps {
 }
 
 export const Comment = ({ comment, showUrl = false }: CommentProps) => {
-  const sendUpvote = useMutation({ ...postCommentsByIdUpvoteMutation() })
-  const sendDownvote = useMutation({ ...postCommentsByIdDownvoteMutation() })
+  const sendUpvote = useMutation({ ...postCommentsByIdUpvoteMutation() });
+  const sendDownvote = useMutation({ ...postCommentsByIdDownvoteMutation() });
 
   const upvote = () => {
     // Handle upvote logic here
@@ -84,7 +87,11 @@ export const Comment = ({ comment, showUrl = false }: CommentProps) => {
           />
           <span>{new Date(comment.created).toLocaleDateString()}</span>
         </div>
-        <NewComment convoUrl={comment.conversationUrl} parentId={comment.id} triggerButtonText="Reply" />
+        <NewComment
+          convoUrl={comment.conversationUrl}
+          parentId={comment.id}
+          triggerButtonText="Reply"
+        />
       </div>
     </div>
   );

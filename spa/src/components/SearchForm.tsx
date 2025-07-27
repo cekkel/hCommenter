@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface SearchFormProps {
   title: string;
@@ -8,18 +8,16 @@ interface SearchFormProps {
   placeholder: string;
 }
 
-export const SearchForm = ({ 
-  title, 
-  inputValue, 
-  setInputValue, 
-  onSubmit, 
-  placeholder 
+export const SearchForm = ({
+  title,
+  inputValue,
+  setInputValue,
+  onSubmit,
+  placeholder,
 }: SearchFormProps) => {
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">
-        {title}
-      </h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">{title}</h2>
       <form onSubmit={onSubmit} className="flex gap-2">
         <div className="flex-1">
           <input

@@ -1,10 +1,13 @@
-import { defineConfig } from '@hey-api/openapi-ts';
+import { defineConfig } from "@hey-api/openapi-ts";
 
 export default defineConfig({
-  input: '../api/api-swagger.json',
-  output: 'src/client',
-  plugins: ['@tanstack/react-query', {
-    name: '@hey-api/client-fetch',
-    baseUrl: 'http://localhost:80',
-  }],
+  input: "../api/api-swagger.json",
+  output: "src/client",
+  plugins: [
+    "@tanstack/react-query",
+    {
+      name: "@hey-api/client-fetch",
+      baseUrl: "http://localhost:80",
+    },
+  ],
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,9 +11,7 @@ export const Layout = ({ children }: LayoutProps) => {
         <h1 className="text-4xl font-bold text-center text-gray-900 mb-8">
           hCommenter
         </h1>
-        <div className="space-y-8">
-          {children}
-        </div>
+        <div className="space-y-8">{children}</div>
       </div>
     </div>
   );

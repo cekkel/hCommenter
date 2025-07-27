@@ -8,7 +8,11 @@ interface ConversationProps {
 }
 
 export const ConversationComments = ({ convoUrl }: ConversationProps) => {
-  const { data: comments, isLoading, error } = useQuery({
+  const {
+    data: comments,
+    isLoading,
+    error,
+  } = useQuery({
     ...getCommentsConversationByConvoUrlOptions({
       path: { convoUrl },
       query: { sortby: "Popular" },
