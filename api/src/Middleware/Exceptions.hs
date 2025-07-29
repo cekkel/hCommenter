@@ -4,7 +4,6 @@ module Middleware.Exceptions where
 
 import Effectful (runEff)
 import Network.Wai (Request)
-import PyF (fmt)
 
 import Logging.LogContext (LogField (CorrelationID))
 import Logging.LogEffect (runLog)

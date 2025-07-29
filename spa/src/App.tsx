@@ -1,50 +1,33 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthorComments } from "./comments/AuthorComments";
-import { ConversationComments } from "./comments/ConversationComments";
 import { useState } from "react";
-import { SearchForm } from "./components/SearchForm";
+import { ConversationComments } from "./comments/ConversationComments";
 import { Layout } from "./components/Layout";
+import { SearchForm } from "./components/SearchForm";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [username, setUsername] = useState("Abby");
-  const [inputValue, setInputValue] = useState("Abby");
-  const [convoUrl, setConvoUrl] = useState("convo.com");
-  const [convoInputValue, setConvoInputValue] = useState("convo.com");
+  const [convoUrl, setConvoUrl] = useState("example.com/my-article");
+  const [submittedUrl, setSubmittedUrl] = useState(convoUrl);
 
-  const handleUsernameSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setUsername(inputValue);
-  };
-
-  const handleConvoSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setConvoUrl(convoInputValue);
+    setSubmittedUrl(convoUrl);
   };
 
   return (
     <QueryClientProvider client={queryClient}>
       <Layout>
-        <SearchForm
-          title="Search by Username"
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          onSubmit={handleUsernameSubmit}
-          placeholder="Enter username..."
-        />
-
-        <AuthorComments username={username} />
-
-        <SearchForm
-          title="Search by Conversation URL"
-          inputValue={convoInputValue}
-          setInputValue={setConvoInputValue}
-          onSubmit={handleConvoSubmit}
-          placeholder="Enter conversation URL..."
-        />
-
-        <ConversationComments convoUrl={convoUrl} />
+        <div className="space-y-8">
+          <SearchForm
+            title="Search Comments by URL"
+            inputValue={convoUrl}
+            setInputValue={setConvoUrl}
+            onSubmit={handleSubmit}
+            placeholder="example.com/my-article"
+          />
+          <ConversationComments convoUrl={submittedUrl} />
+        </div>
       </Layout>
     </QueryClientProvider>
   );

@@ -1,5 +1,9 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-missing-methods #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module RestAPI.Server
   ( initDevSqliteDB
@@ -19,9 +23,18 @@ import Data.OpenApi (OpenApi)
 import Effectful (Eff)
 import Network.Wai.Handler.Warp (defaultSettings, runSettings, setOnException, setPort)
 import Optics
-import PyF (fmt)
-import Servant (Application, Context (EmptyContext, (:.)), Server, hoistServer, serveWithContext, type (:<|>) (..))
+import Servant
+  ( Application
+  , Context (EmptyContext, (:.))
+  , HasServer (hoistServerWithContext)
+  , Server
+  , serveWithContext
+  , type (:<|>) (..)
+  , type (:>)
+  )
+import Servant.Auth.Server (Auth)
 import Servant.OpenApi (HasOpenApi (toOpenApi))
+import Utils.Auth (UserAuth, authenticated)
 
 import Database.Mockserver (initDevSqliteDB)
 import Middleware.Combined (addCustomMiddleware)
@@ -29,22 +42,23 @@ import Middleware.Exceptions (logOnException)
 import Middleware.Headers (Enriched, enrichApiWithHeaders)
 import Middleware.ServantErrorFormatters (customFormatters)
 import RestAPI.EffectInjection (effToHandler)
+import RestAPI.Endpoints.Auth (AuthAPI, AuthTypes, authServer)
 import RestAPI.Endpoints.Comment (CommentsAPI, commentServer)
 import RestAPI.Endpoints.Health (HealthAPI, healthServer)
 import RestAPI.Endpoints.Swagger (SwaggerAPI, withMetadata)
 import RestAPI.Endpoints.Voting (VotingAPI, votingServer)
+import RestAPI.ServerTypes (ApiContexts)
 import Utils.Environment (Env, readEnv)
 import Utils.RequestContext (RequestContext)
 
-type FunctionalAPI = (HealthAPI :<|> CommentsAPI :<|> VotingAPI)
+type ProtectedAPI = CommentsAPI :<|> VotingAPI
+
+type FunctionalAPI = HealthAPI :<|> AuthAPI :<|> (Auth AuthTypes UserAuth :> ProtectedAPI)
 
 type API = SwaggerAPI :<|> FunctionalAPI
 
 enrichedAPI :: Proxy (Enriched API)
 enrichedAPI = Proxy
-
-fullAPI :: Proxy API
-fullAPI = Proxy
 
 functionalAPI :: Proxy FunctionalAPI
 functionalAPI = Proxy
@@ -52,18 +66,31 @@ functionalAPI = Proxy
 swaggerServer :: Eff es OpenApi
 swaggerServer = pure $ withMetadata $ toOpenApi functionalAPI
 
-serverAPI :: RequestContext -> Server (Enriched API)
+serverAPI :: (HasServer API ApiContexts) => RequestContext -> Server (Enriched API)
 serverAPI ctx = do
-  hoistServer enrichedAPI (effToHandler ctx) $
-    enrichApiWithHeaders fullAPI $
-      swaggerServer :<|> (healthServer :<|> commentServer :<|> votingServer)
+  hoistServerWithContext enrichedAPI (Proxy @ApiContexts) (effToHandler ctx) $
+    enrichApiWithHeaders @API $
+      swaggerServer
+        :<|> ( healthServer
+                 :<|> authServer
+                 :<|> authenticated @ProtectedAPI (commentServer :<|> votingServer)
+             )
 
 app :: Env -> Application
 app env =
-  addCustomMiddleware env $ \ctx ->
-    -- context is needed to be able to provide custom error formatters for servant.
-    serveWithContext enrichedAPI (customFormatters :. EmptyContext) $
-      serverAPI ctx
+  let
+    -- context is needed to be able to provide custom error formatters for servant,
+    -- as well as cookie and JWT settings for authentication.
+    apiContext :: Context ApiContexts
+    apiContext =
+      customFormatters
+        :. (env ^. #cookieSettings)
+        :. (env ^. #jwtSettings)
+        :. EmptyContext
+  in
+    addCustomMiddleware env $ \ctx ->
+      serveWithContext enrichedAPI apiContext $
+        serverAPI ctx
 
 messageConsoleAndRun :: IO ()
 messageConsoleAndRun = do

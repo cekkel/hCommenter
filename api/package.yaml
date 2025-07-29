@@ -41,6 +41,8 @@ dependencies:
   - extra
   - time
   - servant
+  - servant-auth
+  - servant-auth-server
   - servant-server
   - servant-swagger
   - servant-client
@@ -54,7 +56,10 @@ dependencies:
   - bytestring
   - aeson
   - aeson-pretty
+  - bcrypt
   - containers
+  - cookie
+  - deepseq
   - transformers
   - unliftio
   - effectful
@@ -69,6 +74,8 @@ dependencies:
   - esqueleto
   - resource-pool
   - http-api-data
+  - jwt
+  - jose
   - hedgehog
   - warp
   - PyF
@@ -89,6 +96,7 @@ internal-libraries:
         aeson-pretty,
         base ==4.21.*,
         relude,
+        servant-auth-server,
         text,
         extra,
         time

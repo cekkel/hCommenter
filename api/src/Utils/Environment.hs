@@ -9,7 +9,9 @@ import Data.Pool (Pool)
 import Database.Persist.Sqlite (SqlBackend, createSqlitePool)
 import Effectful (MonadUnliftIO)
 import Optics
+import Servant.Auth.Server (CookieSettings, JWTSettings, defaultCookieSettings, defaultJWTSettings)
 import System.Environment (getEnv)
+import Utils.Key (getKey)
 
 import Database.Schema (Backend (SQLite))
 import Logging.Config (LoggingConf, readLoggingConf)
@@ -22,6 +24,8 @@ data Env = Env
   , appName :: !Text
   , envName :: !Text
   , logging :: !LoggingConf
+  , jwtSettings :: JWTSettings
+  , cookieSettings :: CookieSettings
   }
 
 makeFieldLabelsNoPrefix ''Env
@@ -41,6 +45,8 @@ readEnv = do
     port = fromMaybe (error "Port provided in 'APP__PORT' is missing or invalid") mPort
 
   loggingConf <- readLoggingConf appName envName
+  -- TODO: Should be more idiomatic
+  key <- getKey
 
   pure $
     Env
@@ -50,6 +56,8 @@ readEnv = do
       , appName
       , envName
       , logging = loggingConf
+      , jwtSettings = defaultJWTSettings key
+      , cookieSettings = defaultCookieSettings
       }
 
 createCustomSqlPool :: (MonadLoggerIO m, MonadUnliftIO m) => Backend -> m (Pool SqlBackend)

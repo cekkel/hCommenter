@@ -5,6 +5,7 @@ module Mapping.ExternalTypes
   ( Paginated (..)
   , PaginationData (..)
   , ViewComment (..)
+  , ViewUser (..)
   )
 where
 
@@ -37,6 +38,13 @@ data ViewComment = ViewComment
   }
   deriving (Eq, Generic, Show)
 
+data ViewUser = ViewUser
+  { username :: Text
+  , email :: Text
+  , createdAt :: UTCTime
+  }
+  deriving (Eq, Generic, Show)
+
 makeFieldLabelsNoPrefix ''PaginationData
 deriveJSON defaultOptions ''PaginationData
 
@@ -51,3 +59,8 @@ makeFieldLabelsNoPrefix ''ViewComment
 deriveJSON defaultOptions ''ViewComment
 
 instance ToSchema ViewComment
+
+makeFieldLabelsNoPrefix ''ViewUser
+deriveJSON defaultOptions ''ViewUser
+
+instance ToSchema ViewUser

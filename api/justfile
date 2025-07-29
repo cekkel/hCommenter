@@ -8,6 +8,10 @@ cabal-file := "hCommenter-Api.cabal"
 hpack-file := "package.yaml"
 hpack := "hpack"
 
+lint:
+    hlint .
+    fourmolu --mode check .
+
 # Run hpack to generate .cabal file
 run-hpack:
     {{hpack}} -f

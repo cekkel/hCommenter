@@ -5,8 +5,8 @@ import Servant
   ( Capture
   , Description
   , HasServer (ServerT)
-  , NoContent (NoContent)
-  , PostNoContent
+  , JSON
+  , Post
   , type (:<|>) (..)
   , type (:>)
   )
@@ -23,8 +23,8 @@ import Logging.Utilities (addLogContext, addLogNamespace, logInfo)
 type VotingAPI =
   "comments"
     :> Capture "id" (Key Comment)
-    :> ( "upvote" :> Description "Upvote a comment" :> PostNoContent
-           :<|> "downvote" :> Description "Downvote a comment" :> PostNoContent
+    :> ( "upvote" :> Description "Upvote a comment" :> Post '[JSON] ()
+           :<|> "downvote" :> Description "Downvote a comment" :> Post '[JSON] ()
        )
 
 votingServer
@@ -38,10 +38,10 @@ votingServer cID = upvote :<|> downvote
     addLogNamespace "Upvote" . addLogContext [CommentId $ fromSqlKey cID] $ do
       _ <- editComment cID [SendUpvote]
       logInfo "Comment upvoted successfully"
-      pure NoContent
+      pure ()
 
   downvote =
     addLogNamespace "Downvote" . addLogContext [CommentId $ fromSqlKey cID] $ do
       _ <- editComment cID [SendDownvote]
       logInfo "Comment downvoted successfully"
-      pure NoContent
+      pure ()

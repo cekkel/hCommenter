@@ -8,7 +8,11 @@ interface ConversationProps {
 }
 
 export const ConversationComments = ({ convoUrl }: ConversationProps) => {
-  const { data: comments, isLoading, error } = useQuery({
+  const {
+    data: comments,
+    isLoading,
+    error,
+  } = useQuery({
     ...getCommentsConversationByConvoUrlOptions({
       path: { convoUrl },
       query: { sortby: "Popular" },
@@ -18,7 +22,7 @@ export const ConversationComments = ({ convoUrl }: ConversationProps) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
-        <h2 className="text-2xl font-semibold text-gray-900">Comments for {convoUrl}</h2>
+        <h2 className="text-2xl font-semibold text-gray-900">Comments</h2>
         <NewComment convoUrl={convoUrl} />
       </div>
       <CommentsList

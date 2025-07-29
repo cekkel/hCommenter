@@ -7,7 +7,7 @@ default:
 
 # Need to be running the API locally first and have prettier installed.
 write-swagger:
-    curl http://localhost:80/swagger.json | prettier --parser json > spa/api-swagger.json \
+    curl http://localhost:80/swagger.json | prettier --parser json > api/api-swagger.json
 
 # Build the initial Docker image
 build-base-image:
@@ -20,7 +20,8 @@ rebuild-base-image:
     docker build ./api \
       --file ./api/deploy/build.Dockerfile \
       --tag hcommenter:base \
-      --build-arg BASE_IMAGE=hcommenter:base
+      --build-arg BASE_IMAGE=hcommenter:base \
+      --no-cache
 
 # Run development environment
 dev:

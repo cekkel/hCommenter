@@ -4,7 +4,6 @@ module Middleware.ServantErrorFormatters (customFormatters) where
 
 import Data.Aeson (object, (.=))
 import Network.Wai (Request (rawPathInfo))
-import PyF (fmt)
 import Servant
   ( ErrorFormatter
   , ErrorFormatters (bodyParserErrorFormatter, notFoundErrorFormatter)

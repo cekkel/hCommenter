@@ -24,8 +24,6 @@ source-repository head
 
 library
   exposed-modules:
-      Database.Authors.Effect
-      Database.Authors.Interface
       Database.Comments.Effect
       Database.Comments.Interface
       Database.Conversations.Effect
@@ -34,6 +32,8 @@ library
       Database.Mockserver
       Database.Schema
       Database.SqlPool
+      Database.Users.Effect
+      Database.Users.Interface
       EffectInjection
       EntryPoints
       Frontend.Server
@@ -45,21 +45,25 @@ library
       Mapping.Comments
       Mapping.ExternalTypes
       Mapping.Typeclass
+      Mapping.Users
       Middleware.Combined
       Middleware.Exceptions
       Middleware.Headers
       Middleware.Requests
       Middleware.ServantErrorFormatters
       RestAPI.EffectInjection
+      RestAPI.Endpoints.Auth
       RestAPI.Endpoints.Comment
       RestAPI.Endpoints.Health
       RestAPI.Endpoints.Swagger
       RestAPI.Endpoints.Voting
       RestAPI.Server
       RestAPI.ServerTypes
+      Utils.Auth
       Utils.Environment
       Utils.Error
       Utils.Generators
+      Utils.Key
       Utils.RequestContext
   hs-source-dirs:
       src
@@ -79,8 +83,11 @@ library
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -92,6 +99,8 @@ library
     , http-client
     , http-client-tls
     , http-types
+    , jose
+    , jwt
     , katip
     , monad-logger
     , my-prelude
@@ -101,6 +110,8 @@ library
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
@@ -137,7 +148,7 @@ library my-prelude
   mixins:
       base hiding (Prelude)
   default-language: GHC2024
-  build-depends: PyF, aeson, aeson-pretty, base ==4.21.*, relude, text, extra, time
+  build-depends: PyF, aeson, aeson-pretty, base ==4.21.*, relude, servant-auth-server, text, extra, time
 
 executable backend-exe
   main-is: Main.hs
@@ -159,8 +170,11 @@ executable backend-exe
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -173,6 +187,8 @@ executable backend-exe
     , http-client
     , http-client-tls
     , http-types
+    , jose
+    , jwt
     , katip
     , monad-logger
     , my-prelude
@@ -182,6 +198,8 @@ executable backend-exe
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
@@ -218,8 +236,11 @@ executable frontend-exe
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -232,6 +253,8 @@ executable frontend-exe
     , http-client
     , http-client-tls
     , http-types
+    , jose
+    , jwt
     , katip
     , monad-logger
     , my-prelude
@@ -241,6 +264,8 @@ executable frontend-exe
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
@@ -284,8 +309,11 @@ test-suite spec
     , aeson
     , aeson-pretty
     , base ==4.21.*
+    , bcrypt
     , bytestring
     , containers
+    , cookie
+    , deepseq
     , effectful
     , effectful-core
     , effectful-plugin
@@ -303,6 +331,8 @@ test-suite spec
     , http-client-tls
     , http-types
     , interpolate
+    , jose
+    , jwt
     , katip
     , mockery
     , monad-logger
@@ -313,6 +343,8 @@ test-suite spec
     , persistent-sqlite
     , resource-pool
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-client
     , servant-openapi3
     , servant-server
