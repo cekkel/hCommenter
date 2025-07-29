@@ -9,6 +9,7 @@ import Servant
   ( Handler (Handler)
   , ServerError (errBody, errHTTPCode, errHeaders)
   , err400
+  , err401
   , err404
   , err500
   )
@@ -36,9 +37,9 @@ handleServerResponse (Left (_, err)) = case err of
     CommentNotFound _ -> servantErrorWithText err404 "Comment not found"
     UserOrConvoNotFound _ -> servantErrorWithText err404 "Unable to find user or conversation"
     UnhandledStorageError _ -> servantErrorWithText err500 "An unhandled storage exception occurred. Sorry!"
-  InputError innerErr -> Left $ servantErrorWithText err400 $ case innerErr of
-    BadArgument txt -> [fmt|Bad argument: {txt}|]
-    AuthError txt -> [fmt|Authentication error: {txt}|]
+  InputError innerErr -> Left $ case innerErr of
+    BadArgument txt -> servantErrorWithText err400 [fmt|Bad argument: {txt}|]
+    AuthError txt -> servantErrorWithText err401 [fmt|Authentication error: {txt}|]
  where
   servantErrorWithText sErr msg =
     sErr
