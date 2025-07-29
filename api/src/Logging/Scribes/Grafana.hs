@@ -13,7 +13,6 @@ import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types (statusIsSuccessful)
 import Optics
-import PyF (fmt)
 import Servant (Header, JSON, NoContent (..), Post, ReqBody, (:>))
 import Servant.Client
   ( BaseUrl (..)

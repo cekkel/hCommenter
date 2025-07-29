@@ -8,11 +8,13 @@ module Prelude
   , pack
   , unpack
   , genericSortBy
+  , fmt
   )
 where
 
 import Data.Text (pack, toLower, toUpper, unpack)
 import Data.Time.Clock (UTCTime)
+import PyF (fmt)
 import Relude hiding (sortBy)
 
 import Relude qualified as R

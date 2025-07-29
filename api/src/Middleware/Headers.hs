@@ -10,6 +10,7 @@ import Effectful qualified as E
 import Logging.LogContext (LogField (CorrelationID))
 import Logging.LogEffect (Log)
 import Logging.Utilities (addLogContext)
+import RestAPI.ServerTypes (ApiContexts)
 
 correlationIDHeaderName :: (IsString a) => a
 correlationIDHeaderName = "Correlation-Id"
@@ -18,13 +19,13 @@ type Enriched api = Header "Correlation-Id" Text :> api
 
 enrichApiWithHeaders
   :: forall api es
-   . (HasServer api '[], Log E.:> es)
-  => Proxy api
-  -> ServerT api (Eff es)
+   . (HasServer api ApiContexts, Log E.:> es)
+  => ServerT api (Eff es)
   -> ServerT (Enriched api) (Eff es)
-enrichApiWithHeaders api server mCorrelationId =
-  hoistServer
-    api
+enrichApiWithHeaders server mCorrelationId =
+  hoistServerWithContext
+    (Proxy @api)
+    (Proxy @ApiContexts)
     addCorrelationId
     server
  where
@@ -32,7 +33,7 @@ enrichApiWithHeaders api server mCorrelationId =
   correlationId = fromMaybe "MISSING" mCorrelationId
 
   addCorrelationId :: Eff es a -> Eff es a
-  addCorrelationId eff = addLogContext [CorrelationID correlationId] eff
+  addCorrelationId = addLogContext [CorrelationID correlationId]
 
 addGlobalHeadersToResponse :: ByteString -> Response -> Response
 addGlobalHeadersToResponse = \case

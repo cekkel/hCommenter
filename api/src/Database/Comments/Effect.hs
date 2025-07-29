@@ -24,7 +24,6 @@ import Database.Esqueleto.Experimental
   )
 import Effectful (Eff, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
-import PyF (fmt)
 import UnliftIO (catchAny)
 
 import Database.Persist qualified as P

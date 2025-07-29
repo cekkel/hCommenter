@@ -9,6 +9,7 @@
 
 module Database.Schema where
 
+import Crypto.BCrypt (hashPasswordUsingPolicy, slowerBcryptHashingPolicy)
 import Data.Aeson
   ( Object
   , ToJSON (toJSON)
@@ -16,6 +17,7 @@ import Data.Aeson
   )
 import Data.Aeson.KeyMap (singleton)
 import Data.Aeson.TH (deriveJSON)
+import Data.Maybe (fromJust)
 import Data.OpenApi
   ( ToParamSchema
   , ToSchema (declareNamedSchema)
@@ -137,6 +139,39 @@ data NewComment = NewComment
 makeFieldLabelsNoPrefix ''NewComment
 deriveJSON defaultOptions ''NewComment
 
+data NewUser = NewUser
+  { username :: Text
+  , email :: Text
+  , password :: Text
+  }
+  deriving (Eq, Generic, Read, Show)
+
+makeFieldLabelsNoPrefix ''NewUser
+deriveJSON defaultOptions ''NewUser
+
+instance ToSchema NewUser where
+  declareNamedSchema = genericDeclareNamedSchema defaultSchemaOptions
+
+hashPassword :: Text -> IO Text
+hashPassword password = do
+  let
+    passwordBS = encodeUtf8 password
+  hash <- hashPasswordUsingPolicy slowerBcryptHashingPolicy passwordBS
+  pure $ decodeUtf8 $ fromJust hash
+
+fromNewUser :: NewUser -> IO User
+fromNewUser user = do
+  currTime <- getCurrentTime
+  hashedPassword <- hashPassword $ user ^. #password
+  pure $
+    User
+      { userUsername = user ^. #username
+      , userEmail = user ^. #email
+      , userPasswordHash = hashedPassword
+      , userCreatedAt = currTime
+      , userUpdatedAt = currTime
+      }
+
 fromNewComment :: NewComment -> IO Comment
 fromNewComment comment = do
   currTime <- getCurrentTime
@@ -190,6 +225,10 @@ instance ToHttpApiData SortBy where
 instance ToParamSchema (BackendKey SqlBackend)
 
 instance ToParamSchema (Key Comment)
+
+instance ToParamSchema (Key User)
+
+instance ToParamSchema (Key Conversation)
 
 instance ToParamSchema SortBy
 

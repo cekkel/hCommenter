@@ -9,8 +9,8 @@ hpack-file := "package.yaml"
 hpack := "hpack"
 
 lint:
-    hlint --quiet .
-    fourmolu --mode check --quiet .
+    hlint .
+    fourmolu --mode check .
 
 # Run hpack to generate .cabal file
 run-hpack:
